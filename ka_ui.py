@@ -30,7 +30,7 @@ class PatientSelectWindow:
                   background=self.fixed_map('background'))
         # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
         self.treeview = Treeview(self.main_root, style="mystyle.Treeview", height=18, selectmode='browse')
-        self.treeview.place(x=5, y=275)
+        self.treeview.place(x=5, y=5)
 
         self.treeview.heading("#0", text="#", anchor='c')
         self.treeview["columns"] = ["1"]
@@ -43,7 +43,7 @@ class PatientSelectWindow:
         self.treeview.bind("<Button-1>", self.get_patient)
 
         self.file_scroll = Scrollbar(self.main_root, orient="vertical", command=self.treeview.yview)
-        self.file_scroll.place(x=335, y=275, height=385)
+        self.file_scroll.place(x=0, y=0, height=385)
 
         self.treeview.configure(yscrollcommand=self.file_scroll.set)
         self.tree_parents = []
@@ -51,19 +51,35 @@ class PatientSelectWindow:
         self.current_selection = "I000"
         self.patient_file = None
 
+        self.new_button = Button(self.main_root, text="New Patient", command=self.new_patient_quit)
+        self.new_button.place(x=20, y=620)
+
         self.select_button = Button(self.main_root, text="Select Patient", command=self.save_and_quit)
-        self.select_button.place(x=40, y=600)
+        self.select_button.place(x=120, y=620)
 
         self.cancel_button = Button(self.main_root, text="Cancel", command=self.quit_app)
-        self.cancel_button.place(x=200, y=600)
+        self.cancel_button.place(x=220, y=620)
 
         self.patient_files = []
+        self.new_patient, self.cancel, self.selected = False, False, False
+        # https://stackoverflow.com/a/111160
+        self.main_root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.main_root.mainloop()
 
+    def on_closing(self):
+        self.new_patient, self.cancel, self.selected = False, True, False
+        self.main_root.destroy()
+
+    def new_patient_quit(self):
+        self.new_patient, self.cancel, self.selected = True, False, False
+        self.main_root.destroy()
+
     def save_and_quit(self):
-        pass
+        self.new_patient, self.cancel, self.selected = False, False, True
+        self.main_root.destroy()
 
     def quit_app(self):
+        self.new_patient, self.cancel, self.selected = False, True, False
         self.main_root.destroy()
 
     def fixed_map(self, option):
@@ -84,7 +100,6 @@ class PatientSelectWindow:
         selection = self.treeview.identify_row(event.y)
         if selection:
             Patient.update_fields(self.patient_files[selection])
-            self.main_root.destroy()
 
 
 class PatientContainer:
@@ -101,13 +116,14 @@ if __name__ == "__main__":
     print(datetime.datetime.now().strftime("%c"))
 
     Patient = PatientContainer()
-    PatientSelectWindow()
+    UserSelection = PatientSelectWindow()
 
-    root = Tk()
-    root.config(bg="white", bd=-2)
-    pad = 3
-    root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
-    root.title("KSA - KeyStroke Annotator")
+    if not UserSelection.cancel:
+        root = Tk()
+        root.config(bg="white", bd=-2)
+        pad = 3
+        root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
+        root.title("KSA - KeyStroke Annotator")
 
-    StaticImages(root)
-    root.mainloop()
+        StaticImages(root)
+        root.mainloop()
