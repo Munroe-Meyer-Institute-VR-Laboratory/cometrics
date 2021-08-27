@@ -1,3 +1,6 @@
+import os
+import pathlib
+from os import walk
 from tkinter import *
 from tkinter import filedialog, messagebox
 from tkinter.ttk import Treeview, Style
@@ -20,7 +23,7 @@ class PatientSelectWindow:
     def __init__(self):
         self.main_root = Tk()
         self.main_root.config(bg="white", bd=-2)
-        self.main_root.geometry("{0}x{1}+0+0".format(300, 700))
+        self.main_root.geometry("{0}x{1}+0+0".format(300, 500))
         self.main_root.title("KSA - KeyStroke Annotator")
         style = Style()
         style.configure("mystyle.Treeview", highlightthickness=0, bd=0,
@@ -30,20 +33,20 @@ class PatientSelectWindow:
                   background=self.fixed_map('background'))
         # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
         self.treeview = Treeview(self.main_root, style="mystyle.Treeview", height=18, selectmode='browse')
-        self.treeview.place(x=5, y=5)
+        self.treeview.place(x=5, y=5, height=400, width=280)
 
         self.treeview.heading("#0", text="#", anchor='c')
         self.treeview["columns"] = ["1"]
         self.treeview.column("#0", width=65, stretch=NO, anchor='c')
         self.treeview.heading("1", text="Patient")
-        self.treeview.column("1", width=65, stretch=NO, anchor='c')
+        self.treeview.column("1", width=65, stretch=YES, anchor='c')
 
         self.treeview.tag_configure('odd', background='#E8E8E8')
         self.treeview.tag_configure('even', background='#DFDFDF')
         self.treeview.bind("<Button-1>", self.get_patient)
 
         self.file_scroll = Scrollbar(self.main_root, orient="vertical", command=self.treeview.yview)
-        self.file_scroll.place(x=0, y=0, height=385)
+        self.file_scroll.place(x=5, y=5, height=400)
 
         self.treeview.configure(yscrollcommand=self.file_scroll.set)
         self.tree_parents = []
@@ -52,19 +55,40 @@ class PatientSelectWindow:
         self.patient_file = None
 
         self.new_button = Button(self.main_root, text="New Patient", command=self.new_patient_quit)
-        self.new_button.place(x=20, y=620)
+        self.new_button.place(x=20, y=420)
 
         self.select_button = Button(self.main_root, text="Select Patient", command=self.save_and_quit)
-        self.select_button.place(x=120, y=620)
+        self.select_button.place(x=120, y=420)
 
         self.cancel_button = Button(self.main_root, text="Cancel", command=self.quit_app)
-        self.cancel_button.place(x=220, y=620)
+        self.cancel_button.place(x=220, y=420)
 
         self.patient_files = []
+        self.load_patients('./patients/')
+        self.populate_patients()
         self.new_patient, self.cancel, self.selected = False, False, False
         # https://stackoverflow.com/a/111160
         self.main_root.protocol("WM_DELETE_WINDOW", self.on_closing)
         self.main_root.mainloop()
+
+    def populate_patients(self):
+        for i in range(0, len(self.patient_files)):
+            self.tree_parents.append(self.treeview.insert("", 'end', str(i), text=str(i),
+                                                          values=pathlib.Path(self.patient_files[i]).stem,
+                                                          tags=(self.tags[i % 2])))
+
+    def load_patients(self, directory):
+        if path.isdir(directory):
+            valid_dir = False
+            _, _, files = next(walk(directory))
+            for file in files:
+                if pathlib.Path(file).suffix == ".txt":
+                    if not valid_dir:
+                        valid_dir = True
+                    self.patient_files.append(path.join(directory, file))
+                    print(path.join(directory, file))
+        else:
+            os.mkdir('./patients')
 
     def on_closing(self):
         self.new_patient, self.cancel, self.selected = False, True, False
