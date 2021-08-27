@@ -23,8 +23,8 @@ class PatientSelectWindow:
     def __init__(self):
         self.main_root = Tk()
         self.main_root.config(bg="white", bd=-2)
-        self.main_root.geometry("{0}x{1}+0+0".format(300, 500))
-        self.main_root.title("KSA - KeyStroke Annotator")
+        self.main_root.geometry("{0}x{1}+0+0".format(300, 460))
+        self.main_root.title("Select Patient")
         style = Style()
         style.configure("mystyle.Treeview", highlightthickness=0, bd=0,
                         font=('Calibri', 11))  # Modify the font of the body
@@ -33,7 +33,7 @@ class PatientSelectWindow:
                   background=self.fixed_map('background'))
         # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
         self.treeview = Treeview(self.main_root, style="mystyle.Treeview", height=18, selectmode='browse')
-        self.treeview.place(x=5, y=5, height=400, width=280)
+        self.treeview.place(x=20, y=5, height=406, width=270)
 
         self.treeview.heading("#0", text="#", anchor='c')
         self.treeview["columns"] = ["1"]
@@ -46,7 +46,7 @@ class PatientSelectWindow:
         self.treeview.bind("<Button-1>", self.get_patient)
 
         self.file_scroll = Scrollbar(self.main_root, orient="vertical", command=self.treeview.yview)
-        self.file_scroll.place(x=5, y=5, height=400)
+        self.file_scroll.place(x=2, y=5, height=406)
 
         self.treeview.configure(yscrollcommand=self.file_scroll.set)
         self.tree_parents = []
@@ -74,7 +74,7 @@ class PatientSelectWindow:
     def populate_patients(self):
         for i in range(0, len(self.patient_files)):
             self.tree_parents.append(self.treeview.insert("", 'end', str(i), text=str(i),
-                                                          values=pathlib.Path(self.patient_files[i]).stem,
+                                                          values=(pathlib.Path(self.patient_files[i]).stem,),
                                                           tags=(self.tags[i % 2])))
 
     def load_patients(self, directory):
@@ -86,7 +86,6 @@ class PatientSelectWindow:
                     if not valid_dir:
                         valid_dir = True
                     self.patient_files.append(path.join(directory, file))
-                    print(path.join(directory, file))
         else:
             os.mkdir('./patients')
 
