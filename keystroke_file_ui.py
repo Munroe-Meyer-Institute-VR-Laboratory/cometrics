@@ -42,7 +42,7 @@ class KeystrokeSelectWindow:
         self.tags = ['odd', 'even']
         self.current_selection = "I000"
 
-        self.new_button = Button(self.main_root, text="New File", command=self.new_patient_quit)
+        self.new_button = Button(self.main_root, text="New File", command=self.new_keystroke_popup)
         self.new_button.place(x=20, y=420)
 
         self.select_button = Button(self.main_root, text="Select File", command=self.save_and_quit)
@@ -89,9 +89,18 @@ class KeystrokeSelectWindow:
         self.new_keystroke, self.cancel, self.selected = False, True, False
         self.main_root.destroy()
 
-    def new_patient_quit(self):
+    def create_keystroke(self, name):
+        open(path.join(self.keystroke_directory, name + '.json'), 'w')
+        self.keystroke_file = path.join(self.keystroke_directory, name + '.json')
+
+    def new_keystroke_quit(self, name):
+        if name and name != "":
+            self.create_keystroke(name)
+            self.main_root.destroy()
+
+    def new_keystroke_popup(self):
         self.new_keystroke, self.cancel, self.selected = True, False, False
-        self.main_root.destroy()
+        Popup(self, self.main_root)
 
     def save_and_quit(self):
         if self.keystroke_file:
@@ -122,3 +131,28 @@ class KeystrokeSelectWindow:
         style = Style()
         return [elm for elm in style.map('Treeview', query_opt=option) if
                 elm[:2] != ('!disabled', '!selected')]
+
+
+class Popup:
+    def __init__(self, top, root):
+        self.caller = top
+        self.entry = None
+        self.keystroke_name_entry_pop_up(root)
+
+    def keystroke_name_entry_pop_up(self, root):
+        # Create a Toplevel window
+        popup_root = Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x50")
+        popup_root.title("Enter Protocol Name")
+
+        # Create an Entry Widget in the Toplevel window
+        self.entry = Entry(popup_root, bd=2, width=25)
+        self.entry.pack()
+
+        # Create a Button Widget in the Toplevel Window
+        button = Button(popup_root, text="OK", command=self.close_win)
+        button.pack(pady=5, side=TOP)
+
+    def close_win(self):
+        self.caller.new_keystroke_quit(self.entry.get())
