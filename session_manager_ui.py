@@ -130,14 +130,14 @@ class PatientDataFields:
 
 class EmpaticaDataFields:
     def __init__(self, parent):
-        self.frame = Frame(parent, width=350, height=500)
-        self.frame.pack(side=LEFT, padx=5, pady=5)
+        self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight() - 280))
+        self.frame.place(x=265, y=120)
 
 
 class KeystrokeDataFields:
     def __init__(self, parent, keystroke_file):
-        self.frame = Frame(parent, width=350, height=500)
-        self.frame.pack(side=LEFT, padx=5, pady=5)
+        self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight() - 280))
+        self.frame.place(x=530, y=120)
 
 
 class PatientContainer:
@@ -177,8 +177,8 @@ class SessionManagerWindow:
         root.title("KSA - KeyStroke Annotator")
         StaticImages(root)
         PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
-        # EmpaticaDataFields(root)
-        # KeystrokeDataFields(root, keystroke_file)
+        EmpaticaDataFields(root)
+        KeystrokeDataFields(root, keystroke_file)
         # SessionTimeFields(root)
         root.mainloop()
 

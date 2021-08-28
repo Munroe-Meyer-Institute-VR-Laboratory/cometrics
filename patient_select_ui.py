@@ -104,7 +104,13 @@ class PatientSelectWindow:
         self.main_root.destroy()
 
     def create_patient(self, patient_name):
-        open(path.join('./patients/' + patient_name + '.json'), 'w')
+        with open(path.join('./patients/' + patient_name + '.json'), 'w') as f:
+            x = {
+                "Name": patient_name,
+                "Age": "",
+                "MRN": ""
+            }
+            json.dump(x, f)
         self.patient_file = './patients/' + patient_name + '.json'
 
     def fixed_map(self, option):

@@ -1,7 +1,7 @@
 import json
 
-
-x = '{ "Name":"John Smith", "Age":13, "MRN":1}'
+name = "John Smith"
+x = '{ "Name":"' + name + '", "Age":"", "MRN":""}'
 y = json.loads(x)
 
 with open(y["Name"] + '.json', 'w') as f:

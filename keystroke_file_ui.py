@@ -90,7 +90,11 @@ class KeystrokeSelectWindow:
         self.main_root.destroy()
 
     def create_keystroke(self, name):
-        open(path.join(self.keystroke_directory, name + '.json'), 'w')
+        with open(path.join(self.keystroke_directory, name + '.json'), 'w') as f:
+            x = {
+                "Name": name
+            }
+            json.dump(x, f)
         self.keystroke_file = path.join(self.keystroke_directory, name + '.json')
 
     def new_keystroke_quit(self, name):
