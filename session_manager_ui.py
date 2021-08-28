@@ -5,12 +5,13 @@ from tkinter import *
 from tkinter import filedialog, messagebox
 from tkinter.ttk import Treeview, Style
 import json
-from logger_util import *
 import datetime
 from PIL import Image, ImageTk
+import pynput
+# Custom library imports
 from patient_select_ui import PatientSelectWindow
 from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4
-import pynput
+from logger_util import *
 from keystroke_file_ui import KeystrokeSelectWindow
 
 

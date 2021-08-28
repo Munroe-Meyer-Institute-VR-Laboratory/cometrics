@@ -13,7 +13,6 @@ from patient_select_ui import PatientSelectWindow
 from keystroke_file_ui import KeystrokeSelectWindow
 from session_manager_ui import SessionManagerWindow
 from logger_util import *
-from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4
 
 
 if __name__ == "__main__":

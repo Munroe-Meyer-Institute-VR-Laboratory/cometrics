@@ -42,11 +42,6 @@ class KeystrokeSelectWindow:
         self.tags = ['odd', 'even']
         self.current_selection = "I000"
 
-        # Configure keystroke file information
-        self.patient_dir = './data/' + pathlib.Path(patient_file).stem + '/'
-        self.keystroke_directory = self.patient_dir + 'keystrokes/'
-        self.keystroke_file = None
-
         self.new_button = Button(self.main_root, text="New Patient", command=self.new_patient_quit)
         self.new_button.place(x=20, y=420)
 
@@ -56,6 +51,10 @@ class KeystrokeSelectWindow:
         self.cancel_button = Button(self.main_root, text="Cancel", command=self.quit_app)
         self.cancel_button.place(x=220, y=420)
 
+        # Configure keystroke file information
+        self.patient_dir = './data/' + pathlib.Path(patient_file).stem + '/'
+        self.keystroke_directory = self.patient_dir + 'keystrokes/'
+        self.keystroke_file = None
         self.keystroke_files = []
         self.load_keystrokes(self.keystroke_directory)
         self.populate_keystrokes()
