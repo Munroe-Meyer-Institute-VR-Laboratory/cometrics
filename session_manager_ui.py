@@ -49,13 +49,20 @@ class KeystrokeDataFields:
 
 
 class PatientContainer:
-    def __init__(self):
+    def __init__(self, patient_file):
+        self.patient_json = None
         self.patient_path = None
-        self.patient_name = None
+        self.name = None
         self.medical_record_number = None
+        self.age = None
+        self.update_fields(patient_file)
 
     def update_fields(self, filepath):
-        self.patient_path = filepath
+        f = open(filepath)
+        self.patient_json = json.load(f)
+        self.name = self.patient_json["Name"]
+        self.medical_record_number = self.patient_json["MRN"]
+        self.age = self.patient_json["Age"]
 
 
 class SessionManagerWindow:
