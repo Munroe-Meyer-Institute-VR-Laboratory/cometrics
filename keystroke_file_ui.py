@@ -42,10 +42,10 @@ class KeystrokeSelectWindow:
         self.tags = ['odd', 'even']
         self.current_selection = "I000"
 
-        self.new_button = Button(self.main_root, text="New Patient", command=self.new_patient_quit)
+        self.new_button = Button(self.main_root, text="New File", command=self.new_patient_quit)
         self.new_button.place(x=20, y=420)
 
-        self.select_button = Button(self.main_root, text="Select Patient", command=self.save_and_quit)
+        self.select_button = Button(self.main_root, text="Select File", command=self.save_and_quit)
         self.select_button.place(x=120, y=420)
 
         self.cancel_button = Button(self.main_root, text="Cancel", command=self.quit_app)

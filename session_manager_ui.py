@@ -34,6 +34,8 @@ class PatientDataFields:
     def __init__(self, parent):
         self.frame = Frame(parent, width=350, height=500)
         self.frame.pack(side=LEFT, padx=5, pady=5)
+        self.name_label = Label(self.frame, text="Patient Name")
+        self.name_label.pack(side=TOP, padx=5, pady=5)
 
 
 class EmpaticaDataFields:
