@@ -31,12 +31,12 @@ class SessionTimeFields:
 
 
 class PatientDataFields:
-    def __init__(self, parent, patient_file, session_number):
+    def __init__(self, parent, patient_file, session_number, session_date, session_time):
         self.patient = PatientContainer(patient_file)
-        self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight()-250))
+        self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight()-280))
         self.frame.place(x=5, y=120)
         # Create label canvas
-        self.label_canvas = Canvas(self.frame, width=250, height=(parent.winfo_screenheight()-250))
+        self.label_canvas = Canvas(self.frame, width=250, height=(parent.winfo_screenheight()-280))
         # Frame Information
         self.frame_info = self.label_canvas.create_text(125, 15, text="Patient Information", anchor=CENTER,
                                                         font=('Purisa', 12))
@@ -71,15 +71,15 @@ class PatientDataFields:
         self.prim_data_label = self.label_canvas.create_text(5, 435, text="Primary or Reliability Data", anchor=NW,
                                                              font=('Purisa', 10))
         # Session date field
-        self.date_label = self.label_canvas.create_text(5, 480, text="Session Date", anchor=NW,
+        self.date_label = self.label_canvas.create_text(5, 500, text="Session Date: " + session_date, anchor=NW,
                                                         font=('Purisa', 10))
         # Session start time field
-        self.start_label = self.label_canvas.create_text(5, 525, text="Session Start Time", anchor=NW,
+        self.start_label = self.label_canvas.create_text(5, 520, text="Session Start Time: " + session_time, anchor=NW,
                                                          font=('Purisa', 10))
         # Session number field
-        self.sess_number_label = self.label_canvas.create_text(125, 580, text="Session Number " + str(session_number),
-                                                               anchor=CENTER,
-                                                               font=('Purisa', 12))
+        self.sess_number_label = self.label_canvas.create_text(5, 540, text="Session Number " + str(session_number),
+                                                               anchor=NW,
+                                                               font=('Purisa', 10))
         # Setup input variables
         self.patient_name_var = StringVar(self.frame)
         if self.patient.name:
@@ -88,6 +88,8 @@ class PatientDataFields:
         self.name_entry.place(x=15, y=50, width=220, anchor=NW)
 
         self.mrn_var = StringVar(self.frame)
+        if self.patient.medical_record_number:
+            self.mrn_var.set(self.patient.medical_record_number)
         self.mrn_entry = Entry(self.frame, textvariable=self.mrn_var)
         self.mrn_entry.place(x=15, y=95, width=220, anchor=NW)
 
@@ -162,7 +164,11 @@ class SessionManagerWindow:
         self.session_files = []
         self.session_file = None
         self.session_dir = path.join(parts[0], parts[1], parts[2], 'sessions')
+
         self.session_number = 1
+        self.session_date = datetime.datetime.today().strftime("%B %d, %Y")
+        self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+
         self.get_session_file(self.session_dir)
         root = Tk()
         root.config(bg="white", bd=-2)
@@ -170,7 +176,7 @@ class SessionManagerWindow:
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
         root.title("KSA - KeyStroke Annotator")
         StaticImages(root)
-        PatientDataFields(root, patient_file, self.session_number)
+        PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
         # EmpaticaDataFields(root)
         # KeystrokeDataFields(root, keystroke_file)
         # SessionTimeFields(root)

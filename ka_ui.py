@@ -1,13 +1,4 @@
-import os
-import pathlib
-from os import walk
-from tkinter import *
-from tkinter import filedialog, messagebox
-from tkinter.ttk import Treeview, Style
-import json
 import datetime
-from PIL import Image, ImageTk
-import pynput
 # Custom library imports
 from patient_select_ui import PatientSelectWindow
 from keystroke_file_ui import KeystrokeSelectWindow

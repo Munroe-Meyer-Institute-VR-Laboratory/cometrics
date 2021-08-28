@@ -43,7 +43,7 @@ class PatientSelectWindow:
         self.current_selection = "I000"
         self.patient_file = None
 
-        self.new_button = Button(self.main_root, text="New Patient", command=self.new_patient_quit)
+        self.new_button = Button(self.main_root, text="New Patient", command=self.new_patient_popup)
         self.new_button.place(x=20, y=420)
 
         self.select_button = Button(self.main_root, text="Select Patient", command=self.save_and_quit)
@@ -79,12 +79,18 @@ class PatientSelectWindow:
             os.mkdir('./patients')
 
     def on_closing(self):
-        self.new_patient, self.cancel, self.selected = False, True, False
-        self.main_root.destroy()
+        if self.main_root:
+            self.new_patient, self.cancel, self.selected = False, True, False
+            self.main_root.destroy()
 
-    def new_patient_quit(self):
-        self.new_patient, self.cancel, self.selected = True, False, False
-        self.main_root.destroy()
+    def new_patient_popup(self):
+        self.new_patient, self.cancel, self.selected = False, False, True
+        Popup(self, self.main_root)
+
+    def new_patient_quit(self, name):
+        if name and name != "":
+            self.create_patient(name)
+            self.main_root.destroy()
 
     def save_and_quit(self):
         if self.patient_file:
@@ -96,6 +102,10 @@ class PatientSelectWindow:
     def quit_app(self):
         self.new_patient, self.cancel, self.selected = False, True, False
         self.main_root.destroy()
+
+    def create_patient(self, patient_name):
+        open(path.join('./patients/' + patient_name + '.json'), 'w')
+        self.patient_file = './patients/' + patient_name + '.json'
 
     def fixed_map(self, option):
         # https://stackoverflow.com/a/62011081
@@ -115,3 +125,28 @@ class PatientSelectWindow:
         selection = self.treeview.identify_row(event.y)
         if selection:
             self.patient_file = self.patient_files[int(selection)]
+
+
+class Popup:
+    def __init__(self, top, root):
+        self.caller = top
+        self.entry = None
+        self.patient_name_entry_pop_up(root)
+
+    def patient_name_entry_pop_up(self, root):
+        # Create a Toplevel window
+        popup_root = Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x50")
+        popup_root.title("Enter Patient Name")
+
+        # Create an Entry Widget in the Toplevel window
+        self.entry = Entry(popup_root, bd=2, width=25)
+        self.entry.pack()
+
+        # Create a Button Widget in the Toplevel Window
+        button = Button(popup_root, text="OK", command=self.close_win)
+        button.pack(pady=5, side=TOP)
+
+    def close_win(self):
+        self.caller.new_patient_quit(self.entry.get())
