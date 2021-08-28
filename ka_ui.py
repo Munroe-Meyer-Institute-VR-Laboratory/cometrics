@@ -10,6 +10,7 @@ import datetime
 from PIL import Image, ImageTk
 from patient_select_ui import PatientSelectWindow
 from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4
+import pynput
 
 
 class StaticImages(Frame):
@@ -23,22 +24,26 @@ class StaticImages(Frame):
 
 class SessionTimeFields:
     def __init__(self, parent):
-        pass
+        self.frame = Frame(parent, width=350, height=500)
+        self.frame.pack(side=TOP, padx=5, pady=5)
 
 
 class PatientDataFields:
     def __init__(self, parent):
-        pass
+        self.frame = Frame(parent, width=350, height=500)
+        self.frame.pack(side=LEFT, padx=5, pady=5)
 
 
 class EmpaticaDataFields:
     def __init__(self, parent):
-        pass
+        self.frame = Frame(parent, width=350, height=500)
+        self.frame.pack(side=LEFT, padx=5, pady=5)
 
 
 class KeystrokeDataFields:
     def __init__(self, parent):
-        pass
+        self.frame = Frame(parent, width=350, height=500)
+        self.frame.pack(side=LEFT, padx=5, pady=5)
 
 
 class PatientContainer:
@@ -59,6 +64,10 @@ class Annotator:
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
         root.title("KSA - KeyStroke Annotator")
         StaticImages(root)
+        PatientDataFields(root)
+        EmpaticaDataFields(root)
+        KeystrokeDataFields(root)
+        SessionTimeFields(root)
         root.mainloop()
 
 
