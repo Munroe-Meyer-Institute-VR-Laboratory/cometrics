@@ -3,18 +3,16 @@ import pathlib
 import time
 from os import walk
 from tkinter import *
-from tkinter import filedialog, messagebox
+from tkinter import messagebox
 from tkinter.ttk import Treeview, Style
 import json
 import datetime
 from PIL import Image, ImageTk
 import threading
-import pynput
+from pynput import keyboard
 # Custom library imports
-from patient_select_ui import PatientSelectWindow
-from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams, start_e4_server
+from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams
 from logger_util import *
-from keystroke_file_ui import KeystrokeSelectWindow
 
 
 class StaticImages(Frame):
@@ -28,8 +26,91 @@ class StaticImages(Frame):
 
 class SessionTimeFields:
     def __init__(self, parent):
-        self.frame = Frame(parent, width=350, height=500)
-        self.frame.pack(side=TOP, padx=5, pady=5)
+        self.frame = Frame(parent, width=500, height=100, bg='white')
+        self.frame.place(x=252, y=2)
+
+        self.session_started = False
+        self.session_paused = False
+        self.timer_running = True
+        self.ui_timer_running = True
+        self.update_ui = False
+
+        self.current_time = datetime.datetime.now()
+        self.current_time_label = Label(self.frame, text="Current Time:  " + self.current_time.strftime("%H:%M:%S"),
+                                        bg='white',
+                                        font=('Purisa', 14))
+        self.current_time_label.place(x=20, y=2)
+
+        self.session_time = None
+        self.session_time_label = Label(self.frame, text="Session Time: 00:00:00", bg='white',
+                                        font=('Purisa', 14))
+        self.session_time_label.place(x=20, y=30)
+
+        self.break_time = None
+        self.break_time_label = Label(self.frame, text="Break Time:     00:00:00", bg='white',
+                                      font=('Purisa', 14))
+        self.break_time_label.place(x=20, y=58)
+
+        self.time_ui_thread = threading.Thread(target=self.ui_update_thread)
+        self.time_ui_thread.start()
+        self.time_thread = threading.Thread(target=self.time_update_thread)
+        self.time_thread.start()
+
+    def ui_update_thread(self):
+        while self.timer_running:
+            pass
+            # if self.update_ui:
+            #     # Only update the time once and use that for everything
+            #     self.current_time = datetime.datetime.now()
+            #     if self.session_started and not self.session_time:
+            #         self.session_time = self.current_time
+            #     if self.session_paused and not self.break_time:
+            #         self.break_time = self.current_time
+            #     if self.session_paused:
+            #         bt = time.gmtime((self.current_time - self.break_time).total_seconds())
+            #         self.break_time_label['text'] = "Break Time:     " + time.strftime("%H:%M:%S", bt)
+            #     elif self.session_started:
+            #         st = time.gmtime((self.current_time - self.session_time).total_seconds())
+            #         self.session_time_label['text'] = "Session Time: " + time.strftime("%H:%M:%S", st)
+            #     if not self.session_paused and self.break_time:
+            #         self.break_time = None
+            #     self.current_time_label['text'] = "Current Time:  " + self.current_time.strftime("%H:%M:%S")
+            #     self.update_ui = False
+
+    def time_update_thread(self):
+        while self.timer_running:
+            time.sleep(1 - time.monotonic() % 1)
+            if self.timer_running:
+                # Only update the time once and use that for everything
+                self.current_time = time.time()
+                if self.session_started and not self.session_time:
+                    self.session_time = self.current_time
+                if self.session_paused and not self.break_time:
+                    self.break_time = self.current_time
+                if self.session_paused:
+                    bt = time.gmtime(self.current_time - self.break_time)
+                    self.break_time_label['text'] = "Break Time:     " + time.strftime("%H:%M:%S", bt)
+                elif self.session_started:
+                    st = time.gmtime(self.current_time - self.session_time)
+                    self.session_time_label['text'] = "Session Time: " + time.strftime("%H:%M:%S", st)
+                if not self.session_paused and self.break_time:
+                    self.break_time = None
+                self.current_time_label['text'] = "Current Time:  " + time.strftime("%H:%M:%S", time.gmtime(self.current_time))
+
+    def start_session(self):
+        self.session_started = True
+
+    def stop_session(self):
+        self.session_started = False
+
+    def pause_session(self):
+        if not self.session_paused:
+            self.session_paused = True
+        else:
+            self.session_paused = False
+
+    def stop_timer(self):
+        self.timer_running = False
 
 
 class PatientDataFields:
@@ -325,6 +406,12 @@ class KeystrokeDataFields:
         self.save_button = Button(self.frame, text="Save File", command=self.save_binding, width=8)
         self.save_button.place(x=230, y=parent.winfo_screenheight() - 320, anchor=NE)
 
+    def check_key(self, key_char):
+        for key in self.bindings:
+            if self.bindings[key] == key_char:
+                return key
+        return None
+
     def add_key_popup(self):
         NewKeyPopup(self, self.frame)
 
@@ -479,6 +566,17 @@ class Popup:
 
 class SessionManagerWindow:
     def __init__(self, patient_file, keystroke_file):
+        self.global_commands = {
+            "Toggle Session": keyboard.Key.esc,
+            "Pause Session": keyboard.Key.ctrl_l
+        }
+
+        self.listener = keyboard.Listener(
+            on_press=self.on_press,
+            on_release=self.on_release)
+        self.listener.start()
+        self.session_started = False
+        self.session_paused = False
         parts = pathlib.Path(keystroke_file).parts
         self.session_files = []
         self.session_file = None
@@ -489,17 +587,23 @@ class SessionManagerWindow:
         self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
 
         self.get_session_file(self.session_dir)
-        root = Tk()
+        root = self.root = Tk()
         root.config(bg="white", bd=-2)
         pad = 3
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
         root.title("KSA - KeyStroke Annotator")
         StaticImages(root)
-        PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
-        EmpaticaDataFields(root)
-        KeystrokeDataFields(root, keystroke_file)
-        # SessionTimeFields(root)
+        self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
+        self.edf = EmpaticaDataFields(root)
+        self.kdf = KeystrokeDataFields(root, keystroke_file)
+        self.stf = SessionTimeFields(root)
+        root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
+
+    def on_closing(self):
+        if self.root:
+            self.stf.stop_timer()
+            self.root.destroy()
 
     def get_session_file(self, directory):
         if path.isdir(self.session_dir):
@@ -510,3 +614,43 @@ class SessionManagerWindow:
             self.session_file = open(path.join(directory, 'session_' + str(self.session_number) + '.json'), 'w')
         else:
             os.mkdir(directory)
+
+    def on_press(self, key):
+        try:
+            self.handle_key_press(key.char)
+        except AttributeError:
+            self.handle_global_press(key)
+
+    def on_release(self, key):
+        pass
+
+    def handle_global_press(self, key_char):
+        for key in self.global_commands:
+            if self.global_commands[key] == key_char:
+                if key == "Toggle Session":
+                    if self.session_started:
+                        self.pause_session()
+                    else:
+                        self.start_session()
+                elif key == "Pause Session":
+                    self.pause_session()
+
+    def handle_key_press(self, key):
+        pass
+
+    def start_session(self):
+        self.session_started = True
+        self.stf.start_session()
+
+    def stop_session(self):
+        self.session_started = False
+        self.stf.stop_session()
+
+    def pause_session(self):
+        if self.session_started:
+            if not self.session_paused:
+                self.session_paused = True
+                self.stf.pause_session()
+            else:
+                self.session_paused = False
+                self.stf.pause_session()
