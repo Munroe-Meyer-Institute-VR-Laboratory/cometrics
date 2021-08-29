@@ -32,6 +32,7 @@ class KeystrokeSelectWindow:
 
         self.treeview.tag_configure('odd', background='#E8E8E8')
         self.treeview.tag_configure('even', background='#DFDFDF')
+        self.treeview.bind("<Double-Button-1>", self.select_keystroke)
         self.treeview.bind("<Button-1>", self.get_keystroke)
 
         self.file_scroll = Scrollbar(self.main_root, orient="vertical", command=self.treeview.yview)
@@ -92,7 +93,9 @@ class KeystrokeSelectWindow:
     def create_keystroke(self, name):
         with open(path.join(self.keystroke_directory, name + '.json'), 'w') as f:
             x = {
-                "Name": name
+                "Name": name,
+                "Hair Pulling": "a",
+                "Hair Pulling SB": "b"
             }
             json.dump(x, f)
         self.keystroke_file = path.join(self.keystroke_directory, name + '.json')
@@ -116,6 +119,18 @@ class KeystrokeSelectWindow:
     def quit_app(self):
         self.new_keystroke, self.cancel, self.selected = False, True, False
         self.main_root.destroy()
+
+    def select_keystroke(self, event):
+        if self.treeview:
+            selection = self.treeview.identify_row(event.y)
+            if selection:
+                if self.keystroke_file:
+                    if self.keystroke_file == self.keystroke_files[int(selection)]:
+                        self.save_and_quit()
+                    else:
+                        self.keystroke_file = self.keystroke_files[int(selection)]
+                else:
+                    self.keystroke_file = self.keystroke_files[int(selection)]
 
     def get_keystroke(self, event):
         selection = self.treeview.identify_row(event.y)

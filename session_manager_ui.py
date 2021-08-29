@@ -138,6 +138,88 @@ class KeystrokeDataFields:
     def __init__(self, parent, keystroke_file):
         self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight() - 280))
         self.frame.place(x=530, y=120)
+        self.keystroke_json = None
+        self.new_keystroke = False
+        self.bindings = []
+        self.key_file = keystroke_file
+        self.open_keystroke_file()
+
+        keystroke_label = Label(self.frame, text="Key Bindings", font=('Purisa', 12))
+        keystroke_label.place(x=125, y=15, anchor=CENTER)
+
+        style = Style()
+        style.configure("mystyle.Treeview", highlightthickness=0, bd=0,
+                        font=('Calibri', 10))  # Modify the font of the body
+        style.configure("mystyle.Treeview.Heading", font=('Calibri', 13, 'bold'))  # Modify the font of the headings
+        style.map('Treeview', foreground=self.fixed_map('foreground'),
+                  background=self.fixed_map('background'))
+        # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
+        self.treeview = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse')
+        self.treeview.place(x=20, y=30, height=(parent.winfo_screenheight() - 350), width=210)
+
+        self.treeview.heading("#0", text="Char", anchor='c')
+        self.treeview["columns"] = ["1"]
+        self.treeview.column("#0", width=65, stretch=NO, anchor='c')
+        self.treeview.heading("1", text="Tag")
+        self.treeview.column("1", width=65, stretch=YES, anchor='c')
+
+        self.treeview.tag_configure('odd', background='#E8E8E8')
+        self.treeview.tag_configure('even', background='#DFDFDF')
+        self.treeview.bind("<Button-1>", self.change_keybind)
+
+        self.file_scroll = Scrollbar(self.frame, orient="vertical", command=self.treeview.yview)
+        self.file_scroll.place(x=2, y=30, height=(parent.winfo_screenheight() - 350))
+
+        self.treeview.configure(yscrollcommand=self.file_scroll.set)
+        self.tree_parents = []
+        self.tags = ['odd', 'even']
+        self.current_selection = "I000"
+
+        self.populate_bindings()
+
+    def fixed_map(self, option):
+        # https://stackoverflow.com/a/62011081
+        # Fix for setting text colour for Tkinter 8.6.9
+        # From: https://core.tcl.tk/tk/info/509cafafae
+        #
+        # Returns the style map for 'option' with any styles starting with
+        # ('!disabled', '!selected', ...) filtered out.
+
+        # style.map() returns an empty list for missing options, so this
+        # should be future-safe.
+        style = Style()
+        return [elm for elm in style.map('Treeview', query_opt=option) if
+                elm[:2] != ('!disabled', '!selected')]
+
+    def change_keybind(self, event):
+        selection = self.treeview.identify_row(event.y)
+        if selection:
+            Popup(self, self.frame, int(selection))
+
+    def update_keybind(self, tag, key):
+        self.bindings[key] = (self.bindings[key][0], tag)
+        self.clear_listbox()
+        self.populate_bindings()
+
+    def clear_listbox(self):
+        for children in self.treeview.get_children():
+            self.treeview.delete(children)
+
+    def open_keystroke_file(self):
+        with open(self.key_file) as f:
+            self.keystroke_json = json.load(f)
+        if len(self.keystroke_json) == 1:
+            self.new_keystroke = True
+        else:
+            for key in self.keystroke_json:
+                if key != "Name":
+                    self.bindings.append((key, self.keystroke_json[key]))
+
+    def populate_bindings(self):
+        for i in range(0, len(self.bindings)):
+            self.tree_parents.append(self.treeview.insert("", 'end', str(i), text=self.bindings[i][1],
+                                                          values=(self.bindings[i][0],),
+                                                          tags=(self.tags[i % 2])))
 
 
 class PatientContainer:
@@ -156,6 +238,35 @@ class PatientContainer:
         self.name = self.patient_json["Name"]
         self.medical_record_number = self.patient_json["MRN"]
         self.age = self.patient_json["Age"]
+
+
+class Popup:
+    def __init__(self, top, root, tag):
+        self.caller = top
+        self.entry = None
+        self.popup_root = None
+        self.tag = tag
+        self.patient_name_entry_pop_up(root)
+
+    def patient_name_entry_pop_up(self, root):
+        # Create a Toplevel window
+        popup_root = self.popup_root = Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x50")
+        popup_root.title("Enter New Key Bind")
+
+        # Create an Entry Widget in the Toplevel window
+        self.entry = Entry(popup_root, bd=2, width=25)
+        self.entry.pack()
+
+        # Create a Button Widget in the Toplevel Window
+        button = Button(popup_root, text="OK", command=self.close_win)
+        button.pack(pady=5, side=TOP)
+
+    def close_win(self):
+        if len(self.entry.get()) == 1:
+            self.caller.update_keybind(self.entry.get(), self.tag)
+            self.popup_root.destroy()
 
 
 class SessionManagerWindow:

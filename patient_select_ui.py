@@ -33,6 +33,7 @@ class PatientSelectWindow:
         self.treeview.tag_configure('odd', background='#E8E8E8')
         self.treeview.tag_configure('even', background='#DFDFDF')
         self.treeview.bind("<Button-1>", self.get_patient)
+        self.treeview.bind("<Double-Button-1>", self.select_patient)
 
         self.file_scroll = Scrollbar(self.main_root, orient="vertical", command=self.treeview.yview)
         self.file_scroll.place(x=2, y=5, height=406)
@@ -126,6 +127,18 @@ class PatientSelectWindow:
         style = Style()
         return [elm for elm in style.map('Treeview', query_opt=option) if
                 elm[:2] != ('!disabled', '!selected')]
+
+    def select_patient(self, event):
+        if self.treeview:
+            selection = self.treeview.identify_row(event.y)
+            if selection:
+                if self.patient_file:
+                    if self.patient_file == self.patient_files[int(selection)]:
+                        self.save_and_quit()
+                    else:
+                        self.patient_file = self.patient_files[int(selection)]
+                else:
+                    self.patient_file = self.patient_files[int(selection)]
 
     def get_patient(self, event):
         selection = self.treeview.identify_row(event.y)
