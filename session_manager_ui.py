@@ -165,7 +165,8 @@ class KeystrokeDataFields:
 
         self.treeview.tag_configure('odd', background='#E8E8E8')
         self.treeview.tag_configure('even', background='#DFDFDF')
-        self.treeview.bind("<Button-1>", self.change_keybind)
+        self.treeview.bind("<Button-1>", self.get_selection)
+        self.treeview.bind("<Double-Button-1>", self.change_keybind)
 
         self.file_scroll = Scrollbar(self.frame, orient="vertical", command=self.treeview.yview)
         self.file_scroll.place(x=2, y=30, height=(parent.winfo_screenheight() - 350))
@@ -176,6 +177,34 @@ class KeystrokeDataFields:
         self.current_selection = "I000"
 
         self.populate_bindings()
+
+        self.delete_button = Button(self.frame, text="Delete Key", command=self.delete_binding)
+        self.delete_button.place(x=20, y=parent.winfo_screenheight() - 320)
+
+        self.add_button = Button(self.frame, text="Add Key", command = self.add_key_popup)
+        self.add_button.place(x=125, y=parent.winfo_screenheight() - 320, anchor=N)
+
+        self.save_button = Button(self.frame, text="Save File", command=self.save_binding)
+        self.save_button.place(x=230, y=parent.winfo_screenheight() - 320, anchor=NE)
+
+    def add_key_popup(self):
+        NewKeyPopup(self, self.frame)
+
+    def get_selection(self, event):
+        self.current_selection = self.treeview.identify_row(event.y)
+
+    def save_binding(self):
+        x = {"Name": self.keystroke_json["Name"]}
+        for binding in self.bindings:
+            x.update({str(binding[0]): str(binding[1])})
+        with open(self.key_file, 'w') as f:
+            json.dump(x, f)
+
+    def delete_binding(self):
+        if self.current_selection:
+            self.bindings.pop(int(self.current_selection))
+            self.clear_listbox()
+            self.populate_bindings()
 
     def fixed_map(self, option):
         # https://stackoverflow.com/a/62011081
@@ -198,6 +227,11 @@ class KeystrokeDataFields:
 
     def update_keybind(self, tag, key):
         self.bindings[key] = (self.bindings[key][0], tag)
+        self.clear_listbox()
+        self.populate_bindings()
+
+    def add_keybind(self, tag, key):
+        self.bindings.append((tag, key))
         self.clear_listbox()
         self.populate_bindings()
 
@@ -238,6 +272,42 @@ class PatientContainer:
         self.name = self.patient_json["Name"]
         self.medical_record_number = self.patient_json["MRN"]
         self.age = self.patient_json["Age"]
+
+
+class NewKeyPopup:
+    def __init__(self, top, root):
+        self.caller = top
+        self.tag_entry = None
+        self.key_entry = None
+        self.popup_root = None
+        self.patient_name_entry_pop_up(root)
+
+    def patient_name_entry_pop_up(self, root):
+        # Create a Toplevel window
+        popup_root = self.popup_root = Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x100")
+        popup_root.title("Enter New Binding")
+
+        # Create an Entry Widget in the Toplevel window
+        self.tag_label = Label(popup_root, text="Key Tag", bg='white')
+        self.tag_label.place(x=30, y=20, anchor=W)
+        self.tag_entry = Entry(popup_root, bd=2, width=25, bg='white')
+        self.tag_entry.place(x=90, y=20, anchor=W)
+
+        self.key_label = Label(popup_root, text="Key", bg='white')
+        self.key_label.place(x=30, y=50, anchor=W)
+        self.key_entry = Entry(popup_root, bd=2, width=25, bg='white')
+        self.key_entry.place(x=90, y=50, anchor=W)
+
+        # Create a Button Widget in the Toplevel Window
+        button = Button(popup_root, text="OK", command=self.close_win)
+        button.place(x=150, y=70, anchor=N)
+
+    def close_win(self):
+        if len(self.key_entry.get()) == 1:
+            self.caller.add_keybind(self.tag_entry.get(), self.key_entry.get())
+            self.popup_root.destroy()
 
 
 class Popup:
