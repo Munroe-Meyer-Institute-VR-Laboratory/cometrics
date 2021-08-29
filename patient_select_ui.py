@@ -9,7 +9,7 @@ from logger_util import *
 
 
 class PatientSelectWindow:
-    def __init__(self):
+    def __init__(self, experiment_dir):
         self.main_root = Tk()
         self.main_root.config(bg="white", bd=-2)
         self.main_root.geometry("{0}x{1}+0+0".format(300, 460))
@@ -42,19 +42,20 @@ class PatientSelectWindow:
         self.tree_parents = []
         self.tags = ['odd', 'even']
         self.current_selection = "I000"
+
         self.patient_file = None
+        self.patients_dir = path.join(experiment_dir, 'patients')
+        self.new_button = Button(self.main_root, text="New Patient", command=self.new_patient_popup, width=11)
+        self.new_button.place(x=20, y=411, anchor=NW)
 
-        self.new_button = Button(self.main_root, text="New Patient", command=self.new_patient_popup)
-        self.new_button.place(x=20, y=420)
+        self.select_button = Button(self.main_root, text="Select Patient", command=self.save_and_quit, width=12)
+        self.select_button.place(x=155, y=411, anchor=N)
 
-        self.select_button = Button(self.main_root, text="Select Patient", command=self.save_and_quit)
-        self.select_button.place(x=120, y=420)
-
-        self.cancel_button = Button(self.main_root, text="Cancel", command=self.quit_app)
-        self.cancel_button.place(x=220, y=420)
+        self.cancel_button = Button(self.main_root, text="Cancel", command=self.quit_app, width=11)
+        self.cancel_button.place(x=290, y=411, anchor=NE)
 
         self.patient_files = []
-        self.load_patients('./patients/')
+        self.load_patients(self.patients_dir)
         self.populate_patients()
         self.new_patient, self.cancel, self.selected = False, False, False
         # https://stackoverflow.com/a/111160
@@ -77,7 +78,7 @@ class PatientSelectWindow:
                         valid_dir = True
                     self.patient_files.append(path.join(directory, file))
         else:
-            os.mkdir('./patients')
+            os.mkdir(self.patients_dir)
 
     def on_closing(self):
         if self.main_root:
@@ -105,7 +106,7 @@ class PatientSelectWindow:
         self.main_root.destroy()
 
     def create_patient(self, patient_name):
-        with open(path.join('./patients/' + patient_name + '.json'), 'w') as f:
+        with open(path.join(self.patients_dir, patient_name + '.json'), 'w') as f:
             x = {
                 "Name": patient_name,
                 "Age": "",

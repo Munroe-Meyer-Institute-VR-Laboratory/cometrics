@@ -479,10 +479,10 @@ class Popup:
 
 class SessionManagerWindow:
     def __init__(self, patient_file, keystroke_file):
-        parts = keystroke_file.split('/')[:-2]
+        parts = pathlib.Path(keystroke_file).parts
         self.session_files = []
         self.session_file = None
-        self.session_dir = path.join(parts[0], parts[1], parts[2], 'sessions')
+        self.session_dir = path.join(parts[0], parts[1], parts[2], parts[3], 'sessions')
 
         self.session_number = 1
         self.session_date = datetime.datetime.today().strftime("%B %d, %Y")
