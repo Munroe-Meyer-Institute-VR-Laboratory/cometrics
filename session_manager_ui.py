@@ -392,8 +392,8 @@ class KeystrokeDataFields:
 
     def check_key(self, key_char):
         for key in self.bindings:
-            if self.bindings[key] == key_char:
-                return key
+            if key[1] == key_char:
+                return key[0]
         return None
 
     def add_key_popup(self):
@@ -554,7 +554,7 @@ class SessionManagerWindow:
             "Toggle Session": keyboard.Key.esc,
             "Pause Session": keyboard.Key.ctrl_l
         }
-
+        self.tag_history = []
         self.listener = keyboard.Listener(
             on_press=self.on_press,
             on_release=self.on_release)
@@ -583,6 +583,7 @@ class SessionManagerWindow:
         self.stf = SessionTimeFields(root)
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
+        print(self.tag_history)
 
     def on_closing(self):
         if self.root:
@@ -620,7 +621,8 @@ class SessionManagerWindow:
                     self.pause_session()
 
     def handle_key_press(self, key):
-        pass
+        event = self.kdf.check_key(key)
+        self.tag_history.append((event, self.stf.session_time))
 
     def start_session(self):
         self.session_started = True
