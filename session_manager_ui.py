@@ -35,67 +35,35 @@ class SessionTimeFields:
         self.ui_timer_running = True
         self.update_ui = False
 
-        self.current_time = datetime.datetime.now()
-        self.current_time_label = Label(self.frame, text="Current Time:  " + self.current_time.strftime("%H:%M:%S"),
-                                        bg='white',
-                                        font=('Purisa', 14))
-        self.current_time_label.place(x=20, y=2)
-
-        self.session_time = None
+        self.current_time = 0
+        self.session_time = 0
+        self.break_time = 0
         self.session_time_label = Label(self.frame, text="Session Time: 00:00:00", bg='white',
                                         font=('Purisa', 14))
         self.session_time_label.place(x=20, y=30)
 
-        self.break_time = None
         self.break_time_label = Label(self.frame, text="Break Time:     00:00:00", bg='white',
                                       font=('Purisa', 14))
         self.break_time_label.place(x=20, y=58)
 
-        self.time_ui_thread = threading.Thread(target=self.ui_update_thread)
-        self.time_ui_thread.start()
         self.time_thread = threading.Thread(target=self.time_update_thread)
         self.time_thread.start()
-
-    def ui_update_thread(self):
-        while self.timer_running:
-            pass
-            # if self.update_ui:
-            #     # Only update the time once and use that for everything
-            #     self.current_time = datetime.datetime.now()
-            #     if self.session_started and not self.session_time:
-            #         self.session_time = self.current_time
-            #     if self.session_paused and not self.break_time:
-            #         self.break_time = self.current_time
-            #     if self.session_paused:
-            #         bt = time.gmtime((self.current_time - self.break_time).total_seconds())
-            #         self.break_time_label['text'] = "Break Time:     " + time.strftime("%H:%M:%S", bt)
-            #     elif self.session_started:
-            #         st = time.gmtime((self.current_time - self.session_time).total_seconds())
-            #         self.session_time_label['text'] = "Session Time: " + time.strftime("%H:%M:%S", st)
-            #     if not self.session_paused and self.break_time:
-            #         self.break_time = None
-            #     self.current_time_label['text'] = "Current Time:  " + self.current_time.strftime("%H:%M:%S")
-            #     self.update_ui = False
 
     def time_update_thread(self):
         while self.timer_running:
             time.sleep(1 - time.monotonic() % 1)
+            self.current_time += 1
             if self.timer_running:
                 # Only update the time once and use that for everything
-                self.current_time = time.time()
-                if self.session_started and not self.session_time:
-                    self.session_time = self.current_time
-                if self.session_paused and not self.break_time:
-                    self.break_time = self.current_time
-                if self.session_paused:
-                    bt = time.gmtime(self.current_time - self.break_time)
-                    self.break_time_label['text'] = "Break Time:     " + time.strftime("%H:%M:%S", bt)
-                elif self.session_started:
-                    st = time.gmtime(self.current_time - self.session_time)
-                    self.session_time_label['text'] = "Session Time: " + time.strftime("%H:%M:%S", st)
-                if not self.session_paused and self.break_time:
-                    self.break_time = None
-                self.current_time_label['text'] = "Current Time:  " + time.strftime("%H:%M:%S", time.gmtime(self.current_time))
+                if self.session_started and not self.session_paused:
+                    if self.break_time > 0:
+                        self.break_time = 0
+                    self.session_time += 1
+                elif self.session_paused:
+                    self.break_time += 1
+                self.break_time_label['text'] = "Break Time:      " + str(datetime.timedelta(seconds=self.break_time))
+                self.session_time_label['text'] = "Session Time:  " + str(datetime.timedelta(seconds=self.session_time))
+
 
     def start_session(self):
         self.session_started = True
