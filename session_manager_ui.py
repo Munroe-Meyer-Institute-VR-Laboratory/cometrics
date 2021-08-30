@@ -35,16 +35,23 @@ class SessionTimeFields:
         self.ui_timer_running = True
         self.update_ui = False
 
-        self.current_time = 0
         self.session_time = 0
         self.break_time = 0
         self.session_time_label = Label(self.frame, text="Session Time: 00:00:00", bg='white',
                                         font=('Purisa', 14))
-        self.session_time_label.place(x=20, y=30)
+        self.session_time_label.place(x=20, y=10)
 
         self.break_time_label = Label(self.frame, text="Break Time:     00:00:00", bg='white',
                                       font=('Purisa', 14))
-        self.break_time_label.place(x=20, y=58)
+        self.break_time_label.place(x=20, y=38)
+
+        self.session_start_label = Label(self.frame, text="Session Started", bg='white', fg='green',
+                                         font=('Purisa', 14))
+        self.session_paused_label = Label(self.frame, text="Session Paused", bg='white', fg='yellow',
+                                          font=('Purisa', 14))
+        self.session_stopped_label = Label(self.frame, text="Session Stopped", bg='white', fg='red',
+                                           font=('Purisa', 14))
+        self.session_stopped_label.place(x=20, y=66)
 
         self.time_thread = threading.Thread(target=self.time_update_thread)
         self.time_thread.start()
@@ -52,9 +59,7 @@ class SessionTimeFields:
     def time_update_thread(self):
         while self.timer_running:
             time.sleep(1 - time.monotonic() % 1)
-            self.current_time += 1
             if self.timer_running:
-                # Only update the time once and use that for everything
                 if self.session_started and not self.session_paused:
                     if self.break_time > 0:
                         self.break_time = 0
@@ -64,17 +69,28 @@ class SessionTimeFields:
                 self.break_time_label['text'] = "Break Time:      " + str(datetime.timedelta(seconds=self.break_time))
                 self.session_time_label['text'] = "Session Time:  " + str(datetime.timedelta(seconds=self.session_time))
 
-
     def start_session(self):
+        self.session_stopped_label.place_forget()
+        self.session_start_label.place(x=20, y=66)
         self.session_started = True
 
     def stop_session(self):
+        if self.session_paused:
+            self.session_paused_label.place_forget()
+        elif self.session_started:
+            self.session_start_label.place_forget()
+        self.session_stopped_label.place(x=20, y=66)
         self.session_started = False
 
     def pause_session(self):
         if not self.session_paused:
+            if self.session_started:
+                self.session_start_label.place_forget()
+            self.session_paused_label.place(x=20, y=66)
             self.session_paused = True
         else:
+            self.session_start_label.place(x=20, y=66)
+            self.session_paused_label.place_forget()
             self.session_paused = False
 
     def stop_timer(self):
@@ -597,7 +613,7 @@ class SessionManagerWindow:
             if self.global_commands[key] == key_char:
                 if key == "Toggle Session":
                     if self.session_started:
-                        self.pause_session()
+                        self.stop_session()
                     else:
                         self.start_session()
                 elif key == "Pause Session":
