@@ -549,6 +549,10 @@ class Popup:
             self.popup_root.destroy()
 
 
+def beep_thread():
+    winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
+
+
 class SessionManagerWindow:
     def __init__(self, patient_file, keystroke_file):
         self.global_commands = {
@@ -582,6 +586,8 @@ class SessionManagerWindow:
         self.edf = EmpaticaDataFields(root)
         self.kdf = KeystrokeDataFields(root, keystroke_file)
         self.stf = SessionTimeFields(root)
+        self.beep_th = None
+        self.interval_thread = None
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
 
@@ -630,6 +636,8 @@ class SessionManagerWindow:
 
     def start_session(self):
         self.session_started = True
+        self.interval_thread = threading.Thread(target=self.beep_interval_thread)
+        self.interval_thread.start()
         self.stf.start_session()
 
     def stop_session(self):
@@ -645,10 +653,9 @@ class SessionManagerWindow:
                 self.session_paused = False
                 self.stf.pause_session()
 
-    def beep_interval_thread(self, interval):
-        frequency = 2500  # Set Frequency To 2500 Hertz
-        duration = 200  # Set Duration To 1000 ms == 1 second
+    def beep_interval_thread(self):
         while self.session_started:
-            time.sleep(interval)
+            time.sleep(5)
             if not self.session_paused:
-                winsound.Beep(frequency, duration)
+                self.beep_th = threading.Thread(target=beep_thread)
+                self.beep_th.start()
