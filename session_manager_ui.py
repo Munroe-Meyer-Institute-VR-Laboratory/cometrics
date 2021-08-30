@@ -10,6 +10,7 @@ import datetime
 from PIL import Image, ImageTk
 import threading
 from pynput import keyboard
+import winsound
 # Custom library imports
 from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams
 from logger_util import *
@@ -643,3 +644,11 @@ class SessionManagerWindow:
             else:
                 self.session_paused = False
                 self.stf.pause_session()
+
+    def beep_interval_thread(self, interval):
+        frequency = 2500  # Set Frequency To 2500 Hertz
+        duration = 200  # Set Duration To 1000 ms == 1 second
+        while self.session_started:
+            time.sleep(interval)
+            if not self.session_paused:
+                winsound.Beep(frequency, duration)
