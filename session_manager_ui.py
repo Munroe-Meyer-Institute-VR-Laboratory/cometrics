@@ -583,7 +583,6 @@ class SessionManagerWindow:
         self.stf = SessionTimeFields(root)
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
-        print(self.tag_history)
 
     def on_closing(self):
         if self.root:
@@ -621,8 +620,12 @@ class SessionManagerWindow:
                     self.pause_session()
 
     def handle_key_press(self, key):
-        event = self.kdf.check_key(key)
-        self.tag_history.append((event, self.stf.session_time))
+        if self.session_started:
+            event = self.kdf.check_key(key)
+            self.tag_history.append((event, self.stf.session_time))
+
+    def save_session(self):
+        pass
 
     def start_session(self):
         self.session_started = True
