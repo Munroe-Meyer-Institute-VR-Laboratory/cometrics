@@ -432,6 +432,8 @@ class KeystrokeDataFields:
 
         self.treeview.tag_configure('odd', background='#E8E8E8')
         self.treeview.tag_configure('even', background='#DFDFDF')
+        self.treeview.tag_configure('toggle', background='red')
+
         self.treeview.bind("<Button-1>", self.get_selection)
         self.treeview.bind("<Double-Button-1>", self.change_keybind)
 
@@ -440,7 +442,7 @@ class KeystrokeDataFields:
 
         self.treeview.configure(yscrollcommand=self.file_scroll.set)
         self.tree_parents = []
-        self.tags = ['odd', 'even']
+        self.tags = ['odd', 'even', 'toggle']
         self.current_selection = "I000"
 
         self.populate_bindings()
@@ -526,8 +528,14 @@ class KeystrokeDataFields:
                     self.bindings.append((key, self.keystroke_json[key]))
                     self.bindings_freq.append(0)
 
-    def populate_bindings(self):
+    def populate_bindings(self, sticky=None):
         for i in range(0, len(self.bindings)):
+            if sticky:
+                if sticky == i:
+                    self.tree_parents.append(self.treeview.insert("", 'end', str(i), text=self.bindings[i][1],
+                                                                  values=(self.bindings_freq[i], self.bindings[i][0],),
+                                                                  tags=(self.tags[2])))
+                    continue
             self.tree_parents.append(self.treeview.insert("", 'end', str(i), text=self.bindings[i][1],
                                                           values=(self.bindings_freq[i], self.bindings[i][0],),
                                                           tags=(self.tags[i % 2])))
