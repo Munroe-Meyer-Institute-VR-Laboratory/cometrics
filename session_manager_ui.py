@@ -117,8 +117,9 @@ class SessionTimeFields:
                     if self.break_time > 0:
                         self.break_time = 0
                     self.session_time += 1
-                    if self.session_time >= self.session_duration:
-                        self.stop_session()
+                    if self.session_duration:
+                        if self.session_time >= self.session_duration:
+                            self.stop_session()
                 elif self.session_paused:
                     self.break_time += 1
                 self.break_time_label['text'] = "Break Time:      " + str(datetime.timedelta(seconds=self.break_time))
@@ -404,6 +405,7 @@ class KeystrokeDataFields:
         self.keystroke_json = None
         self.new_keystroke = False
         self.bindings = []
+        self.bindings_freq = []
         self.key_file = keystroke_file
         self.open_keystroke_file()
 
@@ -421,10 +423,12 @@ class KeystrokeDataFields:
         self.treeview.place(x=20, y=30, height=(parent.winfo_screenheight() - 350), width=210)
 
         self.treeview.heading("#0", text="Char", anchor='c')
-        self.treeview["columns"] = ["1"]
-        self.treeview.column("#0", width=65, stretch=NO, anchor='c')
-        self.treeview.heading("1", text="Tag")
-        self.treeview.column("1", width=65, stretch=YES, anchor='c')
+        self.treeview["columns"] = ["1", "2"]
+        self.treeview.column("#0", width=40, stretch=NO, anchor='c')
+        self.treeview.heading("1", text="Freq")
+        self.treeview.column("1", width=40, stretch=NO, anchor='c')
+        self.treeview.heading("2", text="Tag")
+        self.treeview.column("2", width=65, stretch=YES, anchor='c')
 
         self.treeview.tag_configure('odd', background='#E8E8E8')
         self.treeview.tag_configure('even', background='#DFDFDF')
@@ -451,9 +455,12 @@ class KeystrokeDataFields:
         self.save_button.place(x=230, y=parent.winfo_screenheight() - 320, anchor=NE)
 
     def check_key(self, key_char):
-        for key in self.bindings:
-            if key[1] == key_char:
-                return key[0]
+        for i in range(0, len(self.bindings)):
+            if self.bindings[i][1] == key_char:
+                self.bindings_freq[i] += 1
+                self.clear_listbox()
+                self.populate_bindings()
+                return self.bindings[i][0]
         return None
 
     def add_key_popup(self):
@@ -517,11 +524,12 @@ class KeystrokeDataFields:
             for key in self.keystroke_json:
                 if key != "Name":
                     self.bindings.append((key, self.keystroke_json[key]))
+                    self.bindings_freq.append(0)
 
     def populate_bindings(self):
         for i in range(0, len(self.bindings)):
             self.tree_parents.append(self.treeview.insert("", 'end', str(i), text=self.bindings[i][1],
-                                                          values=(self.bindings[i][0],),
+                                                          values=(self.bindings_freq[i], self.bindings[i][0],),
                                                           tags=(self.tags[i % 2])))
 
 
