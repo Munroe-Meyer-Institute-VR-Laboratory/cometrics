@@ -98,10 +98,16 @@ class SessionTimeFields:
                 self.beep_th.start()
 
     def show_session_time(self):
-        self.session_dur_input.place(x=530, y=38)
+        if self.session_dur_selection.get():
+            self.session_dur_input.place(x=530, y=38)
+        else:
+            self.session_dur_input.place_forget()
 
     def show_beep_interval(self):
-        self.interval_input.place(x=530, y=10)
+        if self.interval_selection.get():
+            self.interval_input.place(x=530, y=10)
+        else:
+            self.interval_input.place_forget()
 
     def time_update_thread(self):
         while self.timer_running:
