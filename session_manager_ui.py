@@ -27,7 +27,7 @@ class StaticImages(Frame):
 
 class SessionTimeFields:
     def __init__(self, parent):
-        self.frame = Frame(parent, width=500, height=100, bg='white')
+        self.frame = Frame(parent, width=600, height=100, bg='white')
         self.frame.place(x=252, y=2)
 
         self.session_started = False
@@ -38,11 +38,11 @@ class SessionTimeFields:
 
         self.session_time = 0
         self.break_time = 0
-        self.session_time_label = Label(self.frame, text="Session Time: 00:00:00", bg='white',
+        self.session_time_label = Label(self.frame, text="Session Time:  0:00:00", bg='white',
                                         font=('Purisa', 14))
         self.session_time_label.place(x=20, y=10)
 
-        self.break_time_label = Label(self.frame, text="Break Time:     00:00:00", bg='white',
+        self.break_time_label = Label(self.frame, text="Break Time:      0:00:00", bg='white',
                                       font=('Purisa', 14))
         self.break_time_label.place(x=20, y=38)
 
@@ -54,8 +54,51 @@ class SessionTimeFields:
                                            font=('Purisa', 14))
         self.session_stopped_label.place(x=20, y=66)
 
+        self.interval_selection = IntVar()
+        self.interval_checkbutton = Checkbutton(self.frame, text="Reminder Beep (Seconds)",
+                                                variable=self.interval_selection, bg='white',
+                                                font=('Purisa', 14), command=self.show_beep_interval)
+        self.interval_checkbutton.place(x=250, y=6)
+        self.interval_input_var = StringVar()
+
+        interval_cmd = self.frame.register(self.validate_number)
+        self.interval_input = Entry(self.frame, validate='all', validatecommand=(interval_cmd, '%P'),
+                                    font=('Purisa', 14), bg='white', width=6)
+
+        session_cmd = self.frame.register(self.validate_number)
+        self.session_dur_input = Entry(self.frame, validate='all', validatecommand=(session_cmd, '%P'),
+                                       font=('Purisa', 14), bg='white', width=6)
+
+        self.session_dur_selection = IntVar()
+        self.session_dur_checkbutton = Checkbutton(self.frame, text="Session Duration (Seconds)",
+                                                   variable=self.session_dur_selection, bg='white',
+                                                   font=('Purisa', 14),
+                                                   command=self.show_session_time)
+        self.session_dur_checkbutton.place(x=250, y=34)
+
+        self.session_duration = None
+
         self.time_thread = threading.Thread(target=self.time_update_thread)
         self.time_thread.start()
+
+    @staticmethod
+    def validate_number(char):
+        if str.isdigit(char) or char == "":
+            return True
+        return False
+
+    def beep_interval_thread(self):
+        while self.session_started:
+            time.sleep(5)
+            if not self.session_paused:
+                self.beep_th = threading.Thread(target=beep_thread)
+                self.beep_th.start()
+
+    def show_session_time(self):
+        self.session_dur_input.place(x=530, y=38)
+
+    def show_beep_interval(self):
+        self.interval_input.place(x=530, y=10)
 
     def time_update_thread(self):
         while self.timer_running:
@@ -65,12 +108,16 @@ class SessionTimeFields:
                     if self.break_time > 0:
                         self.break_time = 0
                     self.session_time += 1
+                    if self.session_time >= self.session_duration:
+                        self.stop_session()
                 elif self.session_paused:
                     self.break_time += 1
                 self.break_time_label['text'] = "Break Time:      " + str(datetime.timedelta(seconds=self.break_time))
                 self.session_time_label['text'] = "Session Time:  " + str(datetime.timedelta(seconds=self.session_time))
 
     def start_session(self):
+        if self.session_dur_selection.get():
+            self.session_duration = int(self.session_dur_input.get())
         self.session_stopped_label.place_forget()
         self.session_start_label.place(x=20, y=66)
         self.session_started = True
@@ -652,10 +699,3 @@ class SessionManagerWindow:
             else:
                 self.session_paused = False
                 self.stf.pause_session()
-
-    def beep_interval_thread(self):
-        while self.session_started:
-            time.sleep(5)
-            if not self.session_paused:
-                self.beep_th = threading.Thread(target=beep_thread)
-                self.beep_th.start()
