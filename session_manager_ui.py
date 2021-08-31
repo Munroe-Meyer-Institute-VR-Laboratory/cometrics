@@ -77,6 +77,8 @@ class SessionTimeFields:
         self.session_dur_checkbutton.place(x=250, y=34)
 
         self.session_duration = None
+        self.beep_th = None
+        self.interval_thread = None
 
         self.time_thread = threading.Thread(target=self.time_update_thread)
         self.time_thread.start()
@@ -88,9 +90,10 @@ class SessionTimeFields:
         return False
 
     def beep_interval_thread(self):
+        interval = int(self.interval_input.get())
         while self.session_started:
-            time.sleep(5)
-            if not self.session_paused:
+            time.sleep(interval)
+            if not self.session_paused and self.session_started:
                 self.beep_th = threading.Thread(target=beep_thread)
                 self.beep_th.start()
 
@@ -116,11 +119,14 @@ class SessionTimeFields:
                 self.session_time_label['text'] = "Session Time:  " + str(datetime.timedelta(seconds=self.session_time))
 
     def start_session(self):
+        self.session_started = True
         if self.session_dur_selection.get():
             self.session_duration = int(self.session_dur_input.get())
+        if self.interval_selection.get():
+            self.interval_thread = threading.Thread(target=self.beep_interval_thread)
+            self.interval_thread.start()
         self.session_stopped_label.place_forget()
         self.session_start_label.place(x=20, y=66)
-        self.session_started = True
 
     def stop_session(self):
         if self.session_paused:
@@ -683,8 +689,6 @@ class SessionManagerWindow:
 
     def start_session(self):
         self.session_started = True
-        self.interval_thread = threading.Thread(target=self.beep_interval_thread)
-        self.interval_thread.start()
         self.stf.start_session()
 
     def stop_session(self):
