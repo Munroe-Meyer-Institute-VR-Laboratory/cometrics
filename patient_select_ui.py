@@ -113,7 +113,7 @@ class PatientSelectWindow:
                 "MRN": ""
             }
             json.dump(x, f)
-        self.patient_file = './patients/' + patient_name + '.json'
+        self.patient_file = path.join(self.patients_dir, patient_name + '.json')
 
     def fixed_map(self, option):
         # https://stackoverflow.com/a/62011081

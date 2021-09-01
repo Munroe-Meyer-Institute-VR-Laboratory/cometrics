@@ -383,6 +383,11 @@ class EmpaticaDataFields:
             else:
                 messagebox.showwarning("Warning", "Connect to server first!")
 
+    def save_session(self, filename):
+        if self.e4_client:
+            if self.e4_client.connected:
+                self.e4_client.save_readings(filename)
+
     def fixed_map(self, option):
         # https://stackoverflow.com/a/62011081
         # Fix for setting text colour for Tkinter 8.6.9
@@ -510,6 +515,7 @@ class KeystrokeDataFields:
 
     def add_keybind(self, tag, key):
         self.bindings.append((tag, key))
+        self.bindings_freq.append(0)
         self.clear_listbox()
         self.populate_bindings()
 
@@ -651,6 +657,7 @@ class SessionManagerWindow:
         self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
 
         self.get_session_file(self.session_dir)
+        print(self.session_file)
         root = self.root = Tk()
         root.config(bg="white", bd=-2)
         pad = 3
@@ -677,7 +684,8 @@ class SessionManagerWindow:
             for file in files:
                 if pathlib.Path(file).suffix == ".json":
                     self.session_number += 1
-            self.session_file = open(path.join(directory, 'session_' + str(self.session_number) + '.json'), 'w')
+            open(path.join(directory, 'session_' + str(self.session_number) + '.json'), 'w')
+            self.session_file = path.join(directory, 'session_' + str(self.session_number) + '.json')
         else:
             os.mkdir(directory)
 
@@ -707,7 +715,14 @@ class SessionManagerWindow:
             self.tag_history.append((event, self.stf.session_time))
 
     def save_session(self):
-        pass
+        x = {
+            "Session Time": self.stf.session_time
+        }
+        for i in range(0, len(self.tag_history)):
+            x[str(i)] = [self.tag_history[i][0], self.tag_history[i][1]]
+        with open(self.session_file, 'w') as f:
+            json.dump(x, f)
+        self.edf.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + "e4.json"))
 
     def start_session(self):
         self.session_started = True
@@ -716,6 +731,7 @@ class SessionManagerWindow:
     def stop_session(self):
         self.session_started = False
         self.stf.stop_session()
+        self.save_session()
 
     def pause_session(self):
         if self.session_started:
