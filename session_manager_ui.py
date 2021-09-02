@@ -356,11 +356,11 @@ class EmpaticaDataFields:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
 
     def list_devices_thread(self):
-        if not self.emp_client:
-            self.emp_client.list_connected_devices()
-            time.sleep(1)
-            self.clear_device_list()
-            self.populate_device_list()
+        self.emp_client.list_connected_devices()
+        time.sleep(1)
+        print(self.emp_client.device_list)
+        self.clear_device_list()
+        self.populate_device_list()
 
     def clear_device_list(self):
         for children in self.treeview.get_children():
@@ -369,7 +369,7 @@ class EmpaticaDataFields:
     def populate_device_list(self):
         for i in range(0, len(self.emp_client.device_list)):
             self.tree_parents.append(self.treeview.insert("", 'end', str(i), text=str(i),
-                                                          values=(self.emp_client.device_list[i],),
+                                                          values=(self.emp_client.device_list[i].decode("utf-8"),),
                                                           tags=(self.tags[i % 2])))
 
     def get_selection(self, event):
@@ -377,7 +377,7 @@ class EmpaticaDataFields:
         if self.current_selection:
             if self.emp_client:
                 if len(self.emp_client.device_list) != 0:
-                    self.e4_address = self.emp_client.device_list(int(self.current_selection))
+                    self.e4_address = self.emp_client.device_list[int(self.current_selection)]
                 else:
                     messagebox.showerror("Error", "No connected E4s!")
             else:
