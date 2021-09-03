@@ -26,7 +26,8 @@ class StaticImages(Frame):
 
 
 class SessionTimeFields:
-    def __init__(self, parent):
+    def __init__(self, caller, parent):
+        self.caller = caller
         self.frame = Frame(parent, width=600, height=100, bg='white')
         self.frame.place(x=252, y=2)
 
@@ -136,12 +137,14 @@ class SessionTimeFields:
         self.session_start_label.place(x=20, y=66)
 
     def stop_session(self):
+        self.timer_running = False
         if self.session_paused:
             self.session_paused_label.place_forget()
         elif self.session_started:
             self.session_start_label.place_forget()
         self.session_stopped_label.place(x=20, y=66)
         self.session_started = False
+        self.caller.stop_session()
 
     def pause_session(self):
         if not self.session_paused:
@@ -254,6 +257,15 @@ class PatientDataFields:
         self.prim_data_entry.place(x=15, y=455, width=220, anchor=NW)
 
         self.label_canvas.pack()
+
+    def save_patient_fields(self):
+        self.patient.save_patient(self.patient_name_var.get(), self.mrn_var.get())
+
+    def get_session_fields(self):
+        return ([self.sess_loc_var.get(), self.assess_name_var.get(), self.cond_name_var.get(), self.prim_ther_var.get(),
+                self.case_mgr_var.get(), self.sess_ther_var.get(), self.data_rec_var.get(), self.prim_data_var.get()],
+                ["Session Location", "Assessment Name", "Condition Name", "Primary Therapist", "Case Manager",
+                 "Session Therapist", "Data Recorder", "Primary Data"])
 
 
 class EmpaticaDataFields:
@@ -549,11 +561,11 @@ class KeystrokeDataFields:
 
 class PatientContainer:
     def __init__(self, patient_file):
+        self.source_file = patient_file
         self.patient_json = None
         self.patient_path = None
         self.name = None
         self.medical_record_number = None
-        self.age = None
         if patient_file:
             self.update_fields(patient_file)
 
@@ -562,7 +574,14 @@ class PatientContainer:
         self.patient_json = json.load(f)
         self.name = self.patient_json["Name"]
         self.medical_record_number = self.patient_json["MRN"]
-        self.age = self.patient_json["Age"]
+
+    def save_patient(self, name, mrn):
+        with open(self.source_file, 'w') as f:
+            x = {
+                "Name": name,
+                "MRN": mrn
+            }
+            json.dump(x, f)
 
 
 class NewKeyPopup:
@@ -657,7 +676,6 @@ class SessionManagerWindow:
         self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
 
         self.get_session_file(self.session_dir)
-        print(self.session_file)
         root = self.root = Tk()
         root.config(bg="white", bd=-2)
         pad = 3
@@ -667,9 +685,7 @@ class SessionManagerWindow:
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
         self.edf = EmpaticaDataFields(root)
         self.kdf = KeystrokeDataFields(root, keystroke_file)
-        self.stf = SessionTimeFields(root)
-        self.beep_th = None
-        self.interval_thread = None
+        self.stf = SessionTimeFields(self, root)
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
 
@@ -688,6 +704,7 @@ class SessionManagerWindow:
             self.session_file = path.join(directory, 'session_' + str(self.session_number) + '.json')
         else:
             os.mkdir(directory)
+            self.session_file = path.join(directory, 'session_1.json')
 
     def on_press(self, key):
         try:
@@ -715,9 +732,15 @@ class SessionManagerWindow:
             self.tag_history.append((event, self.stf.session_time))
 
     def save_session(self):
+        self.pdf.save_patient_fields()
+        dict_vals, dict_fields = self.pdf.get_session_fields()
         x = {
+            "Session Date": self.session_date,
+            "Session Start Time": self.session_time,
             "Session Time": self.stf.session_time
         }
+        for val, field in zip(dict_vals, dict_fields):
+            x[field] = val
         for i in range(0, len(self.tag_history)):
             x[str(i)] = [self.tag_history[i][0], self.tag_history[i][1]]
         with open(self.session_file, 'w') as f:
@@ -726,11 +749,14 @@ class SessionManagerWindow:
 
     def start_session(self):
         self.session_started = True
+        self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
         self.stf.start_session()
 
     def stop_session(self):
         self.session_started = False
-        self.stf.stop_session()
+        # If being stopped by key press, otherwise don't go into an infinite loop
+        if self.stf.session_started:
+            self.stf.stop_session()
         self.save_session()
 
     def pause_session(self):

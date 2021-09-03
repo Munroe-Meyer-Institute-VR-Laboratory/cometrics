@@ -109,7 +109,6 @@ class PatientSelectWindow:
         with open(path.join(self.patients_dir, patient_name + '.json'), 'w') as f:
             x = {
                 "Name": patient_name,
-                "Age": "",
                 "MRN": ""
             }
             json.dump(x, f)
