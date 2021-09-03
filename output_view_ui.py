@@ -43,8 +43,8 @@ class OutputViewPanel:
         self.view_buttons.append(camera_view_button)
         self.view_buttons[2].place(x=184, y=0)
 
-        clean_view = Frame(self.frame, width=(700-(92*3)+2), height=25, bg='white')
-        clean_view.place(x=(92*3)+2, y=0)
+        clean_view = Frame(self.frame, width=(700-(92*len(self.view_buttons))+2), height=25, bg='white')
+        clean_view.place(x=(92*len(self.view_buttons))+2, y=0)
 
     def switch_camera_frame(self):
         self.switch_frame(OutputViews.CAMERA_VIEW)
@@ -56,6 +56,11 @@ class OutputViewPanel:
         self.switch_frame(OutputViews.E4_VIEW)
 
     def switch_frame(self, view):
+        """
+        https://stackoverflow.com/a/23354009
+        :param view:
+        :return:
+        """
         self.view_buttons[self.current_button].config(relief=RAISED)
         self.current_button = view
         if view == OutputViews.E4_VIEW:
