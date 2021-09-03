@@ -14,6 +14,7 @@ import winsound
 # Custom library imports
 from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams
 from logger_util import *
+from output_view_ui import OutputViewPanel
 
 
 class StaticImages(Frame):
@@ -256,7 +257,7 @@ class PatientDataFields:
         self.prim_data_entry = Entry(self.frame, textvariable=self.prim_data_var)
         self.prim_data_entry.place(x=15, y=455, width=220, anchor=NW)
 
-        self.label_canvas.pack()
+        self.label_canvas.place(x=0, y=0)
 
     def save_patient_fields(self):
         self.patient.save_patient(self.patient_name_var.get(), self.mrn_var.get())
@@ -686,6 +687,7 @@ class SessionManagerWindow:
         self.edf = EmpaticaDataFields(root)
         self.kdf = KeystrokeDataFields(root, keystroke_file)
         self.stf = SessionTimeFields(self, root)
+        self.ovu = OutputViewPanel(root)
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
 
@@ -700,7 +702,6 @@ class SessionManagerWindow:
             for file in files:
                 if pathlib.Path(file).suffix == ".json":
                     self.session_number += 1
-            open(path.join(directory, 'session_' + str(self.session_number) + '.json'), 'w')
             self.session_file = path.join(directory, 'session_' + str(self.session_number) + '.json')
         else:
             os.mkdir(directory)
