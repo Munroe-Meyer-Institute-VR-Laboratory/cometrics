@@ -14,6 +14,9 @@ import winsound
 # Custom library imports
 from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams
 from logger_util import *
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import numpy as np
 
 
 class OutputViews:
@@ -46,6 +49,8 @@ class OutputViewPanel:
         clean_view = Frame(self.frame, width=(700-(92*len(self.view_buttons))+2), height=25, bg='white')
         clean_view.place(x=(92*len(self.view_buttons))+2, y=0)
 
+        self.e4_view = ViewE4()
+
     def switch_camera_frame(self):
         self.switch_frame(OutputViews.CAMERA_VIEW)
 
@@ -67,7 +72,36 @@ class OutputViewPanel:
             self.view_buttons[view].config(relief=SUNKEN)
         elif view == OutputViews.VIDEO_VIEW:
             self.view_buttons[view].config(relief=SUNKEN)
-        elif view== OutputViews.CAMERA_VIEW:
+        elif view == OutputViews.CAMERA_VIEW:
             self.view_buttons[view].config(relief=SUNKEN)
 
+
+class ViewE4:
+    def __init__(self):
+        self.fig = plt.figure()
+        self.acc_plt = self.fig.add_subplot(1, 1, 1)
+
+    def start_plot(self, e4):
+        self.e4 = e4
+        ani = animation.FuncAnimation(self.fig, self.animate, fargs=([]),
+                                      interval=500)
+        plt.show()
+
+    def animate(self, e4):
+        if self.e4:
+            if self.e4.connected:
+                # Limit x and y lists to 20 items
+                ys = self.e4.acc_x[-100:]
+                xs = np.arange(0, len(self.e4.acc_x))
+                xs = xs[-100:]
+
+                # Draw x and y lists
+                self.acc_plt.clear()
+                self.acc_plt.plot(xs, ys)
+
+                # Format plot
+                plt.xticks(rotation=45, ha='right')
+                plt.subplots_adjust(bottom=0.30)
+                plt.title('X Axis')
+                plt.ylabel('m/s^2')
 

@@ -270,7 +270,8 @@ class PatientDataFields:
 
 
 class EmpaticaDataFields:
-    def __init__(self, parent):
+    def __init__(self, parent, output_view):
+        self.ovu = output_view
         self.parent = parent
         self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight() - 280))
         self.frame.place(x=265, y=120)
@@ -343,6 +344,7 @@ class EmpaticaDataFields:
                 if self.e4_client.connected:
                     try:
                         self.e4_client.start_streaming()
+                        self.ovu.e4_view.start_plot(self.e4_client)
                         self.streaming_label.place(x=125, y=(self.parent.winfo_screenheight() - 320), anchor=N)
                     except Exception as e:
                         messagebox.showerror("Exception Encountered",
@@ -371,7 +373,6 @@ class EmpaticaDataFields:
     def list_devices_thread(self):
         self.emp_client.list_connected_devices()
         time.sleep(1)
-        print(self.emp_client.device_list)
         self.clear_device_list()
         self.populate_device_list()
 
@@ -683,11 +684,11 @@ class SessionManagerWindow:
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
         root.title("KSA - KeyStroke Annotator")
         StaticImages(root)
+        self.ovu = OutputViewPanel(root)
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
-        self.edf = EmpaticaDataFields(root)
+        self.edf = EmpaticaDataFields(root, self.ovu)
         self.kdf = KeystrokeDataFields(root, keystroke_file)
         self.stf = SessionTimeFields(self, root)
-        self.ovu = OutputViewPanel(root)
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
 
