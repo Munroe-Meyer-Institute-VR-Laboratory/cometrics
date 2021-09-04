@@ -701,6 +701,7 @@ class SessionManagerWindow:
 
     def on_closing(self):
         self.stf.stop_timer()
+        self.ovu.close()
         self.edf.disconnect_e4()
         self.root.destroy()
         sys.exit(0)

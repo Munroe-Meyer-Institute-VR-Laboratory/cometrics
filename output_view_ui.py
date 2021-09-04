@@ -105,6 +105,9 @@ class OutputViewPanel:
         self.view_buttons[view].config(relief=SUNKEN)
         self.view_frames[view].place(x=780, y=120)
 
+    def close(self):
+        self.e4_view.stop_plot()
+
 
 class ViewE4:
     def __init__(self, root):
@@ -123,6 +126,22 @@ class ViewE4:
         plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
         fig_color = '#%02x%02x%02x' % (240, 240, 237)
+
+        self.hr_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
+        self.hr_canvas.place(x=250, y=5)
+        self.hr_image = ImageTk.PhotoImage(Image.open('heartrate.png').resize((40, 40), Image.ANTIALIAS))
+        self.hr_canvas.create_image(0, 0, anchor=NW, image=self.hr_image)
+
+        self.hr_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
+        self.hr_label.place(x=300, y=15, anchor=NW)
+
+        self.temp_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
+        self.temp_canvas.place(x=400, y=5)
+        self.temp_image = ImageTk.PhotoImage(Image.open('thermometer.png').resize((40, 40), Image.ANTIALIAS))
+        self.temp_canvas.create_image(0, 0, anchor=NW, image=self.temp_image)
+
+        self.temp_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
+        self.temp_label.place(x=450, y=15, anchor=NW)
 
         self.fig = Figure(figsize=(6.75, 1.75), dpi=100)
         self.fig.patch.set_facecolor(fig_color)
@@ -160,9 +179,28 @@ class ViewE4:
         self.streaming = False
         self.e4 = None
 
+        self.update_thread = threading.Thread(target=self.update_labels_thread)
+        self.update_thread.start()
+
+    def stop_plot(self):
+        self.streaming = False
+
     def start_plot(self, e4):
         self.e4 = e4
         self.streaming = True
+
+    def update_labels_thread(self):
+        while not self.streaming:
+            time.sleep(0.5)
+        while self.streaming:
+            if self.streaming:
+                if self.e4:
+                    if self.e4.connected:
+                        if len(self.e4.tmp) > 0:
+                            self.temp_label['text'] = str(int(self.e4.tmp[-1])) + u"\u00b0"
+                        if len(self.e4.hr) > 0:
+                            self.hr_label['text'] = str(int(self.e4.hr[-1])) + " BPM"
+            time.sleep(0.5)
 
     def animate(self, e4):
         if self.streaming:
