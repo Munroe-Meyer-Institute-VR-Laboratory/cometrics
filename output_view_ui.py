@@ -16,7 +16,11 @@ from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStream
 from logger_util import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg, NavigationToolbar2Tk)
+# Implement the default Matplotlib key bindings.
+from matplotlib.backend_bases import key_press_handler
+from matplotlib.figure import Figure
 import numpy as np
 
 
@@ -50,7 +54,7 @@ class OutputViewPanel:
         clean_view = Frame(self.frame, width=(700-(92*len(self.view_buttons))+2), height=25, bg='white')
         clean_view.place(x=(92*len(self.view_buttons))+2, y=0)
 
-        self.e4_view = ViewE4()
+        self.e4_view = ViewE4(self.frame)
 
     def switch_camera_frame(self):
         self.switch_frame(OutputViews.CAMERA_VIEW)
@@ -78,15 +82,31 @@ class OutputViewPanel:
 
 
 class ViewE4:
-    def __init__(self):
-        self.fig = plt.figure()
-        self.acc_plt = self.fig.add_subplot(1, 1, 1)
+    def __init__(self, root):
+        self.root = root
+        self.fig = Figure(figsize=(6, 2), dpi=100)
+        self.acc_plt = self.fig.add_subplot(111)
+        # self.bvp_plt = self.fig.add_subplot(21)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)  # A tk.DrawingArea.
+        self.canvas.draw()
+
+        self.fig1 = Figure(figsize=(6, 2), dpi=100)
+        self.bvp_plt = self.fig1.add_subplot(111)
+        # self.bvp_plt = self.fig.add_subplot(21)
+        self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.root)  # A tk.DrawingArea.
+        self.canvas1.draw()
+
+        self.ani = None
+        self.ani1 = None
 
     def start_plot(self, e4):
         self.e4 = e4
-        ani = animation.FuncAnimation(self.fig, self.animate, fargs=([]),
-                                      interval=500)
-        plt.show()
+
+        self.ani = animation.FuncAnimation(self.fig, self.animate, fargs=([]),
+                                           interval=500)
+        self.canvas.get_tk_widget().place(x=10, y=50)
+        self.ani1 = animation.FuncAnimation(self.fig1, self.bvp_animate, fargs=([]), interval=500)
+        self.canvas1.get_tk_widget().place(x=10, y=250)
 
     def animate(self, e4):
         if self.e4:
@@ -108,6 +128,21 @@ class ViewE4:
                 plt.xticks(rotation=45, ha='right')
                 plt.subplots_adjust(bottom=0.30)
                 plt.title('Accelerations')
-                plt.legend(loc="upper left")
+                # plt.legend(loc="upper left")
+                plt.ylabel('m/s^2')
+
+    def bvp_animate(self, e4):
+        if self.e4:
+            if self.e4.connected:
+                xs = np.arange(0, len(self.e4.bvp))
+                xs = xs[-100:]
+                x_ys = self.e4.bvp[-100:]
+
+                self.bvp_plt.plot(xs, x_ys, label="bvp")
+                # Format plot
+                plt.xticks(rotation=45, ha='right')
+                plt.subplots_adjust(bottom=0.30)
+                plt.title('Accelerations')
+                # plt.legend(loc="upper left")
                 plt.ylabel('m/s^2')
 
