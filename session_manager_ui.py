@@ -22,7 +22,7 @@ class StaticImages(Frame):
         super().__init__(**kw)
         self.unmc_shield_canvas = Canvas(parent, width=250, height=100, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
-        self.unmc_shield_img = ImageTk.PhotoImage(Image.open('UNMCLogo.jpg').resize((250, 100), Image.ANTIALIAS))
+        self.unmc_shield_img = ImageTk.PhotoImage(Image.open('images/UNMCLogo.jpg').resize((250, 100), Image.ANTIALIAS))
         self.unmc_shield_canvas.create_image(0, 0, anchor=NW, image=self.unmc_shield_img)
 
 

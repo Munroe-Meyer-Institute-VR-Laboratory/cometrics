@@ -129,7 +129,7 @@ class ViewE4:
 
         self.hr_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
         self.hr_canvas.place(x=100, y=5)
-        self.hr_image = ImageTk.PhotoImage(Image.open('heartrate.png').resize((40, 40), Image.ANTIALIAS))
+        self.hr_image = ImageTk.PhotoImage(Image.open('images/heartrate.png').resize((40, 40), Image.ANTIALIAS))
         self.hr_canvas.create_image(0, 0, anchor=NW, image=self.hr_image)
 
         self.hr_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
@@ -137,7 +137,7 @@ class ViewE4:
 
         self.temp_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
         self.temp_canvas.place(x=300, y=5)
-        self.temp_image = ImageTk.PhotoImage(Image.open('thermometer.png').resize((40, 40), Image.ANTIALIAS))
+        self.temp_image = ImageTk.PhotoImage(Image.open('images/thermometer.png').resize((40, 40), Image.ANTIALIAS))
         self.temp_canvas.create_image(0, 0, anchor=NW, image=self.temp_image)
 
         self.temp_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
@@ -145,7 +145,7 @@ class ViewE4:
 
         self.bat_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
         self.bat_canvas.place(x=500, y=5)
-        self.bat_image = ImageTk.PhotoImage(Image.open('battery100.png').resize((40, 40), Image.ANTIALIAS))
+        self.bat_image = ImageTk.PhotoImage(Image.open('images/battery100.png').resize((40, 40), Image.ANTIALIAS))
         self.bat_container = self.bat_canvas.create_image(0, 0, anchor=NW, image=self.bat_image)
 
         self.bat_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
@@ -218,15 +218,15 @@ class ViewE4:
                             print(self.bat)
                             if 50 < self.bat < 75:
                                 self.bat_image = ImageTk.PhotoImage(
-                                    Image.open('battery75.png').resize((40, 40), Image.ANTIALIAS))
+                                    Image.open('images/battery75.png').resize((40, 40), Image.ANTIALIAS))
                                 self.bat_canvas.itemconfigure(self.bat_container, image=self.bat_image)
                             elif 25 < self.bat < 50:
                                 self.bat_image = ImageTk.PhotoImage(
-                                    Image.open('battery50.png').resize((40, 40), Image.ANTIALIAS))
+                                    Image.open('images/battery50.png').resize((40, 40), Image.ANTIALIAS))
                                 self.bat_canvas.itemconfigure(self.bat_container, image=self.bat_image)
                             elif self.bat < 25:
                                 self.bat_image = ImageTk.PhotoImage(
-                                    Image.open('battery25.png').resize((40, 40), Image.ANTIALIAS))
+                                    Image.open('images/battery25.png').resize((40, 40), Image.ANTIALIAS))
                                 self.bat_canvas.itemconfigure(self.bat_container, image=self.bat_image)
                             self.bat_label['text'] = str(self.bat) + "%"
             time.sleep(0.5)
