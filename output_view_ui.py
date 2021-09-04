@@ -84,29 +84,47 @@ class OutputViewPanel:
 class ViewE4:
     def __init__(self, root):
         self.root = root
-        self.fig = Figure(figsize=(6, 2), dpi=100)
+
+        SMALL_SIZE = 8
+        MEDIUM_SIZE = 10
+        BIGGER_SIZE = 12
+
+        plt.rc('font', size=SMALL_SIZE)  # controls default text sizes
+        plt.rc('axes', titlesize=SMALL_SIZE)  # fontsize of the axes title
+        plt.rc('axes', labelsize=MEDIUM_SIZE)  # fontsize of the x and y labels
+        plt.rc('xtick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+        plt.rc('ytick', labelsize=SMALL_SIZE)  # fontsize of the tick labels
+        plt.rc('legend', fontsize=SMALL_SIZE)  # legend fontsize
+        plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
+
+        self.fig = Figure(figsize=(6, 1.75), dpi=100)
         self.acc_plt = self.fig.add_subplot(111)
-        # self.bvp_plt = self.fig.add_subplot(21)
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)  # A tk.DrawingArea.
         self.canvas.draw()
 
-        self.fig1 = Figure(figsize=(6, 2), dpi=100)
+        self.fig1 = Figure(figsize=(6, 1.75), dpi=100)
         self.bvp_plt = self.fig1.add_subplot(111)
-        # self.bvp_plt = self.fig.add_subplot(21)
         self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.root)  # A tk.DrawingArea.
         self.canvas1.draw()
 
+        self.fig2 = Figure(figsize=(6, 1.75), dpi=100)
+        self.gsr_plt = self.fig2.add_subplot(111)
+        self.canvas2 = FigureCanvasTkAgg(self.fig2, master=self.root)  # A tk.DrawingArea.
+        self.canvas2.draw()
+
         self.ani = None
         self.ani1 = None
+        self.ani2 = None
 
     def start_plot(self, e4):
         self.e4 = e4
 
-        self.ani = animation.FuncAnimation(self.fig, self.animate, fargs=([]),
-                                           interval=500)
+        self.ani = animation.FuncAnimation(self.fig, self.animate, fargs=([]), interval=500)
         self.canvas.get_tk_widget().place(x=10, y=50)
         self.ani1 = animation.FuncAnimation(self.fig1, self.bvp_animate, fargs=([]), interval=500)
-        self.canvas1.get_tk_widget().place(x=10, y=250)
+        self.canvas1.get_tk_widget().place(x=10, y=225)
+        self.ani2 = animation.FuncAnimation(self.fig2, self.gsr_animate, fargs=([]), interval=500)
+        self.canvas2.get_tk_widget().place(x=10, y=400)
 
     def animate(self, e4):
         if self.e4:
@@ -125,11 +143,9 @@ class ViewE4:
                 self.acc_plt.plot(xs, z_ys, label="z-axis")
 
                 # Format plot
-                plt.xticks(rotation=45, ha='right')
-                plt.subplots_adjust(bottom=0.30)
-                plt.title('Accelerations')
-                # plt.legend(loc="upper left")
-                plt.ylabel('m/s^2')
+                plt.gcf().subplots_adjust(bottom=0.15)
+                self.acc_plt.set_title("Accelerometer Readings")
+                self.acc_plt.legend(loc="upper left")
 
     def bvp_animate(self, e4):
         if self.e4:
@@ -138,11 +154,24 @@ class ViewE4:
                 xs = xs[-100:]
                 x_ys = self.e4.bvp[-100:]
 
+                self.bvp_plt.clear()
                 self.bvp_plt.plot(xs, x_ys, label="bvp")
-                # Format plot
-                plt.xticks(rotation=45, ha='right')
-                plt.subplots_adjust(bottom=0.30)
-                plt.title('Accelerations')
-                # plt.legend(loc="upper left")
-                plt.ylabel('m/s^2')
 
+                # Format plot
+                plt.gcf().subplots_adjust(bottom=0.15)
+                self.bvp_plt.set_title("BVP Readings")
+                self.bvp_plt.legend(loc="upper left")
+
+    def gsr_animate(self, e4):
+        if self.e4:
+            if self.e4.connected:
+                xs = np.arange(0, len(self.e4.gsr))
+                xs = xs[-100:]
+                x_ys = self.e4.gsr[-100:]
+
+                self.gsr_plt.clear()
+                self.gsr_plt.plot(xs, x_ys, label="gsr")
+                # Format plot
+                plt.gcf().subplots_adjust(bottom=0.15)
+                self.gsr_plt.set_title("GSR Readings")
+                self.gsr_plt.legend(loc="upper left")

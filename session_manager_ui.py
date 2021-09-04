@@ -325,6 +325,13 @@ class EmpaticaDataFields:
 
         self.devices_thread = None
 
+    def disconnect_e4(self):
+        if self.emp_client:
+            self.emp_client.close()
+        if self.e4_client:
+            if self.e4_client.connected:
+                self.e4_client.close()
+
     def connect_to_e4(self):
         if self.emp_client:
             try:
@@ -693,9 +700,10 @@ class SessionManagerWindow:
         root.mainloop()
 
     def on_closing(self):
-        if self.root:
-            self.stf.stop_timer()
-            self.root.destroy()
+        self.stf.stop_timer()
+        self.edf.disconnect_e4()
+        self.root.destroy()
+        sys.exit(0)
 
     def get_session_file(self, directory):
         if path.isdir(self.session_dir):
