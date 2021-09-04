@@ -16,6 +16,7 @@ from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStream
 from logger_util import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import numpy as np
 
 
@@ -91,17 +92,22 @@ class ViewE4:
         if self.e4:
             if self.e4.connected:
                 # Limit x and y lists to 20 items
-                ys = self.e4.acc_x[-100:]
+                x_ys = self.e4.acc_x[-100:]
+                y_ys = self.e4.acc_y[-100:]
+                z_ys = self.e4.acc_z[-100:]
                 xs = np.arange(0, len(self.e4.acc_x))
                 xs = xs[-100:]
 
                 # Draw x and y lists
                 self.acc_plt.clear()
-                self.acc_plt.plot(xs, ys)
+                self.acc_plt.plot(xs, x_ys, label="x-axis")
+                self.acc_plt.plot(xs, y_ys, label="y-axis")
+                self.acc_plt.plot(xs, z_ys, label="z-axis")
 
                 # Format plot
                 plt.xticks(rotation=45, ha='right')
                 plt.subplots_adjust(bottom=0.30)
-                plt.title('X Axis')
+                plt.title('Accelerations')
+                plt.legend(loc="upper left")
                 plt.ylabel('m/s^2')
 

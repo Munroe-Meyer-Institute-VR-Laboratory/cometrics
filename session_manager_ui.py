@@ -684,11 +684,11 @@ class SessionManagerWindow:
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
         root.title("KSA - KeyStroke Annotator")
         StaticImages(root)
-        self.ovu = OutputViewPanel(root)
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
+        self.stf = SessionTimeFields(self, root)
+        self.ovu = OutputViewPanel(root)
         self.edf = EmpaticaDataFields(root, self.ovu)
         self.kdf = KeystrokeDataFields(root, keystroke_file)
-        self.stf = SessionTimeFields(self, root)
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
 
