@@ -128,20 +128,28 @@ class ViewE4:
         fig_color = '#%02x%02x%02x' % (240, 240, 237)
 
         self.hr_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.hr_canvas.place(x=250, y=5)
+        self.hr_canvas.place(x=100, y=5)
         self.hr_image = ImageTk.PhotoImage(Image.open('heartrate.png').resize((40, 40), Image.ANTIALIAS))
         self.hr_canvas.create_image(0, 0, anchor=NW, image=self.hr_image)
 
         self.hr_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
-        self.hr_label.place(x=300, y=15, anchor=NW)
+        self.hr_label.place(x=150, y=15, anchor=NW)
 
         self.temp_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.temp_canvas.place(x=400, y=5)
+        self.temp_canvas.place(x=300, y=5)
         self.temp_image = ImageTk.PhotoImage(Image.open('thermometer.png').resize((40, 40), Image.ANTIALIAS))
         self.temp_canvas.create_image(0, 0, anchor=NW, image=self.temp_image)
 
         self.temp_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
-        self.temp_label.place(x=450, y=15, anchor=NW)
+        self.temp_label.place(x=350, y=15, anchor=NW)
+
+        self.bat_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
+        self.bat_canvas.place(x=500, y=5)
+        self.bat_image = ImageTk.PhotoImage(Image.open('battery100.png').resize((40, 40), Image.ANTIALIAS))
+        self.bat_container = self.bat_canvas.create_image(0, 0, anchor=NW, image=self.bat_image)
+
+        self.bat_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
+        self.bat_label.place(x=550, y=15, anchor=NW)
 
         self.fig = Figure(figsize=(6.75, 1.75), dpi=100)
         self.fig.patch.set_facecolor(fig_color)
@@ -152,7 +160,7 @@ class ViewE4:
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)  # A tk.DrawingArea.
         self.canvas.draw()
         self.ani = animation.FuncAnimation(self.fig, self.animate, fargs=([]), interval=500)
-        self.canvas.get_tk_widget().place(x=10, y=50)
+        self.canvas.get_tk_widget().place(x=350, y=50, anchor=N)
 
         self.fig1 = Figure(figsize=(6.75, 1.75), dpi=100)
         self.fig1.patch.set_facecolor(fig_color)
@@ -163,7 +171,7 @@ class ViewE4:
         self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.root)  # A tk.DrawingArea.
         self.canvas1.draw()
         self.ani1 = animation.FuncAnimation(self.fig1, self.bvp_animate, fargs=([]), interval=500)
-        self.canvas1.get_tk_widget().place(x=10, y=225)
+        self.canvas1.get_tk_widget().place(x=350, y=225, anchor=N)
 
         self.fig2 = Figure(figsize=(6.75, 1.75), dpi=100)
         self.fig2.patch.set_facecolor(fig_color)
@@ -174,16 +182,19 @@ class ViewE4:
         self.canvas2 = FigureCanvasTkAgg(self.fig2, master=self.root)  # A tk.DrawingArea.
         self.canvas2.draw()
         self.ani2 = animation.FuncAnimation(self.fig2, self.gsr_animate, fargs=([]), interval=500)
-        self.canvas2.get_tk_widget().place(x=10, y=400)
+        self.canvas2.get_tk_widget().place(x=350, y=400, anchor=N)
 
         self.streaming = False
+        self.kill = False
         self.e4 = None
+        self.bat = 100
 
         self.update_thread = threading.Thread(target=self.update_labels_thread)
         self.update_thread.start()
 
     def stop_plot(self):
         self.streaming = False
+        self.kill = True
 
     def start_plot(self, e4):
         self.e4 = e4
@@ -191,6 +202,8 @@ class ViewE4:
 
     def update_labels_thread(self):
         while not self.streaming:
+            if self.kill:
+                break
             time.sleep(0.5)
         while self.streaming:
             if self.streaming:
@@ -200,6 +213,22 @@ class ViewE4:
                             self.temp_label['text'] = str(int(self.e4.tmp[-1])) + u"\u00b0"
                         if len(self.e4.hr) > 0:
                             self.hr_label['text'] = str(int(self.e4.hr[-1])) + " BPM"
+                        if len(self.e4.bat) > 0:
+                            self.bat = int(float(self.e4.bat[-1]) * 100.0)
+                            print(self.bat)
+                            if 50 < self.bat < 75:
+                                self.bat_image = ImageTk.PhotoImage(
+                                    Image.open('battery75.png').resize((40, 40), Image.ANTIALIAS))
+                                self.bat_canvas.itemconfigure(self.bat_container, image=self.bat_image)
+                            elif 25 < self.bat < 50:
+                                self.bat_image = ImageTk.PhotoImage(
+                                    Image.open('battery50.png').resize((40, 40), Image.ANTIALIAS))
+                                self.bat_canvas.itemconfigure(self.bat_container, image=self.bat_image)
+                            elif self.bat < 25:
+                                self.bat_image = ImageTk.PhotoImage(
+                                    Image.open('battery25.png').resize((40, 40), Image.ANTIALIAS))
+                                self.bat_canvas.itemconfigure(self.bat_container, image=self.bat_image)
+                            self.bat_label['text'] = str(self.bat) + "%"
             time.sleep(0.5)
 
     def animate(self, e4):
