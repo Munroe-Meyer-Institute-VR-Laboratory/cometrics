@@ -12,10 +12,10 @@ import threading
 from pynput import keyboard
 import winsound
 # Custom library imports
-from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams
 from logger_util import *
 from output_view_ui import OutputViewPanel
 from input_view_ui import KeystrokeDataFields, EmpaticaDataFields
+from menu_bar import MenuBar
 
 
 class SessionTimeFields:
@@ -324,6 +324,7 @@ class SessionManagerWindow:
         self.unmc_shield_img = ImageTk.PhotoImage(Image.open('images/UNMCLogo.jpg').resize((250, 100), Image.ANTIALIAS))
         self.unmc_shield_canvas.create_image(0, 0, anchor=NW, image=self.unmc_shield_img)
 
+        self.menu = MenuBar(root)
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
         self.stf = SessionTimeFields(self, root)
         self.ovu = OutputViewPanel(root)
@@ -372,8 +373,9 @@ class SessionManagerWindow:
 
     def handle_key_press(self, key):
         if self.session_started:
-            event = self.kdf.check_key(key)
-            self.tag_history.append((event, self.stf.session_time))
+            events = self.kdf.check_key(key)
+            for event in events:
+                self.tag_history.append((event, self.stf.session_time))
 
     def save_session(self):
         self.pdf.save_patient_fields()

@@ -351,11 +351,14 @@ class EmpaticaDataFields:
     def connect_to_e4(self):
         if self.emp_client:
             try:
-                self.e4_client = EmpaticaE4(self.e4_address)
-                if self.e4_client.connected:
-                    for stream in EmpaticaDataStreams.ALL_STREAMS:
-                        self.e4_client.subscribe_to_stream(stream)
-                    self.connected_label.place(x=125, y=(self.parent.winfo_screenheight() - 350), anchor=N)
+                if self.e4_address:
+                    self.e4_client = EmpaticaE4(self.e4_address)
+                    if self.e4_client.connected:
+                        for stream in EmpaticaDataStreams.ALL_STREAMS:
+                            self.e4_client.subscribe_to_stream(stream)
+                        self.connected_label.place(x=125, y=(self.parent.winfo_screenheight() - 350), anchor=N)
+                else:
+                    messagebox.showwarning("Warning", "Select device from above list first!")
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
         else:

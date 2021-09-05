@@ -76,13 +76,15 @@ class KeystrokeDataFields:
         self.save_button.place(x=230, y=parent.winfo_screenheight() - 320, anchor=NE)
 
     def check_key(self, key_char):
+        return_bindings = []
         for i in range(0, len(self.bindings)):
             if self.bindings[i][1] == key_char:
                 self.bindings_freq[i] += 1
-                self.clear_listbox()
-                self.populate_bindings()
-                return self.bindings[i][0]
-        return None
+                return_bindings.append(self.bindings[i][0])
+        if return_bindings:
+            self.clear_listbox()
+            self.populate_bindings()
+            return return_bindings
 
     def add_key_popup(self):
         NewKeyPopup(self, self.frame)
