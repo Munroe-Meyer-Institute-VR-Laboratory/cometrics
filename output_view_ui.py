@@ -215,7 +215,6 @@ class ViewE4:
                             self.hr_label['text'] = str(int(self.e4.hr[-1])) + " BPM"
                         if len(self.e4.bat) > 0:
                             self.bat = int(float(self.e4.bat[-1]) * 100.0)
-                            print(self.bat)
                             if 50 < self.bat < 75:
                                 self.bat_image = ImageTk.PhotoImage(
                                     Image.open('images/battery75.png').resize((40, 40), Image.ANTIALIAS))
@@ -285,159 +284,13 @@ class ViewE4:
                     self.gsr_plt.legend(loc="upper left")
 
 
-class EmpaticaDataFields:
-    def __init__(self, parent, output_view):
-        self.ovu = output_view
-        self.parent = parent
-        self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight() - 280))
-        self.frame.place(x=265, y=120)
+class ViewTactor:
+    pass
 
-        self.emp_client = None
-        self.e4_client = None
-        self.e4_address = None
 
-        empatica_label = Label(self.frame, text="Empatica E4", font=('Purisa', 12))
-        empatica_label.place(x=125, y=15, anchor=CENTER)
+class ViewVideo:
+    pass
 
-        self.empatica_button = Button(self.frame, text="Start Server", command=self.start_e4_server)
-        self.empatica_button.place(x=125, y=30, anchor=N)
 
-        style = Style()
-        style.configure("mystyle.Treeview", highlightthickness=0, bd=0,
-                        font=('Calibri', 10))  # Modify the font of the body
-        style.configure("mystyle.Treeview.Heading", font=('Calibri', 13, 'bold'))  # Modify the font of the headings
-        style.map('Treeview', foreground=self.fixed_map('foreground'),
-                  background=self.fixed_map('background'))
-        # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
-        self.treeview = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse')
-        self.treeview.place(x=20, y=65, height=(parent.winfo_screenheight() - 450), width=210)
-
-        self.treeview.heading("#0", text="#", anchor='c')
-        self.treeview["columns"] = ["1"]
-        self.treeview.column("#0", width=65, stretch=NO, anchor='c')
-        self.treeview.heading("1", text="E4 Name")
-        self.treeview.column("1", width=65, stretch=YES, anchor='c')
-
-        self.treeview.tag_configure('odd', background='#E8E8E8')
-        self.treeview.tag_configure('even', background='#DFDFDF')
-        self.treeview.bind("<Button-1>", self.get_selection)
-
-        self.file_scroll = Scrollbar(self.frame, orient="vertical", command=self.treeview.yview)
-        self.file_scroll.place(x=2, y=65, height=(parent.winfo_screenheight() - 450))
-
-        self.treeview.configure(yscrollcommand=self.file_scroll.set)
-        self.tree_parents = []
-        self.tags = ['odd', 'even']
-        self.current_selection = "I000"
-
-        self.connect_button = Button(self.frame, text="Connect", command=self.connect_to_e4, width=12)
-        self.connect_button.place(x=20, y=(parent.winfo_screenheight() - 385))
-
-        self.streaming_button = Button(self.frame, text="Stream", command=self.start_e4_streaming, width=12)
-        self.streaming_button.place(x=230, y=(parent.winfo_screenheight() - 385), anchor=NE)
-
-        self.connected_label = Label(self.frame, text="CONNECTED", fg='green')
-        self.streaming_label = Label(self.frame, text="STREAMING", fg='green')
-
-        self.devices_thread = None
-
-    def disconnect_e4(self):
-        if self.emp_client:
-            self.emp_client.close()
-        if self.e4_client:
-            if self.e4_client.connected:
-                self.e4_client.close()
-
-    def connect_to_e4(self):
-        if self.emp_client:
-            try:
-                if self.e4_address:
-                    self.e4_client = EmpaticaE4(self.e4_address)
-                    if self.e4_client.connected:
-                        for stream in EmpaticaDataStreams.ALL_STREAMS:
-                            self.e4_client.subscribe_to_stream(stream)
-                        self.connected_label.place(x=125, y=(self.parent.winfo_screenheight() - 350), anchor=N)
-                else:
-                    messagebox.showwarning("Warning", "Select device from above list first!")
-            except Exception as e:
-                messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
-        else:
-            messagebox.showwarning("Warning", "Connect to server first!")
-
-    def start_e4_streaming(self):
-        if self.emp_client:
-            if self.e4_client:
-                if self.e4_client.connected:
-                    try:
-                        self.e4_client.start_streaming()
-                        self.ovu.e4_view.start_plot(self.e4_client)
-                        self.streaming_label.place(x=125, y=(self.parent.winfo_screenheight() - 320), anchor=N)
-                    except Exception as e:
-                        messagebox.showerror("Exception Encountered",
-                                             "Encountered an error when connecting to E4:\n" + str(e))
-                else:
-                    messagebox.showwarning("Warning", "Device is not connected!")
-            else:
-                messagebox.showwarning("Warning", "Connect to device first!")
-        else:
-            messagebox.showwarning("Warning", "Connect to server first!")
-
-    def start_e4_server(self):
-        if not self.emp_client:
-            try:
-                self.emp_client = EmpaticaClient()
-                self.empatica_button['text'] = "List Devices"
-            except Exception as e:
-                messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
-        else:
-            try:
-                self.devices_thread = threading.Thread(target=self.list_devices_thread)
-                self.devices_thread.start()
-            except Exception as e:
-                messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
-
-    def list_devices_thread(self):
-        self.emp_client.list_connected_devices()
-        time.sleep(1)
-        self.clear_device_list()
-        self.populate_device_list()
-
-    def clear_device_list(self):
-        for children in self.treeview.get_children():
-            self.treeview.delete(children)
-
-    def populate_device_list(self):
-        for i in range(0, len(self.emp_client.device_list)):
-            self.tree_parents.append(self.treeview.insert("", 'end', str(i), text=str(i),
-                                                          values=(self.emp_client.device_list[i].decode("utf-8"),),
-                                                          tags=(self.tags[i % 2])))
-
-    def get_selection(self, event):
-        self.current_selection = self.treeview.identify_row(event.y)
-        if self.current_selection:
-            if self.emp_client:
-                if len(self.emp_client.device_list) != 0:
-                    self.e4_address = self.emp_client.device_list[int(self.current_selection)]
-                else:
-                    messagebox.showerror("Error", "No connected E4s!")
-            else:
-                messagebox.showwarning("Warning", "Connect to server first!")
-
-    def save_session(self, filename):
-        if self.e4_client:
-            if self.e4_client.connected:
-                self.e4_client.save_readings(filename)
-
-    def fixed_map(self, option):
-        # https://stackoverflow.com/a/62011081
-        # Fix for setting text colour for Tkinter 8.6.9
-        # From: https://core.tcl.tk/tk/info/509cafafae
-        #
-        # Returns the style map for 'option' with any styles starting with
-        # ('!disabled', '!selected', ...) filtered out.
-
-        # style.map() returns an empty list for missing options, so this
-        # should be future-safe.
-        style = Style()
-        return [elm for elm in style.map('Treeview', query_opt=option) if
-                elm[:2] != ('!disabled', '!selected')]
+class ViewCamera:
+    pass

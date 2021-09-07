@@ -1,4 +1,5 @@
 from tkinter import *
+from analysis_ui import SessionStatisticsPopup
 
 
 class MenuBar(Frame):
@@ -23,4 +24,4 @@ class MenuBar(Frame):
         pass
 
     def load_sessions(self):
-        pass
+        SessionStatisticsPopup(self.parent)
