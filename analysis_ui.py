@@ -1,4 +1,5 @@
 import json
+import os
 import pathlib
 from os import walk, path
 import openpyxl
@@ -143,6 +144,10 @@ def populate_spreadsheet(patient_file, ksf, session_dir):
     data_wb = wb['Data']
     bindings = open_keystroke_file(ksf)
     sessions = get_session_files(session_dir)
+    sess_parts = session_dir.split('/')
+    analysis_dir = path.join(sess_parts[0], sess_parts[1], sess_parts[2], sess_parts[3], 'analysis')
+    if not path.exists(analysis_dir):
+        os.mkdir(analysis_dir)
     patient = PatientContainer(patient_file)
     row = 5
     data_wb['A1'].value = "Assessment: " + sessions[0]['Assessment Name']
@@ -156,7 +161,7 @@ def populate_spreadsheet(patient_file, ksf, session_dir):
         d[0][4].value = session['Primary Data']
         d[0][6].value = int(session['Session Time'])/60
         row += 1
-    wb.save('test.xlsx')
+    wb.save(path.join(analysis_dir, sess_parts[3] + "_analysis.xlsx"))
 
 
 def get_session_files(session_dir):

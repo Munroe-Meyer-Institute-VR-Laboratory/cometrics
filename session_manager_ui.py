@@ -391,7 +391,7 @@ class SessionManagerWindow:
             x[str(i)] = [self.tag_history[i][0], self.tag_history[i][1]]
         with open(self.session_file, 'w') as f:
             json.dump(x, f)
-        self.edf.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + "e4.json"))
+        self.edf.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"))
 
     def start_session(self):
         self.session_started = True
