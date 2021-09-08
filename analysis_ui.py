@@ -142,17 +142,17 @@ class PatientContainer:
 def populate_spreadsheet(patient_file, ksf, session_dir):
     wb = openpyxl.load_workbook('reference/New Template Graphing Practice.xlsx')
     data_wb = wb['Data']
-    bindings = open_keystroke_file(ksf)
     sessions = get_session_files(session_dir)
     sess_parts = session_dir.split('/')
     analysis_dir = path.join(sess_parts[0], sess_parts[1], sess_parts[2], sess_parts[3], 'analysis')
     if not path.exists(analysis_dir):
         os.mkdir(analysis_dir)
     patient = PatientContainer(patient_file)
-    row = 5
+    row, col = 5, 7
     data_wb['A1'].value = "Assessment: " + sessions[0]['Assessment Name']
     data_wb['A2'].value = "Client: " + patient.name
     for session in sessions:
+        key_freq = get_keystroke_info(ksf, session)
         d = data_wb['B' + str(row):'AL' + str(row)]
         d[0][0].value = session['Condition Name']
         d[0][1].value = session['Session Date']
@@ -160,8 +160,29 @@ def populate_spreadsheet(patient_file, ksf, session_dir):
         d[0][3].value = session['Primary Therapist']
         d[0][4].value = session['Primary Data']
         d[0][6].value = int(session['Session Time'])/60
+        for freq, col in zip(key_freq, range(7, len(key_freq))):
+            d[0][col].value = freq
         row += 1
     wb.save(path.join(analysis_dir, sess_parts[3] + "_analysis.xlsx"))
+
+
+def get_keystroke_info(key_file, session_file):
+    bindings = []
+    key_freq = []
+    with open(key_file) as f:
+        keystroke_json = json.load(f)
+    for key in keystroke_json:
+        if key != "Name":
+            bindings.append((key, keystroke_json[key]))
+            key_freq.append(0)
+    for i in range(0, len(bindings)):
+        for session_info in session_file:
+            try:
+                if session_file[session_info][0] == bindings[i][0]:
+                    key_freq[i] += 1
+            except Exception:
+                continue
+    return key_freq
 
 
 def get_session_files(session_dir):
