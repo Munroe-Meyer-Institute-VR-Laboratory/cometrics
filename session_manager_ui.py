@@ -108,8 +108,6 @@ class SessionTimeFields:
             time.sleep(1 - time.monotonic() % 1)
             if self.timer_running:
                 if self.session_started and not self.session_paused:
-                    if self.break_time > 0:
-                        self.break_time = 0
                     self.session_time += 1
                     if self.session_duration:
                         if self.session_time >= self.session_duration:
@@ -373,7 +371,7 @@ class SessionManagerWindow:
 
     def handle_key_press(self, key):
         if self.session_started:
-            events = self.kdf.check_key(key)
+            events, key_type = self.kdf.check_key(key)
             for event in events:
                 self.tag_history.append((event, self.stf.session_time))
 
@@ -383,7 +381,8 @@ class SessionManagerWindow:
         x = {
             "Session Date": self.session_date,
             "Session Start Time": self.session_time,
-            "Session Time": self.stf.session_time
+            "Session Time": self.stf.session_time,
+            "Pause Time": self.stf.break_time
         }
         for val, field in zip(dict_vals, dict_fields):
             x[field] = val

@@ -149,19 +149,49 @@ def populate_spreadsheet(patient_file, ksf, session_dir):
         os.mkdir(analysis_dir)
     patient = PatientContainer(patient_file)
     row, col = 5, 7
+    m_cells = data_wb.merged_cells
+    freq_cell, freq_coords = None, None
+    dur_cell, dur_coords = None, None
+    st_cell, pt_cell = None, None
+    for row in data_wb.iter_rows(3, 3):
+        for cell in row:
+            if cell.value == 'ST':
+                st_cell = cell
+            if cell.value == 'PT':
+                pt_cell = cell
+    for cell in m_cells:
+        if cell.start_cell.coordinate == 'J1':
+            freq_cell = cell
+            coordinates = cell.coord.split(':')
+            freq_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
+                           ''.join([i for i in coordinates[1] if not i.isdigit()])]
+            break
+    for cell in m_cells:
+        if cell.min_col == freq_cell.max_col + 1:
+            dur_cell = cell
+            coordinates = cell.coord.split(':')
+            dur_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
+                          ''.join([i for i in coordinates[1] if not i.isdigit()])]
     data_wb['A1'].value = "Assessment: " + sessions[0]['Assessment Name']
     data_wb['A2'].value = "Client: " + patient.name
     for session in sessions:
-        key_freq = get_keystroke_info(ksf, session)
-        d = data_wb['B' + str(row):'AL' + str(row)]
+        key_freq, key_dur = get_keystroke_info(ksf, session)
+        d = data_wb['B' + str(row):'H' + str(row)]
+        freq_d = data_wb[freq_coords[0] + str(row):freq_coords[1] + str(row)]
+        dur_d = data_wb[dur_coords[0] + str(row):dur_coords[1] + str(row)]
         d[0][0].value = session['Condition Name']
         d[0][1].value = session['Session Date']
         d[0][2].value = session['Session Therapist']
         d[0][3].value = session['Primary Therapist']
         d[0][4].value = session['Primary Data']
         d[0][6].value = int(session['Session Time'])/60
-        for freq, col in zip(key_freq, range(7, len(key_freq))):
-            d[0][col].value = freq
+        data_wb[st_cell.coordinate].value = session['Session Time']
+        data_wb[pt_cell.coordinate].value = session['Pause Time']
+        # Populate frequency and duration keys
+        for freq, col in zip(key_freq, range(0, len(key_freq))):
+            freq_d[0][col].value = freq
+        for dur, col in zip(key_dur, range(0, len(key_dur))):
+            dur_d[0][col].value = dur
         row += 1
     wb.save(path.join(analysis_dir, sess_parts[3] + "_analysis.xlsx"))
 
@@ -169,6 +199,7 @@ def populate_spreadsheet(patient_file, ksf, session_dir):
 def get_keystroke_info(key_file, session_file):
     bindings = []
     key_freq = []
+    key_dur = []
     with open(key_file) as f:
         keystroke_json = json.load(f)
     for key in keystroke_json:
@@ -182,7 +213,7 @@ def get_keystroke_info(key_file, session_file):
                     key_freq[i] += 1
             except Exception:
                 continue
-    return key_freq
+    return key_freq, key_dur
 
 
 def get_session_files(session_dir):
