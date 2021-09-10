@@ -371,9 +371,14 @@ class SessionManagerWindow:
 
     def handle_key_press(self, key):
         if self.session_started:
-            events, key_type = self.kdf.check_key(key)
+            events, key_type, dur = self.kdf.check_key(key, self.stf.session_time)
             for event in events:
-                self.tag_history.append((event, self.stf.session_time))
+                if event:
+                    if key_type:
+                        if dur:
+                            self.tag_history.append((event, dur))
+                    else:
+                        self.tag_history.append((event, self.stf.session_time))
 
     def save_session(self):
         self.pdf.save_patient_fields()
