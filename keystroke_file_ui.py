@@ -96,8 +96,8 @@ class KeystrokeSelectWindow:
         with open(path.join(self.keystroke_directory, name + '.json'), 'w') as f:
             x = {
                 "Name": name,
-                "Frequency": [('AGG', 'a'), ('AGG SB', 'q')],
-                "Duration": [('ISB', 's')]
+                "Frequency": [],
+                "Duration": []
             }
             json.dump(x, f)
         self.keystroke_file = path.join(self.keystroke_directory, name + '.json')

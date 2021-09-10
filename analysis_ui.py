@@ -143,12 +143,11 @@ def populate_spreadsheet(patient_file, ksf, session_dir):
     wb = openpyxl.load_workbook('reference/New Template Graphing Practice.xlsx')
     data_wb = wb['Data']
     sessions = get_session_files(session_dir)
-    sess_parts = session_dir.split('/')
+    sess_parts = session_dir.split('\\')
     analysis_dir = path.join(sess_parts[0], sess_parts[1], sess_parts[2], sess_parts[3], 'analysis')
     if not path.exists(analysis_dir):
         os.mkdir(analysis_dir)
     patient = PatientContainer(patient_file)
-    row, col = 5, 7
     m_cells = data_wb.merged_cells
     freq_cell, freq_coords = None, None
     dur_cell, dur_coords = None, None
@@ -160,21 +159,31 @@ def populate_spreadsheet(patient_file, ksf, session_dir):
             if cell.value == 'PT':
                 pt_cell = cell
     for cell in m_cells:
-        if cell.start_cell.coordinate == 'J1':
-            freq_cell = cell
-            coordinates = cell.coord.split(':')
-            freq_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
-                           ''.join([i for i in coordinates[1] if not i.isdigit()])]
-            break
+        try:
+            if cell.start_cell.coordinate == 'J2' and cell.start_cell.value == "Frequency":
+                freq_cell = cell
+                coordinates = cell.coord.split(':')
+                freq_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
+                               ''.join([i for i in coordinates[1] if not i.isdigit()])]
+                break
+        except AttributeError:
+            continue
     for cell in m_cells:
-        if cell.min_col == freq_cell.max_col + 1:
-            dur_cell = cell
-            coordinates = cell.coord.split(':')
-            dur_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
-                          ''.join([i for i in coordinates[1] if not i.isdigit()])]
+        try:
+            if cell.min_col == freq_cell.max_col + 1 and cell.start_cell.value == "Duration":
+                dur_cell = cell
+                coordinates = cell.coord.split(':')
+                dur_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
+                              ''.join([i for i in coordinates[1] if not i.isdigit()])]
+                break
+        except AttributeError:
+            continue
     data_wb['A1'].value = "Assessment: " + sessions[0]['Assessment Name']
     data_wb['A2'].value = "Client: " + patient.name
+    row, col = 5, 7
     for session in sessions:
+        st_cell = data_wb[''.join([i for i in st_cell.coordinate if not i.isdigit()]) + str(row)]
+        pt_cell = data_wb[''.join([i for i in pt_cell.coordinate if not i.isdigit()]) + str(row)]
         key_freq, key_dur = get_keystroke_info(ksf, session)
         d = data_wb['B' + str(row):'H' + str(row)]
         freq_d = data_wb[freq_coords[0] + str(row):freq_coords[1] + str(row)]
