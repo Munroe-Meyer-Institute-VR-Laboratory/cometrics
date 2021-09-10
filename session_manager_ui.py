@@ -290,6 +290,8 @@ def beep_thread():
 
 class SessionManagerWindow:
     def __init__(self, patient_file, keystroke_file):
+        self.patient_file = patient_file
+        self.keystroke_file = keystroke_file
         self.global_commands = {
             "Toggle Session": keyboard.Key.esc,
             "Pause Session": keyboard.Key.ctrl_l
@@ -322,7 +324,7 @@ class SessionManagerWindow:
         self.unmc_shield_img = ImageTk.PhotoImage(Image.open('images/UNMCLogo.jpg').resize((250, 100), Image.ANTIALIAS))
         self.unmc_shield_canvas.create_image(0, 0, anchor=NW, image=self.unmc_shield_img)
 
-        self.menu = MenuBar(root)
+        self.menu = MenuBar(root, self)
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
         self.stf = SessionTimeFields(self, root)
         self.ovu = OutputViewPanel(root)

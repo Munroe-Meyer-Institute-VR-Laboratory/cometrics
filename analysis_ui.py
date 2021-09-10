@@ -197,20 +197,26 @@ def populate_spreadsheet(patient_file, ksf, session_dir):
 
 
 def get_keystroke_info(key_file, session_file):
-    bindings = []
+    freq_bindings = []
+    dur_bindings = []
     key_freq = []
     key_dur = []
     with open(key_file) as f:
         keystroke_json = json.load(f)
     for key in keystroke_json:
-        if key != "Name":
-            bindings.append((key, keystroke_json[key]))
-            key_freq.append(0)
-    for i in range(0, len(bindings)):
+        if key == "Frequency":
+            freq_bindings = keystroke_json[key]
+            key_freq = [0]*len(freq_bindings)
+        if key == "Duration":
+            dur_bindings = keystroke_json[key]
+            key_dur = [0]*len(dur_bindings)
+    for i in range(0, len(freq_bindings)):
         for session_info in session_file:
             try:
-                if session_file[session_info][0] == bindings[i][0]:
+                if session_file[session_info][0] == freq_bindings[i][0]:
                     key_freq[i] += 1
+                elif session_info[session_file][0] == dur_bindings[i][0]:
+                    key_dur[i] += int(dur_bindings[i][1])
             except Exception:
                 continue
     return key_freq, key_dur

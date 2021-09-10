@@ -1,9 +1,11 @@
 from tkinter import *
+from analysis_ui import populate_spreadsheet
 
 
 class MenuBar(Frame):
-    def __init__(self, parent, *args, **kwargs):
+    def __init__(self, parent, caller, *args, **kwargs):
         Frame.__init__(self, parent, *args, **kwargs)
+        self.caller = caller
         self.parent = parent
         menu = Menu(self.parent)
         self.parent.config(menu=menu)
@@ -23,4 +25,4 @@ class MenuBar(Frame):
         pass
 
     def load_sessions(self):
-        pass
+        populate_spreadsheet(self.caller.patient_file, self.caller.keystroke_file, self.caller.session_dur)
