@@ -317,7 +317,7 @@ class SessionManagerWindow:
         root.config(bg="white", bd=-2)
         pad = 3
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
-        root.title("KSA - KeyStroke Annotator")
+        root.title("ECL - Experiment Collection & Logging")
 
         self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
