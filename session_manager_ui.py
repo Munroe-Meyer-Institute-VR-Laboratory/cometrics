@@ -172,7 +172,7 @@ class PatientDataFields:
         self.sess_loc_label = self.label_canvas.create_text(5, 120, text="Session Location", anchor=NW,
                                                             font=('Purisa', 10))
         # Assessment name field
-        self.assess_name_label = self.label_canvas.create_text(5, 165, text="Assessement Name", anchor=NW,
+        self.assess_name_label = self.label_canvas.create_text(5, 165, text="Assessment Name", anchor=NW,
                                                                font=('Purisa', 10))
         # Condition name field
         self.cond_name_label = self.label_canvas.create_text(5, 210, text="Condition Name", anchor=NW,

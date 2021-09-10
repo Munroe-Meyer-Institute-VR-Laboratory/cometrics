@@ -18,7 +18,7 @@ class MenuBar(Frame):
         menu.add_cascade(label="Export", menu=export_menu)
 
         edit_menu = Menu(menu)
-        edit_menu.add_command(label="View Sessions", command=self.load_sessions)
+        edit_menu.add_command(label="Analyze Sessions", command=self.load_sessions)
         menu.add_cascade(label="Analyze", menu=edit_menu)
 
     def export_data_as_csv(self):
