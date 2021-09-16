@@ -162,6 +162,9 @@ class KeystrokeDataFields:
     def get_selection(self, event):
         self.current_selection = self.treeview.identify_row(event.y)
 
+    def import_binding(self):
+        pass
+
     def save_binding(self):
         x = {
             "Name": self.keystroke_json["Name"],
