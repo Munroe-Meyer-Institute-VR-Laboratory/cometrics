@@ -31,7 +31,9 @@ class PatientContainer:
 
 
 def populate_spreadsheet(patient_file, ksf, session_dir):
-    wb = openpyxl.load_workbook('reference/New Template Graphing Practice.xlsx')
+    parts = pathlib.Path(patient_file).parts
+    template = path.join(parts[0], parts[1], parts[2], pathlib.Path(ksf).stem + ".xlsx")
+    wb = openpyxl.load_workbook(template)
     data_wb = wb['Data']
     sessions = get_session_files(session_dir)
     sess_parts = session_dir.split('\\')

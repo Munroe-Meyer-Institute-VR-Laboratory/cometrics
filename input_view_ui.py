@@ -83,13 +83,15 @@ class KeystrokeDataFields:
         self.treeview1.place(x=20, y=(parent.winfo_screenheight() / 2 - 175) + 50,
                              height=(parent.winfo_screenheight() / 2 - 200), width=210)
 
-        self.treeview1["columns"] = ["1", "2", "3"]
+        self.treeview1["columns"] = ["1", "2", "3", "4"]
         self.treeview1.heading("1", text="Char", anchor='c')
         self.treeview1.column("1", width=40, stretch=NO, anchor='c')
         self.treeview1.heading("2", text="Dur")
         self.treeview1.column("2", width=40, stretch=NO, anchor='c')
-        self.treeview1.heading("3", text="Tag")
-        self.treeview1.column("3", width=65, stretch=YES, anchor='c')
+        self.treeview1.heading("3", text="Total")
+        self.treeview1.column("3", width=45, stretch=NO, anchor='c')
+        self.treeview1.heading("4", text="Tag")
+        self.treeview1.column("4", width=65, stretch=YES, anchor='c')
 
         self.treeview1.tag_configure('odd', background='#E8E8E8')
         self.treeview1.tag_configure('even', background='#DFDFDF')
@@ -259,7 +261,7 @@ class KeystrokeDataFields:
             self.dur_sticky.append(False)
             self.sticky_start.append(0)
             self.tree_parents1.append(self.treeview1.insert("", 'end', str(i),
-                                                            values=(bind[1], '', bind[0]),
+                                                            values=(bind[1], '', '', bind[0]),
                                                             tags=(self.tags[i % 2])))
 
 
