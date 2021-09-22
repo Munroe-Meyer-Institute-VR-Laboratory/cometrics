@@ -41,7 +41,7 @@ def export_columnwise_csv(session_dir):
         get_export_files(export_dir)
 
 
-def populate_spreadsheet(patient_file, ksf, session_dir):
+def populate_spreadsheet(root, patient_file, ksf, session_dir):
     parts = pathlib.Path(patient_file).parts
     template = path.join(parts[0], parts[1], parts[2], pathlib.Path(ksf).stem + ".xlsx")
     wb = openpyxl.load_workbook(template)
@@ -108,6 +108,7 @@ def populate_spreadsheet(patient_file, ksf, session_dir):
         row += 1
     wb.save(path.join(analysis_dir, sess_parts[3] + "_analysis.xlsx"))
     os.startfile(analysis_dir)
+    root.root.withdraw()
 
 
 def get_keystroke_info(key_file, session_file):

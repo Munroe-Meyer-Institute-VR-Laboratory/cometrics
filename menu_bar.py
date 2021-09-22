@@ -40,4 +40,4 @@ class MenuBar(Frame):
         pass
 
     def load_sessions(self):
-        populate_spreadsheet(self.caller.patient_file, self.caller.keystroke_file, self.caller.session_dir)
+        populate_spreadsheet(self.caller, self.caller.patient_file, self.caller.keystroke_file, self.caller.session_dir)
