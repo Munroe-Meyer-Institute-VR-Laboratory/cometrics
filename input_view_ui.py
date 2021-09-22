@@ -145,7 +145,7 @@ class KeystrokeDataFields:
                 if self.dur_sticky[i]:
                     self.treeview1.item(str(i), tags=self.tags[i % 2])
                     self.dur_sticky[i] = False
-                    duration = start_time - self.sticky_start[i]
+                    duration = (self.sticky_start[i], start_time)
                     self.sticky_start[i] = 0
                 else:
                     self.treeview1.item(str(i), tags=self.tags[2])

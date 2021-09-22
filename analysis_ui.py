@@ -30,12 +30,23 @@ class PatientContainer:
             json.dump(x, f)
 
 
+def export_columnwise_csv(session_dir):
+    sessions = get_session_files(session_dir)
+    sess_parts = session_dir.split('\\')
+    export_dir = path.join(sess_parts[0], sess_parts[1], sess_parts[2], sess_parts[3], 'export')
+    export_files = []
+    if not path.exists(export_dir):
+        os.mkdir(export_dir)
+    else:
+        get_export_files(export_dir)
+
+
 def populate_spreadsheet(patient_file, ksf, session_dir):
     parts = pathlib.Path(patient_file).parts
     template = path.join(parts[0], parts[1], parts[2], pathlib.Path(ksf).stem + ".xlsx")
     wb = openpyxl.load_workbook(template)
     data_wb = wb['Data']
-    sessions = get_session_files(session_dir)
+    sessions = get_sessions(session_dir)
     sess_parts = session_dir.split('\\')
     analysis_dir = path.join(sess_parts[0], sess_parts[1], sess_parts[2], sess_parts[3], 'analysis')
     if not path.exists(analysis_dir):
@@ -125,7 +136,27 @@ def get_keystroke_info(key_file, session_file):
     return key_freq, key_dur
 
 
+def get_export_files(export_dir):
+    export_files = []
+    if path.isdir(export_dir):
+        _, _, files = next(walk(export_dir))
+        for file in files:
+            if pathlib.Path(file).suffix == ".xlsx":
+                export_files.append(file)
+    return export_files
+
+
 def get_session_files(session_dir):
+    session_files = []
+    if path.isdir(session_dir):
+        _, _, files = next(walk(session_dir))
+        for file in files:
+            if pathlib.Path(file).suffix == ".json":
+                session_files.append(file)
+    return session_files
+
+
+def get_sessions(session_dir):
     session_files = []
     sessions = []
     if path.isdir(session_dir):

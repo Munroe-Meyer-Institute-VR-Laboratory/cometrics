@@ -210,11 +210,11 @@ class Popup:
             freq_key_cells = data_wb[freq_coords[0] + str(3):freq_coords[1] + str(3)]
             freq_tag_cells = data_wb[freq_coords[0] + str(4):freq_coords[1] + str(4)]
             for key, tag in zip(freq_key_cells[0], freq_tag_cells[0]):
-                freq_keys.append((tag.value, key.value))
+                freq_keys.append((str(tag.value), str(key.value)))
             dur_key_cells = data_wb[dur_coords[0] + str(3):dur_coords[1] + str(3)]
             dur_tag_cells = data_wb[dur_coords[0] + str(4):dur_coords[1] + str(4)]
             for key, tag in zip(dur_key_cells[0], dur_tag_cells[0]):
-                dur_keys.append((tag.value, key.value))
+                dur_keys.append((str(tag.value), str(key.value)))
             name = pathlib.Path(filename).stem
             with open(path.join(self.caller.keystroke_directory, name + '.json'), 'w') as f:
                 x = {

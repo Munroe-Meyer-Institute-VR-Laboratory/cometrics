@@ -1,5 +1,5 @@
 from tkinter import *
-from analysis_ui import populate_spreadsheet
+from analysis_ui import populate_spreadsheet, export_columnwise_csv
 from ka_ui import main
 
 
@@ -29,11 +29,12 @@ class MenuBar(Frame):
         Note: this function does not return. Any cleanup action (like
         saving data) must be done before calling this function."""
         self.caller.stf.stop_timer()
+        self.caller.ovu.e4_view.stop_plot()
         self.caller.root.destroy()
         main()
 
     def export_csv(self):
-        pass
+        export_columnwise_csv(self.caller.session_dir)
 
     def get_session_acc(self):
         pass
