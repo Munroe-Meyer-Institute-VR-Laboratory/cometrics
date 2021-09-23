@@ -43,7 +43,7 @@ def export_columnwise_csv(session_dir):
 
 def populate_spreadsheet(root, patient_file, ksf, session_dir):
     parts = pathlib.Path(patient_file).parts
-    template = path.join(parts[0], parts[1], parts[2], pathlib.Path(ksf).stem + ".xlsx")
+    template = path.join(parts[0], parts[1], "data", pathlib.Path(ksf).stem + ".xlsx")
     wb = openpyxl.load_workbook(template)
     data_wb = wb['Data']
     sessions = get_sessions(session_dir)
@@ -108,7 +108,7 @@ def populate_spreadsheet(root, patient_file, ksf, session_dir):
         row += 1
     wb.save(path.join(analysis_dir, sess_parts[3] + "_analysis.xlsx"))
     os.startfile(analysis_dir)
-    root.root.withdraw()
+    root.root.iconify()
 
 
 def get_keystroke_info(key_file, session_file):
@@ -120,20 +120,22 @@ def get_keystroke_info(key_file, session_file):
         keystroke_json = json.load(f)
     for key in keystroke_json:
         if key == "Frequency":
-            freq_bindings = keystroke_json[key]
+            for bindings in keystroke_json[key]:
+                freq_bindings.append(bindings[0])
             key_freq = [0]*len(freq_bindings)
         if key == "Duration":
-            dur_bindings = keystroke_json[key]
+            for bindings in keystroke_json[key]:
+                dur_bindings.append(bindings[0])
             key_dur = [0]*len(dur_bindings)
-    for i in range(0, len(freq_bindings)):
-        for session_info in session_file:
-            try:
-                if session_file[session_info][0] == freq_bindings[i][0]:
-                    key_freq[i] += 1
-                elif session_info[session_file][0] == dur_bindings[i][0]:
-                    key_dur[i] += int(dur_bindings[i][1])
-            except Exception:
-                continue
+    for session_info in session_file:
+        try:
+            if session_file[session_info][0] in freq_bindings:
+                key_freq[freq_bindings.index(session_file[session_info][0])] += 1
+            elif session_file[session_info][0] in dur_bindings:
+                i = dur_bindings.index(session_file[session_info][0])
+                key_dur[i] += int(session_file[session_info][1][1]) - int(session_file[session_info][1][0])
+        except Exception as e:
+            continue
     return key_freq, key_dur
 
 
