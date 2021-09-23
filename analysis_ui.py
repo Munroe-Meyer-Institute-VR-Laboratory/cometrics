@@ -128,12 +128,13 @@ def get_keystroke_info(key_file, session_file):
                 dur_bindings.append(bindings[0])
             key_dur = [0]*len(dur_bindings)
     for session_info in session_file:
+        session_param = session_file[session_info]
         try:
-            if session_file[session_info][0] in freq_bindings:
-                key_freq[freq_bindings.index(session_file[session_info][0])] += 1
-            elif session_file[session_info][0] in dur_bindings:
-                i = dur_bindings.index(session_file[session_info][0])
-                key_dur[i] += int(session_file[session_info][1][1]) - int(session_file[session_info][1][0])
+            if session_param[0] in freq_bindings:
+                key_freq[freq_bindings.index(session_param[0])] += 1
+            elif session_param[0] in dur_bindings:
+                i = dur_bindings.index(session_param[0])
+                key_dur[i] += int(session_param[1][1]) - int(session_param[1][0])
         except Exception as e:
             continue
     return key_freq, key_dur

@@ -19,7 +19,8 @@ from menu_bar import MenuBar
 
 
 class SessionTimeFields:
-    def __init__(self, caller, parent):
+    def __init__(self, caller, parent, kdf=None):
+        self.kdf = kdf
         self.caller = caller
         self.frame = Frame(parent, width=600, height=100, bg='white')
         self.frame.place(x=252, y=2)
@@ -109,6 +110,9 @@ class SessionTimeFields:
             if self.timer_running:
                 if self.session_started and not self.session_paused:
                     self.session_time += 1
+                    for i in range(0, len(self.kdf.dur_sticky)):
+                        if self.kdf.dur_sticky[i]:
+                            self.kdf.treeview1.set(str(i), column="2", value=self.session_time - self.kdf.sticky_start[i])
                     if self.session_duration:
                         if self.session_time >= self.session_duration:
                             self.stop_session()
@@ -325,11 +329,11 @@ class SessionManagerWindow:
         self.unmc_shield_canvas.create_image(0, 0, anchor=NW, image=self.unmc_shield_img)
 
         self.menu = MenuBar(root, self)
+        self.kdf = KeystrokeDataFields(root, keystroke_file)
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
-        self.stf = SessionTimeFields(self, root)
+        self.stf = SessionTimeFields(self, root, self.kdf4444kkkkjj)
         self.ovu = OutputViewPanel(root)
         self.edf = EmpaticaDataFields(root, self.ovu)
-        self.kdf = KeystrokeDataFields(root, keystroke_file)
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
 

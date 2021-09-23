@@ -33,6 +33,7 @@ class KeystrokeDataFields:
 
         self.dur_sticky = []
         self.sticky_start = []
+        self.sticky_dur = []
 
         keystroke_label = Label(self.frame, text="Key Bindings", font=('Purisa', 12))
         keystroke_label.place(x=125, y=15, anchor=CENTER)
@@ -146,7 +147,9 @@ class KeystrokeDataFields:
                     self.treeview1.item(str(i), tags=self.tags[i % 2])
                     self.dur_sticky[i] = False
                     duration = (self.sticky_start[i], start_time)
+                    self.sticky_dur[i] += start_time - self.sticky_start[i]
                     self.sticky_start[i] = 0
+                    self.treeview1.set(str(i), column="3", value=self.sticky_dur[i])
                 else:
                     self.treeview1.item(str(i), tags=self.tags[2])
                     self.dur_sticky[i] = True
@@ -260,8 +263,9 @@ class KeystrokeDataFields:
             bind = self.dur_bindings[i]
             self.dur_sticky.append(False)
             self.sticky_start.append(0)
+            self.sticky_dur.append(0)
             self.tree_parents1.append(self.treeview1.insert("", 'end', str(i),
-                                                            values=(bind[1], '', '', bind[0]),
+                                                            values=(bind[1], 0, 0, bind[0]),
                                                             tags=(self.tags[i % 2])))
 
 
