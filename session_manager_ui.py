@@ -247,11 +247,19 @@ class PatientDataFields:
         self.data_rec_entry = Entry(self.frame, textvariable=self.data_rec_var)
         self.data_rec_entry.place(x=15, y=410, width=220, anchor=NW)
 
-        self.prim_data_var = StringVar(self.frame)
-        self.prim_data_entry = Entry(self.frame, textvariable=self.prim_data_var)
-        self.prim_data_entry.place(x=15, y=455, width=220, anchor=NW)
+        self.prim_data_var = StringVar(self.frame, "Primary")
+        self.prim_data_radio = Radiobutton(self.frame, text="Primary", value="Primary",
+                                           variable=self.prim_data_var, command=self.check_radio)
+        self.prim_data_radio.place(x=15, y=455)
+
+        self.rel_data_radio = Radiobutton(self.frame, text="Reliability", value="Reliability",
+                                          variable=self.prim_data_var, command=self.check_radio)
+        self.rel_data_radio.place(x=125, y=455)
 
         self.label_canvas.place(x=0, y=0)
+
+    def check_radio(self):
+        pass
 
     def save_patient_fields(self):
         self.patient.save_patient(self.patient_name_var.get(), self.mrn_var.get())

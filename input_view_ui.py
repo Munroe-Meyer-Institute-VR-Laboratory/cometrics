@@ -1,20 +1,12 @@
-import os
-import pathlib
+import json
+import threading
 import time
-from os import walk
 from tkinter import *
 from tkinter import messagebox
 from tkinter.ttk import Treeview, Style
-import json
-import datetime
-from PIL import Image, ImageTk
-import threading
-from pynput import keyboard
-import winsound
+
 # Custom library imports
 from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams
-from logger_util import *
-from output_view_ui import OutputViewPanel
 
 
 class KeystrokeDataFields:
