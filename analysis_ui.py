@@ -3,6 +3,8 @@ import os
 import pathlib
 from os import walk, path
 import openpyxl
+import csv
+import datetime
 
 
 class PatientContainer:
@@ -30,15 +32,44 @@ class PatientContainer:
             json.dump(x, f)
 
 
-def export_columnwise_csv(session_dir):
+def export_columnwise_csv(root, session_dir):
     sessions = get_session_files(session_dir)
     sess_parts = session_dir.split('\\')
     export_dir = path.join(sess_parts[0], sess_parts[1], sess_parts[2], sess_parts[3], 'export')
     export_files = []
+    date = datetime.datetime.today().strftime("%B %d, %Y")
+    time = datetime.datetime.now().strftime("%H:%M:%S")
     if not path.exists(export_dir):
         os.mkdir(export_dir)
     else:
-        get_export_files(export_dir)
+        export_files = get_export_files(export_dir)
+    for file in sessions:
+        name = pathlib.Path(file).stem
+        if name in export_files:
+            continue
+        with open(path.join(session_dir, file), 'r') as f:
+            session = json.load(f)
+        with open(path.join(export_dir, name + ".csv"), 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([name, 'Generated on', date, time])
+            writer.writerow(['Event', 'Tag', 'Onset', 'Offset'])
+            for key in session:
+                # Event
+                if type(session[key]) is list:
+                    row = [key, session[key][0]]
+                    # Duration event
+                    if type(session[key][1]) is list:
+                        row.append(session[key][1][0])
+                        row.append(session[key][1][1])
+                    # Frequency event
+                    else:
+                        row.append(session[key][1])
+                # Data Field
+                else:
+                    row = ['', key, session[key]]
+                writer.writerow(row)
+    os.startfile(export_dir)
+    root.root.iconify()
 
 
 def populate_spreadsheet(root, patient_file, ksf, session_dir):
@@ -145,8 +176,8 @@ def get_export_files(export_dir):
     if path.isdir(export_dir):
         _, _, files = next(walk(export_dir))
         for file in files:
-            if pathlib.Path(file).suffix == ".xlsx":
-                export_files.append(file)
+            if pathlib.Path(file).suffix == ".csv":
+                export_files.append(pathlib.Path(file).stem)
     return export_files
 
 

@@ -34,7 +34,7 @@ class MenuBar(Frame):
         main()
 
     def export_csv(self):
-        export_columnwise_csv(self.caller.session_dir)
+        export_columnwise_csv(self.caller, self.caller.session_dir)
 
     def get_session_acc(self):
         pass
