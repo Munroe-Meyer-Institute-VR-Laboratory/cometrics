@@ -331,7 +331,7 @@ class SessionManagerWindow:
         self.menu = MenuBar(root, self)
         self.kdf = KeystrokeDataFields(root, keystroke_file)
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
-        self.stf = SessionTimeFields(self, root, self.kdf4444kkkkjj)
+        self.stf = SessionTimeFields(self, root, self.kdf)
         self.ovu = OutputViewPanel(root)
         self.edf = EmpaticaDataFields(root, self.ovu)
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
