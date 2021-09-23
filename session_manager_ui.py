@@ -157,7 +157,8 @@ class SessionTimeFields:
 
 
 class PatientDataFields:
-    def __init__(self, parent, patient_file, session_number, session_date, session_time):
+    def __init__(self, parent, patient_file, session_number, session_date, session_time, conditions):
+        self.conditions = conditions
         self.patient = PatientContainer(patient_file)
         self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight()-280))
         self.frame.place(x=5, y=120)
@@ -227,9 +228,14 @@ class PatientDataFields:
         self.assess_name_entry = Entry(self.frame, textvariable=self.assess_name_var)
         self.assess_name_entry.place(x=15, y=180, width=220, anchor=NW)
 
-        self.cond_name_var = StringVar(self.frame)
-        self.cond_name_entry = Entry(self.frame, textvariable=self.cond_name_var)
-        self.cond_name_entry.place(x=15, y=230, width=220, anchor=NW)
+        if self.conditions:
+            self.cond_name_var = StringVar(self.frame)
+            self.cond_name_entry = OptionMenu(self.frame, self.cond_name_var, *self.conditions)
+            self.cond_name_entry.place(x=15, y=225, width=220, anchor=NW)
+        else:
+            self.cond_name_var = StringVar(self.frame)
+            self.cond_name_entry = Entry(self.frame, textvariable=self.cond_name_var)
+            self.cond_name_entry.place(x=15, y=230, width=220, anchor=NW)
 
         self.prim_ther_var = StringVar(self.frame)
         self.prim_ther_entry = Entry(self.frame, textvariable=self.prim_ther_var)
@@ -338,7 +344,8 @@ class SessionManagerWindow:
 
         self.menu = MenuBar(root, self)
         self.kdf = KeystrokeDataFields(root, keystroke_file)
-        self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date, self.session_time)
+        self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date,
+                                     self.session_time, self.kdf.conditions)
         self.stf = SessionTimeFields(self, root, self.kdf)
         self.ovu = OutputViewPanel(root)
         self.edf = EmpaticaDataFields(root, self.ovu)

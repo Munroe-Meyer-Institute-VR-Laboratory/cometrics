@@ -1,5 +1,5 @@
 from tkinter import *
-from analysis_ui import populate_spreadsheet, export_columnwise_csv
+from analysis_ui import populate_spreadsheet, export_columnwise_csv, generate_accuracy
 from ka_ui import main
 
 
@@ -36,8 +36,9 @@ class MenuBar(Frame):
     def export_csv(self):
         export_columnwise_csv(self.caller, self.caller.session_dir)
 
-    def get_session_acc(self):
-        pass
+    @staticmethod
+    def get_session_acc():
+        generate_accuracy()
 
     def load_sessions(self):
         populate_spreadsheet(self.caller, self.caller.patient_file, self.caller.keystroke_file, self.caller.session_dir)

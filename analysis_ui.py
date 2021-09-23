@@ -32,6 +32,10 @@ class PatientContainer:
             json.dump(x, f)
 
 
+def generate_accuracy():
+    pass
+
+
 def export_columnwise_csv(root, session_dir):
     sessions = get_session_files(session_dir)
     sess_parts = session_dir.split('\\')

@@ -215,12 +215,24 @@ class Popup:
             dur_tag_cells = data_wb[dur_coords[0] + str(4):dur_coords[1] + str(4)]
             for key, tag in zip(dur_key_cells[0], dur_tag_cells[0]):
                 dur_keys.append((str(tag.value), str(key.value)))
+            conditions = []
+            try:
+                cond_wb = wb['Conditions']
+                for i in range(1, 20):
+                    if cond_wb['A' + str(i)].value is None:
+                        break
+                    else:
+                        conditions.append(str(cond_wb['A' + str(i)].value))
+            except KeyError as e:
+                print("No conditions in the workbook!", str(e))
+                messagebox.showwarning("Warning", "Conditions not added to keystroke file!")
             name = pathlib.Path(filename).stem
             with open(path.join(self.caller.keystroke_directory, name + '.json'), 'w') as f:
                 x = {
                     "Name": name,
                     "Frequency": freq_keys,
-                    "Duration": dur_keys
+                    "Duration": dur_keys,
+                    "Conditions": conditions
                 }
                 json.dump(x, f)
             self.caller.keystroke_file = path.join(self.caller.keystroke_directory, name + '.json')

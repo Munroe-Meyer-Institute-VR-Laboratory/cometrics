@@ -19,9 +19,11 @@ class KeystrokeDataFields:
         self.dur_bindings = []
         self.bindings_freq = []
         self.key_file = keystroke_file
+        self.conditions = []
         self.open_keystroke_file()
         self.freq_strings = []
         self.freq_key_strings = []
+
 
         self.dur_sticky = []
         self.sticky_start = []
@@ -242,6 +244,9 @@ class KeystrokeDataFields:
                 elif key == "Duration":
                     for binding in self.keystroke_json[key]:
                         self.dur_bindings.append(binding)
+                elif key == "Conditions":
+                    for binding in self.keystroke_json[key]:
+                        self.conditions.append(binding)
 
     def populate_bindings(self):
         for i in range(0, len(self.bindings)):
