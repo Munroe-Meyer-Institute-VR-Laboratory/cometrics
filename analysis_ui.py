@@ -82,7 +82,19 @@ class AccuracyPopup:
 
     def cal_acc(self):
         if path.isfile(self.rel_file_var.get()) and path.isfile(self.prim_file_var.get()):
-            pass
+            with open(self.prim_file_var.get(), 'r') as f:
+                prim_session = json.load(f)
+            with open(self.rel_file_var.get(), 'r') as f:
+                rel_session = json.load(f)
+            event_counter = 0
+            correct_counter = 0
+            window = self.window_var.get()
+            for prim_key, rel_key in zip(prim_session, rel_session):
+                if type(prim_session[prim_key]) is list:
+                    # Duration event
+                    if type(prim_session[prim_key][1]) is list:
+                        prim_dur = int(prim_session[prim_key][1][1]) - int(prim_session[prim_key][1][0])
+                        rel_dur = int()
         else:
             messagebox.showwarning("Warning", "Please choose valid files!")
 
