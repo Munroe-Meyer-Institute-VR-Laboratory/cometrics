@@ -35,7 +35,8 @@ class PatientContainer:
 
 
 class AccuracyPopup:
-    def __init__(self, root):
+    def __init__(self, root, ksf):
+        self.ksf = ksf
         self.window_entry, self.prim_browse, self.rel_browse, self.acc_report, self.acc_button = None, None, None, None, None
         self.window_label = None
         self.popup = None
@@ -80,21 +81,14 @@ class AccuracyPopup:
         self.acc_report = Label(self.popup, textvariable=self.acc_var, width=16, bg='white')
         self.acc_report.place(x=150, y=130, anchor=N)
 
-    def cal_acc(self, ksf):
+    def cal_acc(self):
         if path.isfile(self.rel_file_var.get()) and path.isfile(self.prim_file_var.get()):
             with open(self.prim_file_var.get(), 'r') as f:
                 prim_session = json.load(f)
             with open(self.rel_file_var.get(), 'r') as f:
                 rel_session = json.load(f)
-            event_counter = 0
-            correct_counter = 0
-            window = self.window_var.get()
-            for prim_key, rel_key in zip(prim_session, rel_session):
-                if type(prim_session[prim_key]) is list:
-                    # Duration event
-                    if type(prim_session[prim_key][1]) is list:
-                        prim_dur = int(prim_session[prim_key][1][1]) - int(prim_session[prim_key][1][0])
-                        rel_dur = int()
+            prim_window_freq, prim_window_dur = get_keystroke_window(self.ksf, prim_session, self.window_var.get())
+            rel_window_freq, rel_window_dur = get_keystroke_window(self.ksf, rel_session, self.window_var.get())
         else:
             messagebox.showwarning("Warning", "Please choose valid files!")
 
@@ -250,15 +244,15 @@ def get_keystroke_window(key_file, session_file, window_size):
             freq_keys.append(key)
     for i in range(0, session_time, window_size):
         for key in freq_keys:
-            if i < session_file[key][1] < (i + window_size):
+            if i <= session_file[key][1] < (i + window_size):
                 freq_windows[i / window_size][freq_bindings.index(session_file[key][0])] += 1
             else:
                 break
     for i in range(0, session_time, window_size):
         for key in dur_keys:
-            if i < session_file[key][1][0] < (i + window_size):
+            if i <= session_file[key][1][0] < (i + window_size):
                 dur_windows[i / window_size][dur_bindings.index(session_file[key][0])] += 1
-            elif i < session_file[key][1][1] < (i + window_size):
+            elif i <= session_file[key][1][1] < (i + window_size):
                 dur_windows[i / window_size][dur_bindings.index(session_file[key][0])] += 1
             else:
                 break
