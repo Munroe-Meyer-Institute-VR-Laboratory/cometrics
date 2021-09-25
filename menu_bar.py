@@ -37,7 +37,7 @@ class MenuBar(Frame):
         export_columnwise_csv(self.caller, self.caller.session_dir)
 
     def get_session_acc(self):
-        AccuracyPopup(self.caller.root)
+        AccuracyPopup(self.caller.root, self.caller.keystroke_file)
 
     def load_sessions(self):
         populate_spreadsheet(self.caller, self.caller.patient_file, self.caller.keystroke_file, self.caller.session_dir)

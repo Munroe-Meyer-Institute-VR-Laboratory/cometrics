@@ -82,13 +82,14 @@ class AccuracyPopup:
         self.acc_report.place(x=150, y=130, anchor=N)
 
     def cal_acc(self):
-        if path.isfile(self.rel_file_var.get()) and path.isfile(self.prim_file_var.get()):
-            with open(self.prim_file_var.get(), 'r') as f:
+        if path.isfile(self.rel_filename) and path.isfile(self.prim_filename):
+            with open(self.prim_filename, 'r') as f:
                 prim_session = json.load(f)
-            with open(self.rel_file_var.get(), 'r') as f:
+            with open(self.rel_filename, 'r') as f:
                 rel_session = json.load(f)
-            prim_window_freq, prim_window_dur = get_keystroke_window(self.ksf, prim_session, self.window_var.get())
-            rel_window_freq, rel_window_dur = get_keystroke_window(self.ksf, rel_session, self.window_var.get())
+            prim_window_freq, prim_window_dur = get_keystroke_window(self.ksf, prim_session, int(self.window_var.get()))
+            rel_window_freq, rel_window_dur = get_keystroke_window(self.ksf, rel_session, int(self.window_var.get()))
+            
         else:
             messagebox.showwarning("Warning", "Please choose valid files!")
 
@@ -215,7 +216,7 @@ def populate_spreadsheet(root, patient_file, ksf, session_dir):
 
 
 def get_keystroke_window(key_file, session_file, window_size):
-    session_time = session_file["Session Time"]
+    session_time = int(session_file["Session Time"])
     with open(key_file) as f:
         keystroke_json = json.load(f)
     freq_bindings = []
@@ -227,14 +228,10 @@ def get_keystroke_window(key_file, session_file, window_size):
         if key == "Duration":
             for bindings in keystroke_json[key]:
                 dur_bindings.append(bindings[0])
-    if session_time % window_size == 0:
-        freq_windows = [[0] * len(freq_bindings) for i in range(session_time / window_size)]
-        dur_windows = [[0] * len(dur_bindings) for i in range(session_time / window_size)]
-    else:
-        # Add a window
-        session_time += session_time % window_size
-        freq_windows = [[0] * len(freq_bindings) for i in range(session_time / window_size)]
-        dur_windows = [[0] * len(dur_bindings) for i in range(session_time / window_size)]
+    if session_time % window_size != 0:
+        session_time += window_size - (session_time % window_size)
+    freq_windows = [[0] * len(freq_bindings) for i in range(int(session_time / window_size))]
+    dur_windows = [[0] * len(dur_bindings) for i in range(int(session_time / window_size))]
     keys = list(session_file.keys())[12:]
     dur_keys, freq_keys = [], []
     for key in keys:
@@ -251,9 +248,9 @@ def get_keystroke_window(key_file, session_file, window_size):
     for i in range(0, session_time, window_size):
         for key in dur_keys:
             if i <= session_file[key][1][0] < (i + window_size):
-                dur_windows[i / window_size][dur_bindings.index(session_file[key][0])] += 1
+                dur_windows[int(i / window_size)][dur_bindings.index(session_file[key][0])] += 1
             elif i <= session_file[key][1][1] < (i + window_size):
-                dur_windows[i / window_size][dur_bindings.index(session_file[key][0])] += 1
+                dur_windows[int(i / window_size)][dur_bindings.index(session_file[key][0])] += 1
             else:
                 break
     return freq_windows, dur_windows
