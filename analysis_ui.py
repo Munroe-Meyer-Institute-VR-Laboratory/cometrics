@@ -102,14 +102,27 @@ class AccuracyPopup:
                     rel_session = json.load(f)
                 prim_window_freq, prim_window_dur = get_keystroke_window(self.ksf, prim_session, int(self.window_var.get()))
                 rel_window_freq, rel_window_dur = get_keystroke_window(self.ksf, rel_session, int(self.window_var.get()))
-                freq_pia = 0
-                freq_oia_agree = 0
-                freq_nia_agree = 0
-                freq_eia_agree = 0
-                freq_tia_agree = 0
-                freq_intervals, dur_intervals = 0, 0
-                dur_pia = 0
-                dur_eia_agree = 0
+
+                if len(prim_window_freq) > len(rel_window_freq):
+                    for i in range(0, len(prim_window_freq) - len(rel_window_freq)):
+                        rel_window_freq.append([0] * len(freq_bindings))
+                elif len(prim_window_freq) < len(rel_window_freq):
+                    for i in range(0, len(rel_window_freq) - len(prim_window_freq)):
+                        prim_window_freq.append([0] * len(freq_bindings))
+                if len(prim_window_dur) > len(rel_window_dur):
+                    for i in range(0, len(prim_window_dur) - len(rel_window_dur)):
+                        rel_window_dur.append([0] * len(dur_bindings))
+                elif len(prim_window_dur) < len(rel_window_dur):
+                    for i in range(0, len(rel_window_dur) - len(prim_window_dur)):
+                        prim_window_dur.append([0] * len(dur_bindings))
+                freq_pia = [0] * len(freq_bindings)
+                freq_oia_agree = [0] * len(freq_bindings)
+                freq_nia_agree = [0] * len(freq_bindings)
+                freq_eia_agree = [0] * len(freq_bindings)
+                freq_tia_agree = [0] * len(freq_bindings)
+                freq_intervals, dur_intervals = [0] * len(freq_bindings), [0] * len(dur_bindings)
+                dur_pia = [0] * len(dur_bindings)
+                dur_eia_agree = [0] * len(dur_bindings)
                 for row in range(0, len(prim_window_freq)):
                     for cell in range(0, len(prim_window_freq[row])):
                         if prim_window_freq[row][cell] > rel_window_freq[row][cell]:
@@ -120,16 +133,16 @@ class AccuracyPopup:
                             larger = rel_window_freq[row][cell]
                         if smaller == larger:
                             x = 1
-                            freq_nia_agree += 1
-                            freq_eia_agree += 1
+                            freq_nia_agree[cell] += 1
+                            freq_eia_agree[cell] += 1
                         else:
                             x = smaller / larger
-                        freq_pia += x
+                        freq_pia[cell] += x
                         if larger >= 1 and smaller >= 1:
-                            freq_oia_agree += 1
+                            freq_oia_agree[cell] += 1
                         if (larger > 1 and smaller > 1) or (larger == 0 and smaller == 0):
-                            freq_tia_agree += 1
-                        freq_intervals += 1
+                            freq_tia_agree[cell] += 1
+                        freq_intervals[cell] += 1
                 for row in range(0, len(prim_window_dur)):
                     for cell in range(0, len(prim_window_dur[row])):
                         if prim_window_dur[row][cell] > rel_window_dur[row][cell]:
@@ -140,11 +153,11 @@ class AccuracyPopup:
                             larger = rel_window_dur[row][cell]
                         if smaller == larger:
                             x = 1
-                            dur_eia_agree += 1
+                            dur_eia_agree[cell] += 1
                         else:
                             x = smaller / larger
-                        dur_pia += x
-                        dur_intervals += 1
+                        dur_pia[cell] += x
+                        dur_intervals[cell] += 1
                 headers = {
                     "Generation Date": datetime.datetime.today().strftime("%B %d, %Y") + " " + datetime.datetime.now().strftime("%H:%M:%S"),
                     "Primary Session Date": prim_session["Session Date"] + " " + prim_session["Session Start Time"],
@@ -155,14 +168,7 @@ class AccuracyPopup:
                     "Reliability Therapist": rel_session["Primary Therapist"],
                     "Reliability Case Manager": rel_session["Case Manager"],
                     "Reliability Session Therapist": rel_session["Session Therapist"],
-                    "Window Size (seconds)": str(self.window_entry.get()),
-                    "Freq PIA": str((freq_pia / freq_intervals) * 100) + "%",
-                    "Freq OIA": str((freq_oia_agree / freq_intervals) * 100) + "%",
-                    "Freq NIA": str((freq_nia_agree / freq_intervals) * 100) + "%",
-                    "Freq EIA": str((freq_eia_agree / freq_intervals) * 100) + "%",
-                    "Freq TIA": str((freq_tia_agree / freq_intervals) * 100) + "%",
-                    "Dur PIA": str((dur_pia / dur_intervals) * 100) + "%",
-                    "Dur EIA": str((dur_eia_agree / dur_intervals) * 100) + "%"
+                    "Window Size (seconds)": str(self.window_entry.get()) + " seconds"
                 }
                 path_to_file = filedialog.asksaveasfilename(
                     defaultextension='.xlsx', filetypes=[("Excel files", '*.xlsx')],
@@ -172,9 +178,45 @@ class AccuracyPopup:
                 wb.create_sheet("Primary Data")
                 wb.create_sheet("Reliability Data")
                 ws.title = "Interval Measures"
-                for x, header in zip(range(1, 18), headers):
+                for x, header in zip(range(1, 10), headers):
                     ws.cell(row=x, column=1).value = header
                     ws.cell(row=x, column=2).value = headers[header]
+
+                row = 11
+                for col, val in enumerate(freq_bindings, start=2):
+                    ws.cell(row=row, column=col).value = val
+                row += 1
+                ws.cell(row=row, column=1).value = "Freq PIA"
+                for col, val in enumerate(freq_pia, start=2):
+                    ws.cell(row=row, column=col).value = str(int(val / freq_intervals[freq_pia.index(val)]) * 100) + "%"
+                row += 1
+                ws.cell(row=row, column=1).value = "Freq NIA"
+                for col, val in enumerate(freq_nia_agree, start=2):
+                    ws.cell(row=row, column=col).value = str(int(val / freq_intervals[freq_nia_agree.index(val)]) * 100) + "%"
+                row += 1
+                ws.cell(row=row, column=1).value = "Freq TIA"
+                for col, val in enumerate(freq_tia_agree, start=2):
+                    ws.cell(row=row, column=col).value = str(int(val / freq_intervals[freq_tia_agree.index(val)]) * 100) + "%"
+                row += 1
+                ws.cell(row=row, column=1).value = "Freq EIA"
+                for col, val in enumerate(freq_eia_agree, start=2):
+                    ws.cell(row=row, column=col).value = str(int(val / freq_intervals[freq_eia_agree.index(val)]) * 100) + "%"
+                row += 1
+                ws.cell(row=row, column=1).value = "Freq OIA"
+                for col, val in enumerate(freq_oia_agree, start=2):
+                    ws.cell(row=row, column=col).value = str(int(val / freq_intervals[freq_oia_agree.index(val)]) * 100) + "%"
+                row += 2
+                for col, val in enumerate(dur_bindings, start=2):
+                    ws.cell(row=row, column=col).value = val
+                row += 1
+                ws.cell(row=row, column=1).value = "Dur PIA"
+                for col, val in enumerate(dur_pia, start=2):
+                    ws.cell(row=row, column=col).value = str(int(val / dur_intervals[dur_pia.index(val)]) * 100) + "%"
+                row += 1
+                ws.cell(row=row, column=1).value = "Dur EIA"
+                for col, val in enumerate(dur_eia_agree, start=2):
+                    ws.cell(row=row, column=col).value = str(int(val / dur_intervals[dur_eia_agree.index(val)]) * 100) + "%"
+                row += 1
 
                 ws = wb["Primary Data"]
                 row = 1
@@ -185,6 +227,7 @@ class AccuracyPopup:
                     for col, val in enumerate(window, start=1):
                         ws.cell(row=row, column=col).value = val
                     row += 1
+                row += 1
                 for col, val in enumerate(dur_bindings, start=1):
                     ws.cell(row=row, column=col).value = val
                 row += 1
@@ -202,6 +245,7 @@ class AccuracyPopup:
                     for col, val in enumerate(window, start=1):
                         ws.cell(row=row, column=col).value = val
                     row += 1
+                row += 1
                 for col, val in enumerate(dur_bindings, start=1):
                     ws.cell(row=row, column=col).value = val
                 row += 1
@@ -365,17 +409,21 @@ def get_keystroke_window(key_file, session_file, window_size):
         else:
             freq_keys.append(key)
     for i in range(0, session_time, window_size):
-        for key in freq_keys:
+        for key in freq_keys[:]:
             if i <= session_file[key][1] < (i + window_size):
-                freq_windows[i / window_size][freq_bindings.index(session_file[key][0])] += 1
+                freq_windows[int(i / window_size)][freq_bindings.index(session_file[key][0])] += 1
+                freq_keys.remove(key)
             else:
                 break
     for i in range(0, session_time, window_size):
-        for key in dur_keys:
+        for key in dur_keys[:]:
             if i <= session_file[key][1][0] < (i + window_size):
                 dur_windows[int(i / window_size)][dur_bindings.index(session_file[key][0])] += 1
+                if i <= session_file[key][1][1] < (i + window_size):
+                    dur_keys.remove(key)
             elif i <= session_file[key][1][1] < (i + window_size):
                 dur_windows[int(i / window_size)][dur_bindings.index(session_file[key][0])] += 1
+                dur_keys.remove(key)
             else:
                 break
     return freq_windows, dur_windows
