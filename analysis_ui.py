@@ -84,88 +84,137 @@ class AccuracyPopup:
 
     def cal_acc(self):
         if path.isfile(self.rel_filename) and path.isfile(self.prim_filename):
-            with open(self.prim_filename, 'r') as f:
-                prim_session = json.load(f)
-            with open(self.rel_filename, 'r') as f:
-                rel_session = json.load(f)
-            prim_window_freq, prim_window_dur = get_keystroke_window(self.ksf, prim_session, int(self.window_var.get()))
-            rel_window_freq, rel_window_dur = get_keystroke_window(self.ksf, rel_session, int(self.window_var.get()))
-            freq_pia = 0
-            freq_oia_agree = 0
-            freq_nia_agree = 0
-            freq_eia_agree = 0
-            freq_tia_agree = 0
-            freq_intervals, dur_intervals = 0, 0
-            dur_pia = 0
-            dur_eia_agree = 0
-            for row in range(0, len(prim_window_freq)):
-                for cell in range(0, len(prim_window_freq[row])):
-                    if prim_window_freq[row][cell] > rel_window_freq[row][cell]:
-                        larger = prim_window_freq[row][cell]
-                        smaller = rel_window_freq[row][cell]
-                    else:
-                        smaller = prim_window_freq[row][cell]
-                        larger = rel_window_freq[row][cell]
-                    if smaller == larger:
-                        x = 1
-                        freq_nia_agree += 1
-                        freq_eia_agree += 1
-                    else:
-                        x = smaller / larger
-                    freq_pia += x
-                    if larger >= 1 and smaller >= 1:
-                        freq_oia_agree += 1
-                    if (larger > 1 and smaller > 1) or (larger == 0 and smaller == 0):
-                        freq_tia_agree += 1
-                    freq_intervals += 1
-            for row in range(0, len(prim_window_dur)):
-                for cell in range(0, len(prim_window_dur[row])):
-                    if prim_window_dur[row][cell] > rel_window_dur[row][cell]:
-                        larger = prim_window_dur[row][cell]
-                        smaller = rel_window_dur[row][cell]
-                    else:
-                        smaller = prim_window_dur[row][cell]
-                        larger = rel_window_dur[row][cell]
-                    if smaller == larger:
-                        x = 1
-                        dur_eia_agree += 1
-                    else:
-                        x = smaller / larger
-                    dur_pia += x
-                    dur_intervals += 1
-            headers = {
-                "Generation Date": datetime.datetime.today().strftime("%B %d, %Y") + " " + datetime.datetime.now().strftime("%H:%M:%S"),
-                "Primary Session Date": prim_session["Session Date"] + " " + prim_session["Session Start Time"],
-                "Primary Therapist": prim_session["Primary Therapist"],
-                "Primary Case Manager": prim_session["Case Manager"],
-                "Primary Session Therapist": prim_session["Session Therapist"],
-                "Reliability Session Date": rel_session["Session Date"] + " " + rel_session["Session Start Time"],
-                "Reliability Therapist": rel_session["Primary Therapist"],
-                "Reliability Case Manager": rel_session["Case Manager"],
-                "Reliability Session Therapist": rel_session["Session Therapist"],
-                "Freq PIA": str((freq_pia / freq_intervals) * 100) + "%",
-                "Freq OIA": str((freq_oia_agree / freq_intervals) * 100) + "%",
-                "Freq NIA": str((freq_nia_agree / freq_intervals) * 100) + "%",
-                "Freq EIA": str((freq_eia_agree / freq_intervals) * 100) + "%",
-                "Freq TIA": str((freq_tia_agree / freq_intervals) * 100) + "%",
-                "Dur PIA": str((dur_pia / dur_intervals) * 100) + "%",
-                "Dur EIA": str((dur_eia_agree / dur_intervals) * 100) + "%"
-            }
-            path_to_file = filedialog.asksaveasfilename(
-                defaultextension='.xlsx', filetypes=[("Excel files", '*.xlsx')],
-                title="Choose output filename")
-            wb = openpyxl.Workbook()
-            ws = wb.active
-            wb.create_sheet("Primary Data")
-            wb.create_sheet("Reliability Data")
-            ws.title = "Interval Measures"
-            print(wb.sheetnames)
-            for x, header in zip(range(1, 17), headers):
-                ws.cell(row=x, column=1).value = header
-                ws.cell(row=x, column=2).value = headers[header]
-            wb.save(path_to_file)
-            os.startfile(pathlib.Path(path_to_file).parent)
-            self.root.iconify()
+            try:
+                with open(self.ksf) as f:
+                    keystroke_json = json.load(f)
+                freq_bindings = []
+                dur_bindings = []
+                for key in keystroke_json:
+                    if key == "Frequency":
+                        for bindings in keystroke_json[key]:
+                            freq_bindings.append(bindings[0])
+                    if key == "Duration":
+                        for bindings in keystroke_json[key]:
+                            dur_bindings.append(bindings[0])
+                with open(self.prim_filename, 'r') as f:
+                    prim_session = json.load(f)
+                with open(self.rel_filename, 'r') as f:
+                    rel_session = json.load(f)
+                prim_window_freq, prim_window_dur = get_keystroke_window(self.ksf, prim_session, int(self.window_var.get()))
+                rel_window_freq, rel_window_dur = get_keystroke_window(self.ksf, rel_session, int(self.window_var.get()))
+                freq_pia = 0
+                freq_oia_agree = 0
+                freq_nia_agree = 0
+                freq_eia_agree = 0
+                freq_tia_agree = 0
+                freq_intervals, dur_intervals = 0, 0
+                dur_pia = 0
+                dur_eia_agree = 0
+                for row in range(0, len(prim_window_freq)):
+                    for cell in range(0, len(prim_window_freq[row])):
+                        if prim_window_freq[row][cell] > rel_window_freq[row][cell]:
+                            larger = prim_window_freq[row][cell]
+                            smaller = rel_window_freq[row][cell]
+                        else:
+                            smaller = prim_window_freq[row][cell]
+                            larger = rel_window_freq[row][cell]
+                        if smaller == larger:
+                            x = 1
+                            freq_nia_agree += 1
+                            freq_eia_agree += 1
+                        else:
+                            x = smaller / larger
+                        freq_pia += x
+                        if larger >= 1 and smaller >= 1:
+                            freq_oia_agree += 1
+                        if (larger > 1 and smaller > 1) or (larger == 0 and smaller == 0):
+                            freq_tia_agree += 1
+                        freq_intervals += 1
+                for row in range(0, len(prim_window_dur)):
+                    for cell in range(0, len(prim_window_dur[row])):
+                        if prim_window_dur[row][cell] > rel_window_dur[row][cell]:
+                            larger = prim_window_dur[row][cell]
+                            smaller = rel_window_dur[row][cell]
+                        else:
+                            smaller = prim_window_dur[row][cell]
+                            larger = rel_window_dur[row][cell]
+                        if smaller == larger:
+                            x = 1
+                            dur_eia_agree += 1
+                        else:
+                            x = smaller / larger
+                        dur_pia += x
+                        dur_intervals += 1
+                headers = {
+                    "Generation Date": datetime.datetime.today().strftime("%B %d, %Y") + " " + datetime.datetime.now().strftime("%H:%M:%S"),
+                    "Primary Session Date": prim_session["Session Date"] + " " + prim_session["Session Start Time"],
+                    "Primary Therapist": prim_session["Primary Therapist"],
+                    "Primary Case Manager": prim_session["Case Manager"],
+                    "Primary Session Therapist": prim_session["Session Therapist"],
+                    "Reliability Session Date": rel_session["Session Date"] + " " + rel_session["Session Start Time"],
+                    "Reliability Therapist": rel_session["Primary Therapist"],
+                    "Reliability Case Manager": rel_session["Case Manager"],
+                    "Reliability Session Therapist": rel_session["Session Therapist"],
+                    "Window Size (seconds)": str(self.window_entry.get()),
+                    "Freq PIA": str((freq_pia / freq_intervals) * 100) + "%",
+                    "Freq OIA": str((freq_oia_agree / freq_intervals) * 100) + "%",
+                    "Freq NIA": str((freq_nia_agree / freq_intervals) * 100) + "%",
+                    "Freq EIA": str((freq_eia_agree / freq_intervals) * 100) + "%",
+                    "Freq TIA": str((freq_tia_agree / freq_intervals) * 100) + "%",
+                    "Dur PIA": str((dur_pia / dur_intervals) * 100) + "%",
+                    "Dur EIA": str((dur_eia_agree / dur_intervals) * 100) + "%"
+                }
+                path_to_file = filedialog.asksaveasfilename(
+                    defaultextension='.xlsx', filetypes=[("Excel files", '*.xlsx')],
+                    title="Choose output filename")
+                wb = openpyxl.Workbook()
+                ws = wb.active
+                wb.create_sheet("Primary Data")
+                wb.create_sheet("Reliability Data")
+                ws.title = "Interval Measures"
+                for x, header in zip(range(1, 18), headers):
+                    ws.cell(row=x, column=1).value = header
+                    ws.cell(row=x, column=2).value = headers[header]
+
+                ws = wb["Primary Data"]
+                row = 1
+                for col, val in enumerate(freq_bindings, start=1):
+                    ws.cell(row=row, column=col).value = val
+                row += 1
+                for window in prim_window_freq:
+                    for col, val in enumerate(window, start=1):
+                        ws.cell(row=row, column=col).value = val
+                    row += 1
+                for col, val in enumerate(dur_bindings, start=1):
+                    ws.cell(row=row, column=col).value = val
+                row += 1
+                for window in prim_window_dur:
+                    for col, val in enumerate(window, start=1):
+                        ws.cell(row=row, column=col).value = val
+                    row += 1
+
+                ws = wb["Reliability Data"]
+                row = 1
+                for col, val in enumerate(freq_bindings, start=1):
+                    ws.cell(row=row, column=col).value = val
+                row += 1
+                for window in rel_window_freq:
+                    for col, val in enumerate(window, start=1):
+                        ws.cell(row=row, column=col).value = val
+                    row += 1
+                for col, val in enumerate(dur_bindings, start=1):
+                    ws.cell(row=row, column=col).value = val
+                row += 1
+                for window in rel_window_dur:
+                    for col, val in enumerate(window, start=1):
+                        ws.cell(row=row, column=col).value = val
+                    row += 1
+
+                wb.save(path_to_file)
+                os.startfile(pathlib.Path(path_to_file).parent)
+                self.root.iconify()
+            except Exception as e:
+                messagebox.showerror("Error", "Error encountered!\n" + str(e))
         else:
             messagebox.showwarning("Warning", "Please choose valid files!")
 
