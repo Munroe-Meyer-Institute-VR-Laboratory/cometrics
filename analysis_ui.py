@@ -89,7 +89,7 @@ class AccuracyPopup:
                 rel_session = json.load(f)
             prim_window_freq, prim_window_dur = get_keystroke_window(self.ksf, prim_session, int(self.window_var.get()))
             rel_window_freq, rel_window_dur = get_keystroke_window(self.ksf, rel_session, int(self.window_var.get()))
-            
+
         else:
             messagebox.showwarning("Warning", "Please choose valid files!")
 
