@@ -37,6 +37,7 @@ class PatientContainer:
 class AccuracyPopup:
     def __init__(self, root, ksf):
         self.ksf = ksf
+        self.root = root
         self.window_entry, self.prim_browse, self.rel_browse, self.acc_report, self.acc_button = None, None, None, None, None
         self.window_label = None
         self.popup = None
@@ -110,7 +111,7 @@ class AccuracyPopup:
                         freq_nia_agree += 1
                         freq_eia_agree += 1
                     else:
-                        x = larger / smaller
+                        x = smaller / larger
                     freq_pia += x
                     if larger >= 1 and smaller >= 1:
                         freq_oia_agree += 1
@@ -129,20 +130,42 @@ class AccuracyPopup:
                         x = 1
                         dur_eia_agree += 1
                     else:
-                        x = larger / smaller
+                        x = smaller / larger
                     dur_pia += x
                     dur_intervals += 1
-            fia = {
-                "PIA": str((freq_pia / freq_intervals) * 100) + "%",
-                "OIA": str((freq_oia_agree / freq_intervals) * 100) + "%",
-                "NIA": str((freq_nia_agree / freq_intervals) * 100) + "%",
-                "EIA": str((freq_eia_agree / freq_intervals) * 100) + "%",
-                "TIA": str((freq_tia_agree / freq_intervals) * 100) + "%"
+            headers = {
+                "Generation Date": datetime.datetime.today().strftime("%B %d, %Y") + " " + datetime.datetime.now().strftime("%H:%M:%S"),
+                "Primary Session Date": prim_session["Session Date"] + " " + prim_session["Session Start Time"],
+                "Primary Therapist": prim_session["Primary Therapist"],
+                "Primary Case Manager": prim_session["Case Manager"],
+                "Primary Session Therapist": prim_session["Session Therapist"],
+                "Reliability Session Date": rel_session["Session Date"] + " " + rel_session["Session Start Time"],
+                "Reliability Therapist": rel_session["Primary Therapist"],
+                "Reliability Case Manager": rel_session["Case Manager"],
+                "Reliability Session Therapist": rel_session["Session Therapist"],
+                "Freq PIA": str((freq_pia / freq_intervals) * 100) + "%",
+                "Freq OIA": str((freq_oia_agree / freq_intervals) * 100) + "%",
+                "Freq NIA": str((freq_nia_agree / freq_intervals) * 100) + "%",
+                "Freq EIA": str((freq_eia_agree / freq_intervals) * 100) + "%",
+                "Freq TIA": str((freq_tia_agree / freq_intervals) * 100) + "%",
+                "Dur PIA": str((dur_pia / dur_intervals) * 100) + "%",
+                "Dur EIA": str((dur_eia_agree / dur_intervals) * 100) + "%"
             }
-            dia = {
-                "PIA": str((dur_pia / dur_intervals) * 100) + "%",
-                "EIA": str((dur_eia_agree / dur_intervals) * 100) + "%"
-            }
+            path_to_file = filedialog.asksaveasfilename(
+                defaultextension='.xlsx', filetypes=[("Excel files", '*.xlsx')],
+                title="Choose output filename")
+            wb = openpyxl.Workbook()
+            ws = wb.active
+            wb.create_sheet("Primary Data")
+            wb.create_sheet("Reliability Data")
+            ws.title = "Interval Measures"
+            print(wb.sheetnames)
+            for x, header in zip(range(1, 17), headers):
+                ws.cell(row=x, column=1).value = header
+                ws.cell(row=x, column=2).value = headers[header]
+            wb.save(path_to_file)
+            os.startfile(pathlib.Path(path_to_file).parent)
+            self.root.iconify()
         else:
             messagebox.showwarning("Warning", "Please choose valid files!")
 
