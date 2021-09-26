@@ -89,7 +89,60 @@ class AccuracyPopup:
                 rel_session = json.load(f)
             prim_window_freq, prim_window_dur = get_keystroke_window(self.ksf, prim_session, int(self.window_var.get()))
             rel_window_freq, rel_window_dur = get_keystroke_window(self.ksf, rel_session, int(self.window_var.get()))
-
+            freq_pia = 0
+            freq_oia_agree = 0
+            freq_nia_agree = 0
+            freq_eia_agree = 0
+            freq_tia_agree = 0
+            freq_intervals, dur_intervals = 0, 0
+            dur_pia = 0
+            dur_eia_agree = 0
+            for row in range(0, len(prim_window_freq)):
+                for cell in range(0, len(prim_window_freq[row])):
+                    if prim_window_freq[row][cell] > rel_window_freq[row][cell]:
+                        larger = prim_window_freq[row][cell]
+                        smaller = rel_window_freq[row][cell]
+                    else:
+                        smaller = prim_window_freq[row][cell]
+                        larger = rel_window_freq[row][cell]
+                    if smaller == larger:
+                        x = 1
+                        freq_nia_agree += 1
+                        freq_eia_agree += 1
+                    else:
+                        x = larger / smaller
+                    freq_pia += x
+                    if larger >= 1 and smaller >= 1:
+                        freq_oia_agree += 1
+                    if (larger > 1 and smaller > 1) or (larger == 0 and smaller == 0):
+                        freq_tia_agree += 1
+                    freq_intervals += 1
+            for row in range(0, len(prim_window_dur)):
+                for cell in range(0, len(prim_window_dur[row])):
+                    if prim_window_dur[row][cell] > rel_window_dur[row][cell]:
+                        larger = prim_window_dur[row][cell]
+                        smaller = rel_window_dur[row][cell]
+                    else:
+                        smaller = prim_window_dur[row][cell]
+                        larger = rel_window_dur[row][cell]
+                    if smaller == larger:
+                        x = 1
+                        dur_eia_agree += 1
+                    else:
+                        x = larger / smaller
+                    dur_pia += x
+                    dur_intervals += 1
+            fia = {
+                "PIA": str((freq_pia / freq_intervals) * 100) + "%",
+                "OIA": str((freq_oia_agree / freq_intervals) * 100) + "%",
+                "NIA": str((freq_nia_agree / freq_intervals) * 100) + "%",
+                "EIA": str((freq_eia_agree / freq_intervals) * 100) + "%",
+                "TIA": str((freq_tia_agree / freq_intervals) * 100) + "%"
+            }
+            dia = {
+                "PIA": str((dur_pia / dur_intervals) * 100) + "%",
+                "EIA": str((dur_eia_agree / dur_intervals) * 100) + "%"
+            }
         else:
             messagebox.showwarning("Warning", "Please choose valid files!")
 
