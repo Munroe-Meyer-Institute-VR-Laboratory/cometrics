@@ -183,61 +183,64 @@ class Popup:
     def import_ksf(self):
         filename = filedialog.askopenfilename(filetypes=(("Excel Files", "*.xlsx"), ("All Files", "*.*")))
         if filename:
-            wb = openpyxl.load_workbook(filename)
-            data_wb = wb['Data']
-            freq_cell, freq_coords, freq_keys = None, None, []
-            dur_cell, dur_coords, dur_keys = None, None, []
-            m_cells = data_wb.merged_cells
-            for cell in m_cells:
-                try:
-                    if cell.start_cell.coordinate == 'J2' and cell.start_cell.value == "Frequency":
-                        freq_cell = cell
-                        coordinates = cell.coord.split(':')
-                        freq_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
-                                       ''.join([i for i in coordinates[1] if not i.isdigit()])]
-                        break
-                except AttributeError:
-                    continue
-            for cell in m_cells:
-                try:
-                    if cell.min_col == freq_cell.max_col + 1 and cell.start_cell.value == "Duration":
-                        coordinates = cell.coord.split(':')
-                        dur_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
-                                      ''.join([i for i in coordinates[1] if not i.isdigit()])]
-                        break
-                except AttributeError:
-                    continue
-            freq_key_cells = data_wb[freq_coords[0] + str(3):freq_coords[1] + str(3)]
-            freq_tag_cells = data_wb[freq_coords[0] + str(4):freq_coords[1] + str(4)]
-            for key, tag in zip(freq_key_cells[0], freq_tag_cells[0]):
-                freq_keys.append((str(tag.value), str(key.value)))
-            dur_key_cells = data_wb[dur_coords[0] + str(3):dur_coords[1] + str(3)]
-            dur_tag_cells = data_wb[dur_coords[0] + str(4):dur_coords[1] + str(4)]
-            for key, tag in zip(dur_key_cells[0], dur_tag_cells[0]):
-                dur_keys.append((str(tag.value), str(key.value)))
-            conditions = []
             try:
-                cond_wb = wb['Conditions']
-                for i in range(1, 20):
-                    if cond_wb['A' + str(i)].value is None:
-                        break
-                    else:
-                        conditions.append(str(cond_wb['A' + str(i)].value))
-            except KeyError as e:
-                print("No conditions in the workbook!", str(e))
-                messagebox.showwarning("Warning", "Conditions not added to keystroke file!")
-            name = pathlib.Path(filename).stem
-            with open(path.join(self.caller.keystroke_directory, name + '.json'), 'w') as f:
-                x = {
-                    "Name": name,
-                    "Frequency": freq_keys,
-                    "Duration": dur_keys,
-                    "Conditions": conditions
-                }
-                json.dump(x, f)
-            self.caller.keystroke_file = path.join(self.caller.keystroke_directory, name + '.json')
-            copy2(filename, path.join(self.caller.experiment_dir, pathlib.Path(filename).name))
-            self.close_win()
+                wb = openpyxl.load_workbook(filename)
+                data_wb = wb['Data']
+                freq_cell, freq_coords, freq_keys = None, None, []
+                dur_cell, dur_coords, dur_keys = None, None, []
+                m_cells = data_wb.merged_cells
+                for cell in m_cells:
+                    try:
+                        if cell.start_cell.coordinate == 'J2' and cell.start_cell.value == "Frequency":
+                            freq_cell = cell
+                            coordinates = cell.coord.split(':')
+                            freq_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
+                                           ''.join([i for i in coordinates[1] if not i.isdigit()])]
+                            break
+                    except AttributeError:
+                        continue
+                for cell in m_cells:
+                    try:
+                        if cell.min_col == freq_cell.max_col + 1 and cell.start_cell.value == "Duration":
+                            coordinates = cell.coord.split(':')
+                            dur_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
+                                          ''.join([i for i in coordinates[1] if not i.isdigit()])]
+                            break
+                    except AttributeError:
+                        continue
+                freq_key_cells = data_wb[freq_coords[0] + str(3):freq_coords[1] + str(3)]
+                freq_tag_cells = data_wb[freq_coords[0] + str(4):freq_coords[1] + str(4)]
+                for key, tag in zip(freq_key_cells[0], freq_tag_cells[0]):
+                    freq_keys.append((str(tag.value), str(key.value)))
+                dur_key_cells = data_wb[dur_coords[0] + str(3):dur_coords[1] + str(3)]
+                dur_tag_cells = data_wb[dur_coords[0] + str(4):dur_coords[1] + str(4)]
+                for key, tag in zip(dur_key_cells[0], dur_tag_cells[0]):
+                    dur_keys.append((str(tag.value), str(key.value)))
+                conditions = []
+                try:
+                    cond_wb = wb['Conditions']
+                    for i in range(1, 20):
+                        if cond_wb['A' + str(i)].value is None:
+                            break
+                        else:
+                            conditions.append(str(cond_wb['A' + str(i)].value))
+                except KeyError as e:
+                    print("No conditions in the workbook!", str(e))
+                    messagebox.showwarning("Warning", "Conditions not added to keystroke file!")
+                name = pathlib.Path(filename).stem
+                with open(path.join(self.caller.keystroke_directory, name + '.json'), 'w') as f:
+                    x = {
+                        "Name": name,
+                        "Frequency": freq_keys,
+                        "Duration": dur_keys,
+                        "Conditions": conditions
+                    }
+                    json.dump(x, f)
+                self.caller.keystroke_file = path.join(self.caller.keystroke_directory, name + '.json')
+                copy2(filename, path.join(self.caller.experiment_dir, pathlib.Path(filename).name))
+                self.close_win()
+            except Exception as e:
+                messagebox.showwarning("Warning", "Excel format is not correct!\n" + str(e))
         else:
             messagebox.showwarning("Warning", "Select the protocol Excel tracker spreadsheet.")
 
