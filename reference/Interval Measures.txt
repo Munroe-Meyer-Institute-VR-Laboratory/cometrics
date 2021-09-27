@@ -3,17 +3,21 @@ Frequency Keys Partial Interval Agreement Percentage (PIA)
 	If both reliability and primary have zero value, then x = 1
 	Partial Interval Agreement = average all x values * 100
 
-Frequency Keys Occurance Interval Agreement Percentage (OIA)
+Frequency Keys Occurrence Interval Agreement Percentage (OIA)
 	Given that one observed scored 1 or more for an interval, agreement if both scored at least 1
-	Occurance Interval Agreement  = agreements / (agreements + disagreements) * 100
+	Occurrence Interval Agreement  = agreements / (agreements + disagreements) * 100
 
-Frequency Keys NonOccurance Interval Agreement Percentage (NIA)
+Frequency Keys NonOccurrence Interval Agreement Percentage (NIA)
 	Given that one scored 0 for an interval, agreement if both scored 0
-	NonOccurance Interval Agreement  =  agreements / (agreements + disagreements) * 100
+	NonOccurrence Interval Agreement  =  agreements / (agreements + disagreements) * 100
 
 Frequency Keys Exact Agreement Percentage (EIA)
 	Agreement is scored if both primary and reli have same value for an interval.
 	Exact Agreement Percentage = total agreements / total intervals * 100
+
+Frequency Keys Total Agreement Percentage (TIA)
+	Agreement = # of intervals where both scored zero or > 1
+	Total agreement =  number of agreements / total intervals * 100
 
 Duration Keys Partial Interval Agreement Percentage (PIA)
 	For each interval, x = smaller value / larger value
@@ -24,7 +28,3 @@ Duration Keys Exact Interval Agreement Percentage (EIA)
 	For each interval the value of the primary and reli is rounded to the nearest second
 	Agreement is scored if both primary and reli have same value for an interval.
 	Exact Agreement Percentage = total agreements / total intervals * 100
-
-Frequency Keys Total Agreement Percentage (TIA)
-	Agreement = # of intervals where both scored zero or > 1
-	Total argeement =  number of agreements / total intervals * 100
