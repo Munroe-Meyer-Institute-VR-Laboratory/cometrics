@@ -144,6 +144,9 @@ class SessionTimeFields:
         self.session_start_label.place(x=20, y=66)
 
     def stop_session(self):
+        self.session_toggle_button['text'] = "Restart Session"
+        self.session_toggle_button['bg'] = self.session_pause_button['bg']
+        self.session_toggle_button['command'] = self.caller.menu.restart_program
         self.timer_running = False
         if self.session_paused:
             self.session_paused_label.place_forget()
