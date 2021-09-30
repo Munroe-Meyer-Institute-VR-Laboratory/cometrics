@@ -22,7 +22,7 @@ class SessionTimeFields:
     def __init__(self, caller, parent, kdf=None):
         self.kdf = kdf
         self.caller = caller
-        self.frame = Frame(parent, width=600, height=100, bg='white')
+        self.frame = Frame(parent, width=800, height=100, bg='white')
         self.frame.place(x=252, y=2)
 
         self.session_started = False
@@ -70,6 +70,15 @@ class SessionTimeFields:
                                                    font=('Purisa', 14),
                                                    command=self.show_session_time)
         self.session_dur_checkbutton.place(x=250, y=34)
+
+        self.session_toggle_button = Button(self.frame, text="Start Session", bg='#4abb5f',
+                                            font=('Purisa', 11), width=15,
+                                            command=self.caller.start_session)
+        self.session_toggle_button.place(x=527, y=4)
+
+        self.session_pause_button = Button(self.frame, text="Pause Session", width=15,
+                                           font=('Purisa', 11), command=self.caller.pause_session)
+        self.session_pause_button.place(x=527, y=36)
 
         self.session_duration = None
         self.beep_th = None
@@ -123,6 +132,9 @@ class SessionTimeFields:
 
     def start_session(self):
         self.session_started = True
+        self.session_toggle_button['text'] = "Stop Session"
+        self.session_toggle_button['bg'] = '#ea2128'
+        self.session_toggle_button['command'] = self.caller.stop_session
         if self.session_dur_selection.get():
             self.session_duration = int(self.session_dur_input.get())
         if self.interval_selection.get():
@@ -270,6 +282,26 @@ class PatientDataFields:
     def save_patient_fields(self):
         self.patient.save_patient(self.patient_name_var.get(), self.mrn_var.get())
 
+    def check_session_fields(self):
+        if self.sess_loc_var.get() == "":
+            return "Session location not set!"
+        elif self.assess_name_var.get() == "":
+            return "Assessment name not set!"
+        elif self.cond_name_var.get() == "":
+            return "Condition name not set!"
+        elif self.prim_ther_var.get() == "":
+            return "Primary therapist name not set!"
+        elif self.case_mgr_var.get() == "":
+            return "Case manager name not set!"
+        elif self.sess_ther_var.get() == "":
+            return "Session therapist name not set!"
+        elif self.data_rec_var.get() == "":
+            return "Data recorder not set!"
+        elif self.prim_data_var.get() == "":
+            return "Data type not set!"
+        else:
+            return ""
+
     def get_session_fields(self):
         return ([self.sess_loc_var.get(), self.assess_name_var.get(), self.cond_name_var.get(), self.prim_ther_var.get(),
                 self.case_mgr_var.get(), self.sess_ther_var.get(), self.data_rec_var.get(), self.prim_data_var.get()],
@@ -386,7 +418,11 @@ class SessionManagerWindow:
                     if self.session_started:
                         self.stop_session()
                     else:
-                        self.start_session()
+                        response = self.pdf.check_session_fields()
+                        if response is False:
+                            self.start_session()
+                        else:
+                            messagebox.showwarning("Warning", response)
                 elif key == "Pause Session":
                     self.pause_session()
 
