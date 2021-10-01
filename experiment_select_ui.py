@@ -32,7 +32,7 @@ class ExperimentSelectWindow:
         self.treeview.tag_configure('odd', background='#E8E8E8')
         self.treeview.tag_configure('even', background='#DFDFDF')
         self.treeview.bind("<Button-1>", self.get_experiment)
-        self.treeview.bind("<Double-Button-1>", self.select_experiment)
+        # self.treeview.bind("<Double-Button-1>", self.select_experiment)
 
         self.file_scroll = Scrollbar(self.main_root, orient="vertical", command=self.treeview.yview)
         self.file_scroll.place(x=2, y=5, height=406)
@@ -77,6 +77,7 @@ class ExperimentSelectWindow:
     def on_closing(self):
         if self.main_root:
             self.new_experiment, self.cancel, self.selected = False, True, False
+            self.main_root.quit()
             self.main_root.destroy()
 
     def new_experiment_popup(self):
@@ -86,17 +87,20 @@ class ExperimentSelectWindow:
     def new_experiment_quit(self, name):
         if name and name != "":
             self.create_experiment(name)
+            self.main_root.quit()
             self.main_root.destroy()
 
     def save_and_quit(self):
         if self.experiment_dir:
             self.new_experiment, self.cancel, self.selected = False, False, True
+            self.main_root.quit()
             self.main_root.destroy()
         else:
             messagebox.showwarning("Warning", "Select experiment from list below first or click 'New'")
 
     def quit_app(self):
         self.new_experiment, self.cancel, self.selected = False, True, False
+        self.main_root.quit()
         self.main_root.destroy()
 
     def create_experiment(self, experiment_name):
@@ -132,7 +136,13 @@ class ExperimentSelectWindow:
     def get_experiment(self, event):
         selection = self.treeview.identify_row(event.y)
         if selection:
-            self.experiment_dir = self.experiment_dirs[int(selection)]
+            if self.experiment_dir:
+                if self.experiment_dir == self.experiment_dirs[int(selection)]:
+                    self.save_and_quit()
+                else:
+                    self.experiment_dir = self.experiment_dirs[int(selection)]
+            else:
+                self.experiment_dir = self.experiment_dirs[int(selection)]
 
 
 class Popup:

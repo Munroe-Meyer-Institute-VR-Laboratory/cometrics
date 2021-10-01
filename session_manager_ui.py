@@ -16,6 +16,7 @@ from logger_util import *
 from output_view_ui import OutputViewPanel
 from input_view_ui import KeystrokeDataFields, EmpaticaDataFields
 from menu_bar import MenuBar
+from ka_ui import main
 
 
 class SessionTimeFields:
@@ -361,6 +362,7 @@ class SessionManagerWindow:
         self.session_file = None
         self.session_dir = path.join(parts[0], parts[1], parts[2], parts[3], 'sessions')
 
+        self.close_program = False
         self.session_number = 1
         self.session_date = datetime.datetime.today().strftime("%B %d, %Y")
         self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
@@ -387,10 +389,19 @@ class SessionManagerWindow:
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
 
+    def restart_program(self):
+        self.stf.stop_timer()
+        self.ovu.close()
+        self.edf.disconnect_e4()
+        self.listener.stop()
+        self.root.quit()
+        self.root.destroy()
+
     def on_closing(self):
         self.stf.stop_timer()
         self.ovu.close()
         self.edf.disconnect_e4()
+        self.listener.stop()
         self.root.destroy()
         sys.exit(0)
 
@@ -468,6 +479,7 @@ class SessionManagerWindow:
         if self.stf.session_started:
             self.stf.stop_session()
         self.save_session()
+        self.listener.stop()
 
     def pause_session(self):
         if self.session_started:

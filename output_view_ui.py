@@ -190,7 +190,6 @@ class ViewE4:
         self.bat = 100
 
         self.update_thread = threading.Thread(target=self.update_labels_thread)
-        self.update_thread.start()
 
     def stop_plot(self):
         self.streaming = False
@@ -199,12 +198,9 @@ class ViewE4:
     def start_plot(self, e4):
         self.e4 = e4
         self.streaming = True
+        self.update_thread.start()
 
     def update_labels_thread(self):
-        while not self.streaming:
-            if self.kill:
-                break
-            time.sleep(0.5)
         while self.streaming:
             if self.streaming:
                 if self.e4:

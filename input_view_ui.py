@@ -421,6 +421,7 @@ class EmpaticaDataFields:
                 if self.e4_client.connected:
                     try:
                         self.e4_client.start_streaming()
+
                         self.ovu.e4_view.start_plot(self.e4_client)
                         self.streaming_label.place(x=125, y=(self.parent.winfo_screenheight() - 320), anchor=N)
                     except Exception as e:
