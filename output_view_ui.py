@@ -3,16 +3,20 @@ import pathlib
 import time
 from os import walk
 from tkinter import *
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from tkinter.ttk import Treeview, Style
 import json
 import datetime
+
+import cv2
 from PIL import Image, ImageTk
 import threading
 from pynput import keyboard
 import winsound
 # Custom library imports
 from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams
+
+from gif_player import ImageLabel
 from logger_util import *
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
@@ -45,19 +49,19 @@ class OutputViewPanel:
         self.view_frames.append(e4_frame)
 
         video_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
-        test_label = Label(video_frame, text="Video Frame")
-        test_label.place(x=200, y=200)
+        # test_label = Label(video_frame, text="Video Frame")
+        # test_label.place(x=200, y=200)
         self.view_frames.append(video_frame)
-
+        #
         camera_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
-        test_label = Label(camera_frame, text="Camera Frame")
-        test_label.place(x=200, y=200)
+        # test_label = Label(camera_frame, text="Camera Frame")
+        # test_label.place(x=200, y=200)
         self.view_frames.append(camera_frame)
 
-        tactor_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
-        test_label = Label(tactor_frame, text="Tactor Frame")
-        test_label.place(x=200, y=200)
-        self.view_frames.append(tactor_frame)
+        # tactor_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
+        # test_label = Label(tactor_frame, text="Tactor Frame")
+        # test_label.place(x=200, y=200)
+        # self.view_frames.append(tactor_frame)
 
         e4_output_button = Button(self.frame, text="E4 View", command=self.switch_e4_frame, width=12)
         self.view_buttons.append(e4_output_button)
@@ -72,14 +76,15 @@ class OutputViewPanel:
         self.view_buttons.append(camera_view_button)
         self.view_buttons[2].place(x=184, y=0)
 
-        tactor_view_button = Button(self.frame, text="Tactor View", command=self.switch_tactor_frame, width=12)
-        self.view_buttons.append(tactor_view_button)
-        self.view_buttons[3].place(x=276, y=0)
+        # tactor_view_button = Button(self.frame, text="Tactor View", command=self.switch_tactor_frame, width=12)
+        # self.view_buttons.append(tactor_view_button)
+        # self.view_buttons[3].place(x=276, y=0)
 
         clean_view = Frame(self.frame, width=(700-(92*len(self.view_buttons))+2), height=25, bg='white')
         clean_view.place(x=(92*len(self.view_buttons))+2, y=0)
 
         self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW])
+        self.video_view = ViewVideo(self.view_frames[OutputViews.VIDEO_VIEW])
 
     def switch_tactor_frame(self):
         self.switch_frame(OutputViews.TACTOR_VIEW)
@@ -285,7 +290,61 @@ class ViewTactor:
 
 
 class ViewVideo:
-    pass
+    def __init__(self, parent):
+        fig_color = '#%02x%02x%02x' % (240, 240, 237)
+        self.parent = parent
+        self.current_frame = None
+
+        self.new_video_button = Button(self.parent, text="Select Video", font=('Purisa', 11),
+                                       command=self.open_video)
+        self.new_video_button.place(x=50, y=50, anchor=W)
+
+        self.frame_canvas = Canvas(self.parent, width=600, height=400, bg="white", bd=-2)
+        self.frame_canvas.place(x=350, y=100, anchor=N)
+        self.frame_img = ImageTk.PhotoImage(Image.open('images/mmi_logo.jpg'), Image.ANTIALIAS)
+        self.video_frame = self.frame_canvas.create_image(300, 200, anchor=CENTER, image=self.frame_img)
+
+        self.slider = Scale(parent, from_=0, to=0, orient=HORIZONTAL, bg=fig_color, length=600)
+        self.slider.place(x=350, y=500, anchor=N)
+
+        self.frame_title = Label(self.parent, text="Current Video: ", bg=fig_color,
+                                 font=('Purisa', 11))
+        self.frame_title.place(x=50, y=100, anchor=SW)
+
+        self.loading_screen = ImageLabel(self.frame_canvas)
+        self.loading_screen.place(x=100, y=0, anchor=NW)
+
+    def open_video(self):
+        video_path = filedialog.askopenfilename(filetypes=(("Video Files", (".avi", ".mov", ".mpg", ".mpeg", ".mp4", ".mkv", ".wmv")), ("All Files", "*.*")))
+        if video_path:
+            self.frame_canvas.itemconfig(self.video_frame, image='')
+            self.load_loading()
+            self.frame_title['text'] = "Current Video: " + video_path
+
+    def unload_loading(self):
+        self.loading_screen.unload()
+
+    def load_loading(self):
+        self.loading_screen.load(r'images\loading.gif', (400, 400))
+
+    def update_frame_slider(self):
+        # self.slider.config(to=file_driver.last_frame - 1)
+        self.slider.set(0)
+
+    def set_frame_slider(self, frame):
+        self.slider.set(frame)
+
+    # def update_frame(self, frame):
+    #     file_driver.loaded_video.set(cv2.CAP_PROP_POS_FRAMES, int(frame))
+    #     _, temp_frame = file_driver.loaded_video.read()
+    #     if temp_frame is not None:
+    #         temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2RGB)
+    #         temp_frame = Image.fromarray(temp_frame)
+    #         self.current_frame = temp_frame.resize((800, 600), Image.ANTIALIAS)
+    #         self.current_frame = ImageTk.PhotoImage(self.current_frame)
+    #         self.video_frame.config(image=self.current_frame)
+    #     else:
+    #         print(datetime.datetime.now().strftime("%c:"), "Invalid frame index chosen:", frame)
 
 
 class ViewCamera:
