@@ -83,6 +83,7 @@ class PatientSelectWindow:
     def on_closing(self):
         if self.main_root:
             self.new_patient, self.cancel, self.selected = False, True, False
+            self.main_root.quit()
             self.main_root.destroy()
 
     def new_patient_popup(self):
@@ -92,17 +93,20 @@ class PatientSelectWindow:
     def new_patient_quit(self, name):
         if name and name != "":
             self.create_patient(name)
+            self.main_root.quit()
             self.main_root.destroy()
 
     def save_and_quit(self):
         if self.patient_file:
             self.new_patient, self.cancel, self.selected = False, False, True
+            self.main_root.quit()
             self.main_root.destroy()
         else:
             messagebox.showwarning("Warning", "Select patient from list below first or click 'New Patient'")
 
     def quit_app(self):
         self.new_patient, self.cancel, self.selected = False, True, False
+        self.main_root.quit()
         self.main_root.destroy()
 
     def create_patient(self, patient_name):

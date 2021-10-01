@@ -92,6 +92,7 @@ class KeystrokeSelectWindow:
 
     def on_closing(self):
         self.new_keystroke, self.cancel, self.selected = False, True, False
+        self.main_root.quit()
         self.main_root.destroy()
 
     def create_keystroke(self, name):
@@ -107,6 +108,7 @@ class KeystrokeSelectWindow:
     def new_keystroke_quit(self, name):
         if name and name != "":
             self.create_keystroke(name)
+            self.main_root.quit()
             self.main_root.destroy()
 
     def new_keystroke_popup(self):
@@ -116,12 +118,14 @@ class KeystrokeSelectWindow:
     def save_and_quit(self):
         if self.keystroke_file:
             self.new_keystroke, self.cancel, self.selected = False, False, True
+            self.main_root.quit()
             self.main_root.destroy()
         else:
             messagebox.showwarning("Warning", "Select protocol from list below first or click 'New File'")
 
     def quit_app(self):
         self.new_keystroke, self.cancel, self.selected = False, True, False
+        self.main_root.quit()
         self.main_root.destroy()
 
     def select_keystroke(self, event):
@@ -246,6 +250,7 @@ class Popup:
 
     def close_win(self):
         if self.caller.keystroke_file:
+            self.top_root.quit()
             self.top_root.destroy()
         else:
             self.caller.new_keystroke_quit(self.entry.get())
