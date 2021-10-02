@@ -16,11 +16,17 @@ def main():
             if not KeystrokeSelection.cancel:
                 SessionManager = session_manager_ui.SessionManagerWindow(UserSelection.patient_file, KeystrokeSelection.keystroke_file)
                 return SessionManager.close_program
+            else:
+                return KeystrokeSelection.cancel
+        else:
+            return UserSelection.cancel
+    else:
+        return ExperimentSelection.cancel
 
 
 if __name__ == "__main__":
-    sys.stdout = Log()
-    sys.stderr = sys.stdout
+    # sys.stdout = Log()
+    # sys.stderr = sys.stdout
     print(datetime.datetime.now().strftime("%c"))
     ret = main()
     while not ret:

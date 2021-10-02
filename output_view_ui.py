@@ -299,12 +299,22 @@ class ViewVideo:
                                        command=self.open_video)
         self.new_video_button.place(x=50, y=50, anchor=W)
 
+        self.play_image = ImageTk.PhotoImage(Image.open(r'images/play.jpg').resize((30, 30), Image.ANTIALIAS))
+        self.pause_image = ImageTk.PhotoImage(Image.open(r'images/pause.jpg').resize((30, 30), Image.ANTIALIAS))
+
+        self.play_button = Button(self.parent, width=30, height=30, image=self.play_image, command=self.toggle_video)
+        self.play_button.place(x=350, y=540, anchor=N)
+
+        # self.pause_button = Button(self.parent, width=30, height=30, image=self.pause_image, command=self.toggle_video)
+        # self.pause_button.place(x=350, y=540, anchor=N)
+
         self.frame_canvas = Canvas(self.parent, width=600, height=400, bg="white", bd=-2)
         self.frame_canvas.place(x=350, y=100, anchor=N)
         self.frame_img = ImageTk.PhotoImage(Image.open('images/mmi_logo.jpg'), Image.ANTIALIAS)
         self.video_frame = self.frame_canvas.create_image(300, 200, anchor=CENTER, image=self.frame_img)
 
-        self.slider = Scale(parent, from_=0, to=0, orient=HORIZONTAL, bg=fig_color, length=600)
+        self.slider = Scale(parent, from_=0, to=0, orient=HORIZONTAL, bg=fig_color, length=600,
+                            command=self.update_frame)
         self.slider.place(x=350, y=500, anchor=N)
 
         self.frame_title = Label(self.parent, text="Current Video: ", bg=fig_color,
@@ -312,7 +322,25 @@ class ViewVideo:
         self.frame_title.place(x=50, y=100, anchor=SW)
 
         self.loading_screen = ImageLabel(self.frame_canvas)
-        self.loading_screen.place(x=100, y=0, anchor=NW)
+
+        self.video_playing = False
+        self.frame_number = 0
+        self.fps = 0
+        self.frame_delay = 0
+        self.frame_imgs = []
+        self.loaded_video = None
+        self.video_thread, self.load_thread = None, None
+
+    def toggle_video(self):
+        if not self.video_playing:
+            self.video_playing = True
+            self.play_button['image'] = self.pause_image
+            if self.slider.get() == self.frame_number:
+                self.update_frame(1)
+            self.play_video()
+        else:
+            self.video_playing = False
+            self.play_button['image'] = self.play_image
 
     def open_video(self):
         video_path = filedialog.askopenfilename(filetypes=(("Video Files", (".avi", ".mov", ".mpg", ".mpeg", ".mp4", ".mkv", ".wmv")), ("All Files", "*.*")))
@@ -320,31 +348,92 @@ class ViewVideo:
             self.frame_canvas.itemconfig(self.video_frame, image='')
             self.load_loading()
             self.frame_title['text'] = "Current Video: " + video_path
+            # self.load_thread = threading.Thread(target=self.load_frames, args=(video_path,))
+            # self.load_thread.start()
+            self.loaded_video = cv2.VideoCapture(video_path)
+            self.frame_number = int(self.loaded_video.get(cv2.CAP_PROP_FRAME_COUNT))
+            self.fps = self.loaded_video.get(cv2.CAP_PROP_FPS)
+            self.frame_delay = 1.0 / float(self.fps)
+            self.update_frame(1)
+            self.update_frame_slider()
+            self.unload_loading()
 
     def unload_loading(self):
         self.loading_screen.unload()
+        self.loading_screen.place_forget()
 
     def load_loading(self):
+        self.loading_screen.place(x=100, y=0, anchor=NW)
         self.loading_screen.load(r'images\loading.gif', (400, 400))
 
     def update_frame_slider(self):
-        # self.slider.config(to=file_driver.last_frame - 1)
-        self.slider.set(0)
+        self.slider.config(from_=1, to=self.frame_number)
+        self.slider.set(1)
 
     def set_frame_slider(self, frame):
         self.slider.set(frame)
 
-    # def update_frame(self, frame):
-    #     file_driver.loaded_video.set(cv2.CAP_PROP_POS_FRAMES, int(frame))
-    #     _, temp_frame = file_driver.loaded_video.read()
-    #     if temp_frame is not None:
-    #         temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2RGB)
-    #         temp_frame = Image.fromarray(temp_frame)
-    #         self.current_frame = temp_frame.resize((800, 600), Image.ANTIALIAS)
-    #         self.current_frame = ImageTk.PhotoImage(self.current_frame)
-    #         self.video_frame.config(image=self.current_frame)
-    #     else:
-    #         print(datetime.datetime.now().strftime("%c:"), "Invalid frame index chosen:", frame)
+    def play_video(self):
+        self.video_thread = threading.Thread(target=self.play_video_thread, args=(self.slider.get(),))
+        self.video_thread.start()
+
+    def play_video_thread(self, start_frame):
+        for i in range(start_frame, self.frame_number + 1):
+            self.update_frame(i)
+            self.sleep(self.frame_delay)
+            if not self.video_playing:
+                break
+        if self.video_playing:
+            self.toggle_video()
+
+    @staticmethod
+    def sleep(duration, get_now=time.perf_counter):
+        now = get_now()
+        end = now + duration
+        while now < end:
+            now = get_now()
+
+    def update_frame(self, frame):
+        # self.frame_img = self.frame_imgs[int(frame) - 1]
+        # self.frame_canvas.itemconfig(self.video_frame, image=self.frame_img)
+        self.set_frame(int(frame) - 1)
+        self.get_frame()
+        self.frame_canvas.itemconfig(self.video_frame, image=self.frame_img)
+        self.set_frame_slider(frame)
+
+    def set_frame(self, frame):
+        self.loaded_video.set(cv2.CAP_PROP_POS_FRAMES, int(frame))
+
+    def get_frame(self):
+        _, temp_frame = self.loaded_video.read()
+        if temp_frame is not None:
+            temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2RGB)
+            temp_frame = Image.fromarray(temp_frame)
+            self.frame_img = temp_frame.resize((800, 600), Image.ANTIALIAS)
+            self.frame_img = ImageTk.PhotoImage(self.frame_img)
+        else:
+            print(datetime.datetime.now().strftime("%c:"), "Invalid frame index chosen")
+
+    def load_frames(self, video_path):
+        loaded_video = cv2.VideoCapture(video_path)
+        success, frame = loaded_video.read()
+        self.fps, self.frame_delay, self.frame_number = 0, 0, 0
+        self.frame_imgs = []
+        while success:
+            self.frame_number += 1
+            temp_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            temp_frame = Image.fromarray(temp_frame)
+            temp_frame = temp_frame.resize((800, 600), Image.ANTIALIAS)
+            temp_frame = ImageTk.PhotoImage(temp_frame)
+            self.frame_imgs.append(temp_frame)
+            success, frame = loaded_video.read()
+        self.fps = loaded_video.get(cv2.CAP_PROP_FPS)
+        self.frame_delay = 1.0 / float(self.fps)
+        self.update_frame(0)
+        self.update_frame_slider()
+        self.unload_loading()
+        print("Video Params | Frame Count:", len(self.frame_imgs), "| FPS:", self.fps,
+              "| Frame Delay:", self.frame_delay)
 
 
 class ViewCamera:
