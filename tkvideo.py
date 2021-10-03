@@ -5,7 +5,6 @@ Released under the terms of the MIT license (https://opensource.org/licenses/MIT
 
 """
 import time
-import moviepy.editor as mp
 try:
     import Tkinter as tk  # for Python2 (although it has already reached EOL)
 except ImportError:
@@ -36,22 +35,31 @@ class tkvideo():
         self.path = path
         self.label = label
         self.loop = loop
+        self.playing = False
         self.frame_data = imageio.get_reader(path)
+        self.meta_data = self.frame_data.get_meta_data()
+        self.fps = self.meta_data['fps']
+        self.nframes = self.frame_data.count_frames()
+        if self.nframes == float("inf"):
+            self.nframes = int(float(self.fps) * float(self.meta_data['duration']))
+        self.current_frame = 0
         if keep_ratio:
             temp = self.frame_data._get_data(0)[0].shape
             self.aspect_ratio = float(temp[1]) / float(temp[0])
-            self.size = (size[0], int(size[0] * self.aspect_ratio))
+            self.size = (size[0], int(size[0] / self.aspect_ratio))
         else:
             self.size = size
         self.slider = slider
+        if self.slider:
+            self.slider.config(from_=1, to=self.nframes)
+            self.slider.set(1)
 
     def load_frame(self, frame):
         image, met = self.frame_data._get_data(int(frame))
         frame_image = ImageTk.PhotoImage(Image.fromarray(image).resize(self.size))
         self.label.config(image=frame_image)
         self.label.image = frame_image
-        if self.slider:
-            self.slider.set(frame)
+        self.current_frame = int(frame)
 
     def load(self, path, label, loop):
         """
@@ -73,41 +81,52 @@ class tkvideo():
                 label.config(image=frame_image)
                 label.image = frame_image
 
-    def iter_data_index(self, path, label, frame, slider):
+    def stop_playing(self):
+        if self.playing:
+            self.playing = False
+
+    def iter_data_index(self, path, label, frame, fps, slider):
         """ iter_data()
         Iterate over all images in the series. (Note: you can also
         iterate over the reader object.)
         """
         frame_data = imageio.get_reader(path)
-        delay = float(1 / frame_data.get_meta_data()['fps'])
         frame_data._checkClosed()
         n = frame_data.get_length()
-        i = frame
+        i = int(frame)
+        self.playing = True
         while i < n:
             try:
                 im, meta = frame_data._get_data(i)
-            except StopIteration:
+                self.current_frame = i
+            except StopIteration as e:
+                print(str(e))
+                self.playing = False
                 return
-            except IndexError:
+            except IndexError as e:
+                print(str(e))
+                self.playing = False
                 if n == float("inf"):
                     return
                 raise
             frame_image = ImageTk.PhotoImage(Image.fromarray(im).resize(self.size))
             label.config(image=frame_image)
-            label.image = frame_image
+            # label.image = frame_image
+            i += 1
             if slider:
                 slider.set(i)
-            i += 1
-            time.sleep(delay)
+            if not self.playing:
+                break
+        self.playing = False
 
-    def play(self, start_frame=None):
+    def play(self):
         """
             Creates and starts a thread as a daemon that plays the video by rapidly going through
             the video's frames.
         """
-        if not start_frame:
-            thread = threading.Thread(target=self.iter_data_index, args=(self.path, self.label, start_frame))
-        else:
-            thread = threading.Thread(target=self.load, args=(self.path, self.label, self.loop))
+        if self.current_frame == self.nframes - 1:
+            self.current_frame = 0
+        thread = threading.Thread(target=self.iter_data_index,
+                                  args=(self.path, self.label, self.current_frame, self.fps, self.slider))
         thread.daemon = 1
         thread.start()
