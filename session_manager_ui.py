@@ -469,7 +469,6 @@ class SessionManagerWindow:
             x[str(i)] = [self.tag_history[i][0], self.tag_history[i][1]]
         with open(self.session_file, 'w') as f:
             json.dump(x, f)
-        print(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"))
         self.ovu.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"), self.tag_history)
 
     def start_session(self):

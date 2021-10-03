@@ -1,5 +1,5 @@
 # Introduction 
-TODO: Give a short introduction of your project. Let this section explain the objectives or the motivation behind this project. 
+Experiment Collection & Logging (ECL) is a Windows-based computer program that allows for the real-time collection of frequency- and duration-based behavior metrics.
 
 # Getting Started
 TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
