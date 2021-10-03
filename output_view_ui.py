@@ -1,3 +1,4 @@
+import pickle
 import threading
 import time
 from tkinter import *
@@ -54,12 +55,6 @@ class OutputViewPanel:
     def switch_tactor_frame(self):
         self.switch_frame(OutputViews.TACTOR_VIEW)
 
-    def switch_camera_frame(self):
-        self.switch_frame(OutputViews.CAMERA_VIEW)
-
-    def switch_video_frame(self):
-        self.switch_frame(OutputViews.VIDEO_VIEW)
-
     def switch_e4_frame(self):
         self.switch_frame(OutputViews.E4_VIEW)
 
@@ -78,11 +73,24 @@ class OutputViewPanel:
     def close(self):
         self.e4_view.stop_plot()
 
+    def start_session(self):
+        self.e4_view.session_started = True
+
+    def stop_session(self):
+        self.e4_view.session_started = False
+
+    def save_session(self, filename, keystrokes):
+        if self.e4_view.windowed_readings:
+            for keystroke in keystrokes:
+                self.e4_view.windowed_readings[keystroke[1]][-1].append(keystroke[0])
+            with open(filename, 'wb') as f:
+                pickle.dump(self.e4_view.windowed_readings, f)
+
 
 class ViewE4:
     def __init__(self, root):
         self.root = root
-
+        self.session_started = False
         SMALL_SIZE = 8
         MEDIUM_SIZE = 10
         BIGGER_SIZE = 12
@@ -154,21 +162,23 @@ class ViewE4:
         self.ani2 = animation.FuncAnimation(self.fig2, self.gsr_animate, fargs=([]), interval=500)
         self.canvas2.get_tk_widget().place(x=350, y=400, anchor=N)
 
+        self.save_reading = False
         self.streaming = False
         self.kill = False
         self.e4 = None
         self.bat = 100
-
+        self.windowed_readings = []
         self.update_thread = threading.Thread(target=self.update_labels_thread)
 
     def stop_plot(self):
-        self.streaming = False
+        # self.streaming = False
         self.kill = True
 
     def start_plot(self, e4):
         self.e4 = e4
-        self.streaming = True
-        self.update_thread.start()
+        if not self.streaming:
+            self.streaming = True
+            self.update_thread.start()
 
     def update_labels_thread(self):
         while self.streaming:
@@ -200,6 +210,19 @@ class ViewE4:
         if self.streaming:
             if self.e4:
                 if self.e4.connected:
+                    if self.session_started:
+                        if self.save_reading:
+                            self.save_reading = False
+                            self.windowed_readings.append(
+                                (self.e4.acc_3d[-(32*3):], self.e4.acc_x[-32:], self.e4.acc_y[-32:], self.e4.acc_z[-32:],
+                                 self.e4.acc_timestamps[-32:],
+                                 self.e4.bvp[-64:], self.e4.bvp_timestamps[-64:],
+                                 self.e4.gsr[-4:], self.e4.gsr_timestamps[-4:],
+                                 self.e4.tmp[-4:], self.e4.tmp_timestamps[-4:],
+                                 [])
+                            )
+                        else:
+                            self.save_reading = True
                     # Limit x and y lists to 20 items
                     x_ys = self.e4.acc_x[-100:]
                     y_ys = self.e4.acc_y[-100:]

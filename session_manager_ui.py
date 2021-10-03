@@ -146,7 +146,7 @@ class SessionTimeFields:
         self.session_stopped_label.place_forget()
         self.session_start_label.place(x=20, y=66)
 
-    def stop_session(self):
+    def stop_session(self, caller_save=True):
         self.session_toggle_button['text'] = "Restart Session"
         self.session_toggle_button['bg'] = self.session_pause_button['bg']
         self.session_toggle_button['command'] = self.caller.menu.restart_program
@@ -157,7 +157,8 @@ class SessionTimeFields:
             self.session_start_label.place_forget()
         self.session_stopped_label.place(x=20, y=66)
         self.session_started = False
-        self.caller.stop_session()
+        if caller_save:
+            self.caller.stop_session()
 
     def pause_session(self):
         if not self.session_paused:
@@ -468,7 +469,8 @@ class SessionManagerWindow:
             x[str(i)] = [self.tag_history[i][0], self.tag_history[i][1]]
         with open(self.session_file, 'w') as f:
             json.dump(x, f)
-        self.edf.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"))
+        print(self.tag_history)
+        self.ovu.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"), self.tag_history)
 
     def start_session(self):
         self.session_started = True
@@ -479,7 +481,7 @@ class SessionManagerWindow:
         self.session_started = False
         # If being stopped by key press, otherwise don't go into an infinite loop
         if self.stf.session_started:
-            self.stf.stop_session()
+            self.stf.stop_session(False)
         self.save_session()
         self.listener.stop()
 

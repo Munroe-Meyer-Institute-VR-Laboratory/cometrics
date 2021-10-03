@@ -405,11 +405,19 @@ class EmpaticaDataFields:
     def connect_to_e4(self):
         if self.emp_client:
             try:
-                self.e4_client = EmpaticaE4(self.e4_address)
-                if self.e4_client.connected:
-                    for stream in EmpaticaDataStreams.ALL_STREAMS:
-                        self.e4_client.subscribe_to_stream(stream)
-                    self.connected_label.place(x=125, y=(self.parent.winfo_screenheight() - 350), anchor=N)
+                if self.e4_client:
+                    self.e4_client.disconnect()
+                    self.connect_button.config(text="Connect")
+                    self.connected_label.place_forget()
+                    self.streaming_label.place_forget()
+                    self.e4_client = None
+                else:
+                    self.e4_client = EmpaticaE4(self.e4_address)
+                    if self.e4_client.connected:
+                        for stream in EmpaticaDataStreams.ALL_STREAMS:
+                            self.e4_client.subscribe_to_stream(stream)
+                        self.connected_label.place(x=125, y=(self.parent.winfo_screenheight() - 350), anchor=N)
+                        self.connect_button.config(text="Disconnect")
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
         else:
@@ -421,7 +429,6 @@ class EmpaticaDataFields:
                 if self.e4_client.connected:
                     try:
                         self.e4_client.start_streaming()
-
                         self.ovu.e4_view.start_plot(self.e4_client)
                         self.streaming_label.place(x=125, y=(self.parent.winfo_screenheight() - 320), anchor=N)
                     except Exception as e:
