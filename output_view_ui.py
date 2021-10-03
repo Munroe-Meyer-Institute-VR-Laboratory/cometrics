@@ -1,31 +1,23 @@
-import os
-import pathlib
-import time
-from os import walk
-from tkinter import *
-from tkinter import messagebox, filedialog
-from tkinter.ttk import Treeview, Style
-import json
 import datetime
-
-import cv2
-from PIL import Image, ImageTk
 import threading
-from pynput import keyboard
-import winsound
-# Custom library imports
-from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams
+import time
+from tkinter import *
+from tkinter import filedialog
+from video_loader import VideoLoader
+import cv2
+import matplotlib.animation as animation
+import matplotlib.pyplot as plt
+import numpy as np
+from PIL import Image, ImageTk
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg)
+# Implement the default Matplotlib key bindings.
+from matplotlib.figure import Figure
 
 from gif_player import ImageLabel
-from logger_util import *
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg, NavigationToolbar2Tk)
-# Implement the default Matplotlib key bindings.
-from matplotlib.backend_bases import key_press_handler
-from matplotlib.figure import Figure
-import numpy as np
+
+
+# Custom library imports
 
 
 class OutputViews:
@@ -350,10 +342,11 @@ class ViewVideo:
             self.frame_title['text'] = "Current Video: " + video_path
             # self.load_thread = threading.Thread(target=self.load_frames, args=(video_path,))
             # self.load_thread.start()
-            self.loaded_video = cv2.VideoCapture(video_path)
-            self.frame_number = int(self.loaded_video.get(cv2.CAP_PROP_FRAME_COUNT))
-            self.fps = self.loaded_video.get(cv2.CAP_PROP_FPS)
+            self.loaded_video = VideoLoader(video_path)
+            self.frame_number = self.loaded_video.frame_count
+            self.fps = self.loaded_video.fps
             self.frame_delay = 1.0 / float(self.fps)
+            print(self.loaded_video)
             self.update_frame(1)
             self.update_frame_slider()
             self.unload_loading()
@@ -375,6 +368,7 @@ class ViewVideo:
 
     def play_video(self):
         self.video_thread = threading.Thread(target=self.play_video_thread, args=(self.slider.get(),))
+        self.video_thread.daemon = 1
         self.video_thread.start()
 
     def play_video_thread(self, start_frame):
@@ -396,23 +390,19 @@ class ViewVideo:
     def update_frame(self, frame):
         # self.frame_img = self.frame_imgs[int(frame) - 1]
         # self.frame_canvas.itemconfig(self.video_frame, image=self.frame_img)
-        self.set_frame(int(frame) - 1)
-        self.get_frame()
-        self.frame_canvas.itemconfig(self.video_frame, image=self.frame_img)
+        self.get_frame(int(frame) - 1)
         self.set_frame_slider(frame)
 
-    def set_frame(self, frame):
-        self.loaded_video.set(cv2.CAP_PROP_POS_FRAMES, int(frame))
-
-    def get_frame(self):
-        _, temp_frame = self.loaded_video.read()
+    def get_frame(self, frame):
+        temp_frame = self.loaded_video.read()
         if temp_frame is not None:
             temp_frame = cv2.cvtColor(temp_frame, cv2.COLOR_BGR2RGB)
             temp_frame = Image.fromarray(temp_frame)
             self.frame_img = temp_frame.resize((800, 600), Image.ANTIALIAS)
             self.frame_img = ImageTk.PhotoImage(self.frame_img)
+            self.frame_canvas.itemconfig(self.video_frame, image=self.frame_img)
         else:
-            print(datetime.datetime.now().strftime("%c:"), "Invalid frame index chosen")
+            print(datetime.datetime.now().strftime("%c:"), "Invalid frame index chosen:", frame)
 
     def load_frames(self, video_path):
         loaded_video = cv2.VideoCapture(video_path)

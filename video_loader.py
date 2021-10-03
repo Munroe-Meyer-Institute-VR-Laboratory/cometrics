@@ -82,6 +82,7 @@ class VideoLoader():
 
         #handle threading
         self.use_threading = use_threading
+        self.thread = None
         if self.use_threading:
             self.thread_started = False
             self.frame_queue = queue.Queue(maxsize = max_queue_size)
