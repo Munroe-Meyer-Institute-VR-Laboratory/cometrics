@@ -50,7 +50,7 @@ class SessionTimeFields:
                                            font=('Purisa', 14))
         self.session_stopped_label.place(x=20, y=66)
 
-        self.interval_selection = IntVar()
+        self.interval_selection = BooleanVar()
         self.interval_checkbutton = Checkbutton(self.frame, text="Reminder Beep (Seconds)",
                                                 variable=self.interval_selection, bg='white',
                                                 font=('Purisa', 14), command=self.show_beep_interval)
@@ -65,7 +65,7 @@ class SessionTimeFields:
         self.session_dur_input = Entry(self.frame, validate='all', validatecommand=(session_cmd, '%P'),
                                        font=('Purisa', 14), bg='white', width=6)
 
-        self.session_dur_selection = IntVar()
+        self.session_dur_selection = BooleanVar()
         self.session_dur_checkbutton = Checkbutton(self.frame, text="Session Duration (Seconds)",
                                                    variable=self.session_dur_selection, bg='white',
                                                    font=('Purisa', 14),
@@ -104,14 +104,18 @@ class SessionTimeFields:
 
     def show_session_time(self):
         if self.session_dur_selection.get():
-            self.session_dur_input.place(x=530, y=38)
+            self.session_dur_checkbutton.config(text="Session Duration")
+            self.session_dur_input.place(x=430, y=38)
         else:
+            self.session_dur_checkbutton.config(text="Session Duration (Seconds)")
             self.session_dur_input.place_forget()
 
     def show_beep_interval(self):
         if self.interval_selection.get():
-            self.interval_input.place(x=530, y=10)
+            self.interval_checkbutton.config(text="Reminder Beep")
+            self.interval_input.place(x=430, y=10)
         else:
+            self.interval_checkbutton.config(text="Reminder Beep (Seconds)")
             self.interval_input.place_forget()
 
     def time_update_thread(self):
