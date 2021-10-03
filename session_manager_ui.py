@@ -469,12 +469,13 @@ class SessionManagerWindow:
             x[str(i)] = [self.tag_history[i][0], self.tag_history[i][1]]
         with open(self.session_file, 'w') as f:
             json.dump(x, f)
-        print(self.tag_history)
+        print(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"))
         self.ovu.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"), self.tag_history)
 
     def start_session(self):
         self.session_started = True
         self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+        self.ovu.start_session()
         self.stf.start_session()
 
     def stop_session(self):
@@ -482,6 +483,7 @@ class SessionManagerWindow:
         # If being stopped by key press, otherwise don't go into an infinite loop
         if self.stf.session_started:
             self.stf.stop_session(False)
+        self.ovu.stop_session()
         self.save_session()
         self.listener.stop()
 

@@ -82,7 +82,8 @@ class OutputViewPanel:
     def save_session(self, filename, keystrokes):
         if self.e4_view.windowed_readings:
             for keystroke in keystrokes:
-                self.e4_view.windowed_readings[keystroke[1]][-1].append(keystroke[0])
+                print(keystroke)
+                self.e4_view.windowed_readings[int(keystroke[1]) - 1][-1].append(keystroke[0])
             with open(filename, 'wb') as f:
                 pickle.dump(self.e4_view.windowed_readings, f)
 
@@ -171,7 +172,7 @@ class ViewE4:
         self.update_thread = threading.Thread(target=self.update_labels_thread)
 
     def stop_plot(self):
-        # self.streaming = False
+        self.streaming = False
         self.kill = True
 
     def start_plot(self, e4):
