@@ -360,20 +360,21 @@ def populate_spreadsheet(root, patient_file, ksf, session_dir):
             continue
     data_wb['A1'].value = "Assessment: " + sessions[0]['Assessment Name']
     data_wb['A2'].value = "Client: " + patient.name
-    row, col = 5, 7
+    row, col, sess = 5, 7, 1
     for session in sessions:
         st_cell = data_wb[''.join([i for i in st_cell.coordinate if not i.isdigit()]) + str(row)]
         pt_cell = data_wb[''.join([i for i in pt_cell.coordinate if not i.isdigit()]) + str(row)]
         key_freq, key_dur = get_keystroke_info(ksf, session)
-        d = data_wb['B' + str(row):'H' + str(row)]
+        d = data_wb['A' + str(row):'H' + str(row)]
         freq_d = data_wb[freq_coords[0] + str(row):freq_coords[1] + str(row)]
         dur_d = data_wb[dur_coords[0] + str(row):dur_coords[1] + str(row)]
-        d[0][0].value = session['Condition Name']
-        d[0][1].value = session['Session Date']
-        d[0][2].value = session['Session Therapist']
-        d[0][3].value = session['Primary Therapist']
-        d[0][4].value = session['Primary Data']
-        d[0][6].value = int(session['Session Time'])/60
+        d[0][0].value = sess
+        d[0][1].value = session['Condition Name']
+        d[0][2].value = session['Session Date']
+        d[0][3].value = session['Session Therapist']
+        d[0][4].value = session['Primary Therapist']
+        d[0][5].value = session['Primary Data']
+        d[0][7].value = int(session['Session Time'])/60
         data_wb[st_cell.coordinate].value = session['Session Time']
         data_wb[pt_cell.coordinate].value = session['Pause Time']
         # Populate frequency and duration keys
@@ -382,6 +383,7 @@ def populate_spreadsheet(root, patient_file, ksf, session_dir):
         for dur, col in zip(key_dur, range(0, len(key_dur))):
             dur_d[0][col].value = dur
         row += 1
+        sess += 1
     wb.save(path.join(analysis_dir, sess_parts[3] + "_analysis.xlsx"))
     os.startfile(analysis_dir)
     root.root.iconify()
