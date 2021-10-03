@@ -82,7 +82,6 @@ class OutputViewPanel:
     def save_session(self, filename, keystrokes):
         if self.e4_view.windowed_readings:
             for keystroke in keystrokes:
-                print(keystroke)
                 self.e4_view.windowed_readings[int(keystroke[1]) - 1][-1].append(keystroke[0])
             with open(filename, 'wb') as f:
                 pickle.dump(self.e4_view.windowed_readings, f)

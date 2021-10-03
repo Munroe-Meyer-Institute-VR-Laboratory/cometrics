@@ -25,8 +25,8 @@ def main():
 
 
 if __name__ == "__main__":
-    # sys.stdout = Log()
-    # sys.stderr = sys.stdout
+    sys.stdout = Log()
+    sys.stderr = sys.stdout
     print(datetime.datetime.now().strftime("%c"))
     ret = main()
     while not ret:
