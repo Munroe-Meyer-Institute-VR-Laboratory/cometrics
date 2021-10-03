@@ -42,33 +42,33 @@ class OutputViewPanel:
         e4_frame.place(x=780, y=120)
         self.view_frames.append(e4_frame)
 
-        video_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
+        # video_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
         # test_label = Label(video_frame, text="Video Frame")
         # test_label.place(x=200, y=200)
-        self.view_frames.append(video_frame)
+        # self.view_frames.append(video_frame)
         #
-        camera_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
+        # camera_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
         # test_label = Label(camera_frame, text="Camera Frame")
         # test_label.place(x=200, y=200)
-        self.view_frames.append(camera_frame)
+        # self.view_frames.append(camera_frame)
 
         # tactor_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
         # test_label = Label(tactor_frame, text="Tactor Frame")
         # test_label.place(x=200, y=200)
         # self.view_frames.append(tactor_frame)
 
-        e4_output_button = Button(self.frame, text="E4 View", command=self.switch_e4_frame, width=12)
+        e4_output_button = Button(self.frame, text="E4 Streams", command=self.switch_e4_frame, width=12)
         self.view_buttons.append(e4_output_button)
         self.view_buttons[0].place(x=0, y=0)
         self.view_buttons[0].config(relief=SUNKEN)
 
-        video_view_button = Button(self.frame, text="Annotate Video", command=self.switch_video_frame, width=12)
-        self.view_buttons.append(video_view_button)
-        self.view_buttons[1].place(x=92, y=0)
+        # video_view_button = Button(self.frame, text="Annotate Video", command=self.switch_video_frame, width=12)
+        # self.view_buttons.append(video_view_button)
+        # self.view_buttons[1].place(x=92, y=0)
 
-        camera_view_button = Button(self.frame, text="Video Capture", command=self.switch_camera_frame, width=12)
-        self.view_buttons.append(camera_view_button)
-        self.view_buttons[2].place(x=184, y=0)
+        # camera_view_button = Button(self.frame, text="Video Capture", command=self.switch_camera_frame, width=12)
+        # self.view_buttons.append(camera_view_button)
+        # self.view_buttons[2].place(x=184, y=0)
 
         # tactor_view_button = Button(self.frame, text="Tactor View", command=self.switch_tactor_frame, width=12)
         # self.view_buttons.append(tactor_view_button)
@@ -78,7 +78,7 @@ class OutputViewPanel:
         clean_view.place(x=(92*len(self.view_buttons))+2, y=0)
 
         self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW])
-        self.video_view = ViewVideo(self.view_frames[OutputViews.VIDEO_VIEW])
+        # self.video_view = ViewVideo(self.view_frames[OutputViews.VIDEO_VIEW])
 
     def switch_tactor_frame(self):
         self.switch_frame(OutputViews.TACTOR_VIEW)
