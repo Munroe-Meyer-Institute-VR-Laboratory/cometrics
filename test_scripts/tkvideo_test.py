@@ -1,8 +1,7 @@
 from tkinter import *
 from tkvideo import tkvideo
-import time
+from tkinter import filedialog, messagebox
 import random
-playing = False
 
 
 def play_video():
@@ -11,7 +10,7 @@ def play_video():
 
 
 frame_number = 0
-# create instance fo window
+# create instance of window
 root = Tk()
 # set window title
 root.title('Video Player')
@@ -20,7 +19,11 @@ button = Button(root, text="Play Video", command=play_video)
 button.pack()
 video_label = Label(root)
 video_label.pack()
-# read video to display on label
-player = tkvideo(r"C:\Users\wsarc\Videos\test.mp4", video_label,
-                 loop = 1, size = (700, 500))
+video_path = filedialog.askopenfilename()
+if video_path:
+    # read video to display on label
+    player = tkvideo(video_path, video_label,
+                     loop=False, size=(700, 500))
+else:
+    messagebox.showwarning("Select Video File", "Please retry and select a video file.")
 root.mainloop()

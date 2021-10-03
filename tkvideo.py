@@ -32,12 +32,17 @@ class tkvideo():
             default is 640x360)
     """
 
-    def __init__(self, path, label, loop=0, size=(640, 360), slider=None):
+    def __init__(self, path, label, loop=False, size=(640, 360), slider=None, keep_ratio=False):
         self.path = path
         self.label = label
         self.loop = loop
-        self.size = size
         self.frame_data = imageio.get_reader(path)
+        if keep_ratio:
+            temp = self.frame_data._get_data(0)[0].shape
+            self.aspect_ratio = float(temp[1]) / float(temp[0])
+            self.size = (size[0], int(size[0] * self.aspect_ratio))
+        else:
+            self.size = size
         self.slider = slider
 
     def load_frame(self, frame):
@@ -56,7 +61,7 @@ class tkvideo():
         """
         frame_data = imageio.get_reader(path)
 
-        if loop == 1:
+        if loop:
             while True:
                 for image in frame_data.iter_data():
                     frame_image = ImageTk.PhotoImage(Image.fromarray(image).resize(self.size))
