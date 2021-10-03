@@ -4,7 +4,6 @@ import time
 from os import walk
 from tkinter import *
 from tkinter import messagebox
-from tkinter.ttk import Treeview, Style
 import json
 import datetime
 from PIL import Image, ImageTk
@@ -16,7 +15,6 @@ from logger_util import *
 from output_view_ui import OutputViewPanel
 from input_view_ui import KeystrokeDataFields, EmpaticaDataFields
 from menu_bar import MenuBar
-from ka_ui import main
 
 
 class SessionTimeFields:
