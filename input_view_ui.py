@@ -397,13 +397,11 @@ class EmpaticaDataFields:
         self.devices_thread = None
 
     def check_e4_error(self):
-        if self.e4_client:
+        while self.e4_client:
             if self.e4_client.client.last_error:
-                print("Error encountered")
                 messagebox.showerror("E4 Error", "Encountered error from E4!\n" + self.e4_client.client.last_error)
                 self.connect_to_e4()
-                self.e4_client.client.last_error = None
-        time.sleep(0.5)
+            time.sleep(0.5)
 
     def disconnect_e4(self):
         if self.emp_client:
