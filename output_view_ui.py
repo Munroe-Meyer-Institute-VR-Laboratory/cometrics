@@ -110,28 +110,41 @@ class ViewE4:
         fig_color = '#%02x%02x%02x' % (240, 240, 237)
 
         self.hr_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.hr_canvas.place(x=100, y=5)
-        self.hr_image = ImageTk.PhotoImage(Image.open('images/heartrate.png').resize((40, 40), Image.ANTIALIAS))
+        self.hr_canvas.place(x=100, y=10)
+        self.hr_image = PhotoImage(file='images/heartrate.png')
         self.hr_canvas.create_image(0, 0, anchor=NW, image=self.hr_image)
 
         self.hr_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
-        self.hr_label.place(x=150, y=15, anchor=NW)
+        self.hr_label.place(x=150, y=20, anchor=NW)
 
         self.temp_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.temp_canvas.place(x=300, y=5)
-        self.temp_image = ImageTk.PhotoImage(Image.open('images/thermometer.png').resize((40, 40), Image.ANTIALIAS))
+        self.temp_canvas.place(x=250, y=10)
+        self.temp_image = PhotoImage(file='images/thermometer.png')
         self.temp_canvas.create_image(0, 0, anchor=NW, image=self.temp_image)
 
         self.temp_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
-        self.temp_label.place(x=350, y=15, anchor=NW)
+        self.temp_label.place(x=300, y=20, anchor=NW)
 
+        self.wrist_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
+        self.wrist_canvas.place(x=400, y=10, anchor=NW)
+        self.on_wrist_image = PhotoImage(file='images/onwrist.png')
+        self.off_wrist_image = PhotoImage(file='images/offwrist.png')
+        self.wrist_container = self.wrist_canvas.create_image(20, 20, anchor=CENTER, image=self.off_wrist_image)
+        self.wrist = False
+
+        self.wrist_label = Label(self.root, text="Off", font=("TkDefaultFont", 12))
+        self.wrist_label.place(x=450, y=20, anchor=NW)
+
+        self.bat_image_100 = PhotoImage(file='images/battery100.png')
+        self.bat_image_75 = PhotoImage(file='images/battery75.png')
+        self.bat_image_50 = PhotoImage(file='images/battery50.png')
+        self.bat_image_25 = PhotoImage(file='images/battery25.png')
         self.bat_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.bat_canvas.place(x=500, y=5)
-        self.bat_image = ImageTk.PhotoImage(Image.open('images/battery100.png').resize((40, 40), Image.ANTIALIAS))
-        self.bat_container = self.bat_canvas.create_image(0, 0, anchor=NW, image=self.bat_image)
+        self.bat_canvas.place(x=550, y=10)
+        self.bat_container = self.bat_canvas.create_image(20, 20, anchor=CENTER, image=self.bat_image_100)
 
         self.bat_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
-        self.bat_label.place(x=550, y=15, anchor=NW)
+        self.bat_label.place(x=600, y=20, anchor=NW)
 
         self.fig = Figure(figsize=(6.75, 1.75), dpi=100)
         self.fig.patch.set_facecolor(fig_color)
@@ -189,25 +202,39 @@ class ViewE4:
             if self.streaming:
                 if self.e4:
                     if self.e4.connected:
+                        if self.wrist != self.e4.on_wrist:
+                            if self.e4.on_wrist:
+                                self.wrist_canvas.delete(self.wrist_container)
+                                self.wrist_container = self.wrist_canvas.create_image(20, 20, anchor=CENTER,
+                                                                                      image=self.on_wrist_image)
+                                self.wrist_label['text'] = "On"
+                            else:
+                                self.wrist_canvas.delete(self.wrist_container)
+                                self.wrist_container = self.wrist_canvas.create_image(20, 20, anchor=CENTER,
+                                                                                      image=self.off_wrist_image)
+                                self.wrist_label['text'] = "Off"
+                            self.wrist = self.e4.on_wrist
                         if len(self.e4.tmp) > 0:
                             self.temp_label['text'] = str(int(self.e4.tmp[-1])) + u"\u00b0"
                         if len(self.e4.hr) > 0:
                             self.hr_label['text'] = str(int(self.e4.hr[-1])) + " BPM"
                         if len(self.e4.bat) > 0:
-                            self.bat = int(float(self.e4.bat[-1]) * 100.0)
-                            if 50 < self.bat < 75:
-                                self.bat_image = ImageTk.PhotoImage(
-                                    Image.open('images/battery75.png').resize((40, 40), Image.ANTIALIAS))
-                                self.bat_canvas.itemconfigure(self.bat_container, image=self.bat_image)
-                            elif 25 < self.bat < 50:
-                                self.bat_image = ImageTk.PhotoImage(
-                                    Image.open('images/battery50.png').resize((40, 40), Image.ANTIALIAS))
-                                self.bat_canvas.itemconfigure(self.bat_container, image=self.bat_image)
-                            elif self.bat < 25:
-                                self.bat_image = ImageTk.PhotoImage(
-                                    Image.open('images/battery25.png').resize((40, 40), Image.ANTIALIAS))
-                                self.bat_canvas.itemconfigure(self.bat_container, image=self.bat_image)
-                            self.bat_label['text'] = str(self.bat) + "%"
+                            bat = int(float(self.e4.bat[-1]) * 100.0)
+                            if bat != self.bat:
+                                self.bat = bat
+                                if 50 < self.bat < 75:
+                                    self.bat_canvas.delete(self.bat_container)
+                                    self.bat_container = self.bat_canvas.create_image(20, 20, anchor=CENTER,
+                                                                                      image=self.bat_image_75)
+                                elif 25 < self.bat < 50:
+                                    self.bat_canvas.delete(self.bat_container)
+                                    self.bat_container = self.bat_canvas.create_image(20, 20, anchor=CENTER,
+                                                                                      image=self.bat_image_50)
+                                elif self.bat < 25:
+                                    self.bat_canvas.delete(self.bat_container)
+                                    self.bat_container = self.bat_canvas.create_image(20, 20, anchor=CENTER,
+                                                                                      image=self.bat_image_25)
+                                self.bat_label['text'] = str(self.bat) + "%"
             time.sleep(0.5)
 
     def animate(self, e4):

@@ -393,7 +393,17 @@ class EmpaticaDataFields:
         self.connected_label = Label(self.frame, text="CONNECTED", fg='green')
         self.streaming_label = Label(self.frame, text="STREAMING", fg='green')
 
+        self.error_thread = None
         self.devices_thread = None
+
+    def check_e4_error(self):
+        if self.e4_client:
+            if self.e4_client.client.last_error:
+                print("Error encountered")
+                messagebox.showerror("E4 Error", "Encountered error from E4!\n" + self.e4_client.client.last_error)
+                self.connect_to_e4()
+                self.e4_client.client.last_error = None
+        time.sleep(0.5)
 
     def disconnect_e4(self):
         if self.emp_client:
@@ -414,6 +424,9 @@ class EmpaticaDataFields:
                 else:
                     self.e4_client = EmpaticaE4(self.e4_address)
                     if self.e4_client.connected:
+                        if self.error_thread is None:
+                            self.error_thread = threading.Thread(target=self.check_e4_error)
+                            self.error_thread.start()
                         for stream in EmpaticaDataStreams.ALL_STREAMS:
                             self.e4_client.subscribe_to_stream(stream)
                         self.connected_label.place(x=125, y=(self.parent.winfo_screenheight() - 350), anchor=N)
