@@ -307,7 +307,7 @@ class PatientDataFields:
         elif self.prim_data_var.get() == "":
             return "Data type not set!"
         else:
-            return ""
+            return False
 
     def get_session_fields(self):
         return ([self.sess_loc_var.get(), self.assess_name_var.get(), self.cond_name_var.get(), self.prim_ther_var.get(),
@@ -375,7 +375,7 @@ class SessionManagerWindow:
         root.config(bg="white", bd=-2)
         pad = 3
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
-        root.title("Experiment Collection & Logging v0.4")
+        root.title("Experiment Collection & Logging v0.4.1")
 
         self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
@@ -444,15 +444,18 @@ class SessionManagerWindow:
                     self.pause_session()
 
     def handle_key_press(self, key):
-        if self.session_started:
-            events, key_type, dur = self.kdf.check_key(key, self.stf.session_time)
-            for event in events:
-                if event:
-                    if key_type:
-                        if dur:
-                            self.tag_history.append((event, dur))
-                    else:
-                        self.tag_history.append((event, self.stf.session_time))
+        try:
+            if self.session_started:
+                events, key_type, dur = self.kdf.check_key(key, self.stf.session_time)
+                for event in events:
+                    if event:
+                        if key_type:
+                            if dur:
+                                self.tag_history.append((event, dur))
+                        else:
+                            self.tag_history.append((event, self.stf.session_time))
+        except TypeError as e:
+            print(str(e))
 
     def save_session(self):
         self.pdf.save_patient_fields()

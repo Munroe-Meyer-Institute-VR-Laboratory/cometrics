@@ -81,14 +81,20 @@ class OutputViewPanel:
 
     def save_session(self, filename, keystrokes):
         if self.e4_view.windowed_readings:
-            for keystroke in keystrokes:
-                if type(keystroke[1]) is list:
-                    self.e4_view.windowed_readings[int(keystroke[1][0]) - 1][-1].append(keystroke[0])
-                    self.e4_view.windowed_readings[int(keystroke[1][1]) - 1][-1].append(keystroke[0])
-                else:
-                    self.e4_view.windowed_readings[int(keystroke[1]) - 1][-1].append(keystroke[0])
-            with open(filename, 'wb') as f:
-                pickle.dump(self.e4_view.windowed_readings, f)
+            try:
+                for keystroke in keystrokes:
+                    if type(keystroke[1]) is tuple:
+                        self.e4_view.windowed_readings[int(keystroke[1][0]) - 1][-1].append(keystroke[0])
+                        self.e4_view.windowed_readings[int(keystroke[1][1]) - 1][-1].append(keystroke[0])
+                    else:
+                        self.e4_view.windowed_readings[int(keystroke[1]) - 1][-1].append(keystroke[0])
+                with open(filename, 'wb') as f:
+                    pickle.dump(self.e4_view.windowed_readings, f)
+            except TypeError as e:
+                with open(filename, 'wb') as f:
+                    pickle.dump(self.e4_view.windowed_readings, f)
+                print(keystrokes, self.e4_view.windowed_readings)
+                print(str(e))
 
 
 class ViewE4:
