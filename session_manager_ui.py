@@ -375,7 +375,7 @@ class SessionManagerWindow:
         root.config(bg="white", bd=-2)
         pad = 3
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
-        root.title("ECL - Experiment Collection & Logging")
+        root.title("Experiment Collection & Logging v0.4")
 
         self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
@@ -472,10 +472,14 @@ class SessionManagerWindow:
         self.ovu.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"), self.tag_history)
 
     def start_session(self):
-        self.session_started = True
-        self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
-        self.ovu.start_session()
-        self.stf.start_session()
+        response = self.pdf.check_session_fields()
+        if response is False:
+            self.session_started = True
+            self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+            self.ovu.start_session()
+            self.stf.start_session()
+        else:
+            messagebox.showwarning("Warning", response)
 
     def stop_session(self):
         self.session_started = False
