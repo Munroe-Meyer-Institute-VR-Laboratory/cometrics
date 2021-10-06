@@ -92,6 +92,10 @@ class SessionTimeFields:
             return True
         return False
 
+    def lock_session_fields(self):
+        self.interval_input.config(state='disabled')
+        self.session_dur_input.config(state='disabled')
+
     def beep_interval_thread(self):
         interval = int(self.interval_input.get())
         while self.session_started:
@@ -309,6 +313,18 @@ class PatientDataFields:
         else:
             return False
 
+    def lock_session_fields(self):
+        self.sess_entry.config(state='disabled')
+        self.cond_name_entry.config(state='disabled')
+        self.data_rec_entry.config(state='disabled')
+        self.cond_name_entry.config(state='disabled')
+        self.sess_ther_entry.config(state='disabled')
+        self.case_mgr_entry.config(state='disabled')
+        self.assess_name_entry.config(state='disabled')
+        self.name_entry.config(state='disabled')
+        self.mrn_entry.config(state='disabled')
+        self.prim_ther_entry.config(state='disabled')
+
     def get_session_fields(self):
         return ([self.sess_loc_var.get(), self.assess_name_var.get(), self.cond_name_var.get(), self.prim_ther_var.get(),
                 self.case_mgr_var.get(), self.sess_ther_var.get(), self.data_rec_var.get(), self.prim_data_var.get()],
@@ -375,7 +391,7 @@ class SessionManagerWindow:
         root.config(bg="white", bd=-2)
         pad = 3
         root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
-        root.title("Experiment Collection & Logging v0.4.1")
+        root.title("Experiment Collection & Logging v0.4.2")
 
         self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
@@ -405,6 +421,7 @@ class SessionManagerWindow:
         self.ovu.close()
         self.edf.disconnect_e4()
         self.listener.stop()
+        self.root.quit()
         self.root.destroy()
         sys.exit(0)
 
@@ -479,6 +496,8 @@ class SessionManagerWindow:
         if response is False:
             self.session_started = True
             self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+            self.pdf.lock_session_fields()
+            self.stf.lock_session_fields()
             self.ovu.start_session()
             self.stf.start_session()
         else:

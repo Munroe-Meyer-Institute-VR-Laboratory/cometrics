@@ -82,6 +82,7 @@ class OutputViewPanel:
     def save_session(self, filename, keystrokes):
         if self.e4_view.windowed_readings:
             try:
+                print(keystrokes)
                 for keystroke in keystrokes:
                     if type(keystroke[1]) is tuple:
                         self.e4_view.windowed_readings[int(keystroke[1][0]) - 1][-1].append(keystroke[0])
