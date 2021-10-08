@@ -96,7 +96,6 @@ class OutputViewPanel:
             except TypeError as e:
                 with open(filename, 'wb') as f:
                     pickle.dump(self.e4_view.windowed_readings, f)
-                print(keystrokes, self.e4_view.windowed_readings)
                 print(str(e))
 
 
