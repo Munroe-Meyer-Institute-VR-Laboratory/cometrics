@@ -459,6 +459,7 @@ def get_keystroke_info(key_file, session_file):
                 i = dur_bindings.index(session_param[0])
                 key_dur[i] += int(session_param[1][1]) - int(session_param[1][0])
         except Exception as e:
+            print(str(e))
             continue
     return key_freq, key_dur
 

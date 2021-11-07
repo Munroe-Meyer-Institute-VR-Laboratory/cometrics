@@ -1,8 +1,9 @@
 import os
 import pathlib
+import sys
 from os import walk
 from tkinter import *
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from tkinter.ttk import Treeview, Style
 from logger_util import *
 
@@ -53,7 +54,7 @@ class ExperimentSelectWindow:
 
         self.experiment_dirs = []
         self.experiment_dir = None
-        self.load_experiments('./experiments/')
+        self.load_experiments()
         self.populate_experiments()
         self.new_experiment, self.cancel, self.selected = False, False, False
         # https://stackoverflow.com/a/111160
@@ -66,7 +67,13 @@ class ExperimentSelectWindow:
                                                           values=(pathlib.Path(self.experiment_dirs[i]).stem,),
                                                           tags=(self.tags[i % 2])))
 
-    def load_experiments(self, directory):
+    def load_experiments(self):
+        directory = None
+        while not directory:
+            directory = filedialog.askdirectory(title='Select root directory to save files')
+            if not directory:
+                if not messagebox.askokcancel("Exit", "Press cancel to close program"):
+                    sys.exit()
         if path.isdir(directory):
             _, dirs, _ = next(walk(directory))
             for dir in dirs:
