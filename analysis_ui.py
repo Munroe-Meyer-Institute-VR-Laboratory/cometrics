@@ -493,7 +493,9 @@ def get_sessions(session_dir):
                 session_files.append(file)
     for file in session_files:
         with open(path.join(session_dir, file), 'r') as f:
-            sessions.append(json.load(f))
+            data = json.load(f)
+            if data['Primary Data'] == "Primary":
+                sessions.append(data)
     return sessions
 
 
