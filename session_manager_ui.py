@@ -227,10 +227,13 @@ class PatientDataFields:
         self.start_label = self.label_canvas.create_text(5, 520, text="Session Start Time: " + session_time, anchor=NW,
                                                          font=('Purisa', 10))
         # Session number field
-        self.sess_number_label = self.label_canvas.create_text(5, 540, text="Session Number " + str(session_number),
+        self.sess_number_label = self.label_canvas.create_text(5, 540, text="Session Number: ",
                                                                anchor=NW,
                                                                font=('Purisa', 10))
         # Setup input variables
+        self.session_number_var = StringVar(self.frame, session_number)
+        self.session_number_entry = Entry(self.frame, textvariable=self.session_number_var)
+        self.session_number_entry.place(x=125, y=540, width=75)
         self.patient_name_var = StringVar(self.frame)
         if self.patient.name:
             self.patient_name_var.set(self.patient.name)
@@ -327,9 +330,10 @@ class PatientDataFields:
 
     def get_session_fields(self):
         return ([self.sess_loc_var.get(), self.assess_name_var.get(), self.cond_name_var.get(), self.prim_ther_var.get(),
-                self.case_mgr_var.get(), self.sess_ther_var.get(), self.data_rec_var.get(), self.prim_data_var.get()],
+                self.case_mgr_var.get(), self.sess_ther_var.get(), self.data_rec_var.get(), self.prim_data_var.get(),
+                 self.session_number_var.get()],
                 ["Session Location", "Assessment Name", "Condition Name", "Primary Therapist", "Case Manager",
-                 "Session Therapist", "Data Recorder", "Primary Data"])
+                 "Session Therapist", "Data Recorder", "Primary Data", "Session Number"])
 
 
 class PatientContainer:
@@ -477,6 +481,16 @@ class SessionManagerWindow:
     def save_session(self):
         self.pdf.save_patient_fields()
         dict_vals, dict_fields = self.pdf.get_session_fields()
+        if dict_vals[-1] != self.session_number:
+            if dict_vals[-2] == "Reliability":
+                self.session_file = path.join(pathlib.Path(self.session_file).parent, "session_" +
+                                              str(dict_vals[-1]) + "_" + str(dict_vals[-2]) + ".json")
+            else:
+                self.session_file = path.join(pathlib.Path(self.session_file).parent, "session_" +
+                                              str(dict_vals[-1]) + ".json")
+        elif dict_vals[-2] == "Reliability":
+            self.session_file = path.join(pathlib.Path(self.session_file).parent, "session_" +
+                                          str(dict_vals[-1]) + "_" + str(dict_vals[-2]) + ".json")
         x = {
             "Session Date": self.session_date,
             "Session Start Time": self.session_time,
