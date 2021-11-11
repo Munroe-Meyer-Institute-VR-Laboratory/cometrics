@@ -332,8 +332,7 @@ class ViewE4:
 
 class KeystrokeDataFields:
     def __init__(self, parent, keystroke_file):
-        self.frame = parent#Frame(parent, width=250, height=(parent.winfo_screenheight() - 280))
-        # self.frame.place(x=520, y=120)
+        self.frame = parent
         self.keystroke_json = None
         self.new_keystroke = False
         self.bindings = []
@@ -349,7 +348,7 @@ class KeystrokeDataFields:
         self.sticky_start = []
         self.sticky_dur = []
 
-        keystroke_label = Label(self.frame, text="Key Bindings", font=('Purisa', 12))
+        keystroke_label = Label(self.frame, text="Frequency Bindings", font=('Purisa', 10))
         keystroke_label.place(x=125, y=15, anchor=CENTER)
 
         style = Style()
@@ -360,7 +359,7 @@ class KeystrokeDataFields:
                   background=self.fixed_map('background'))
         # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
         self.treeview = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
-        self.treeview.place(x=20, y=30, height=(parent.winfo_screenheight() / 2 - 200), width=210)
+        self.treeview.place(x=20, y=30, height=(parent.winfo_screenheight() - 370), width=210)
 
         self.treeview["columns"] = ["1", "2", "3"]
         self.treeview.heading("1", text="Char", anchor='c')
@@ -378,25 +377,27 @@ class KeystrokeDataFields:
         self.treeview.bind("<Double-Button-1>", self.change_keybind)
 
         self.delete_button = Button(self.frame, text="Delete Key", command=self.delete_binding, width=8)
-        self.delete_button.place(x=20, y=parent.winfo_screenheight() / 2 - 170, anchor=NW)
+        self.delete_button.place(x=20, y=parent.winfo_screenheight() - 340, anchor=NW)
 
         self.add_button = Button(self.frame, text="Add Key", command=self.add_key_popup, width=9)
-        self.add_button.place(x=125, y=parent.winfo_screenheight() / 2 - 170, anchor=N)
+        self.add_button.place(x=125, y=parent.winfo_screenheight() - 340, anchor=N)
 
         self.save_button = Button(self.frame, text="Save File", command=self.save_binding, width=8)
-        self.save_button.place(x=230, y=parent.winfo_screenheight() / 2 - 170, anchor=NE)
+        self.save_button.place(x=230, y=parent.winfo_screenheight() - 340, anchor=NE)
 
         self.file_scroll = Scrollbar(self.frame, orient="vertical", command=self.treeview.yview)
-        self.file_scroll.place(x=2, y=30, height=(parent.winfo_screenheight() / 2 - 200))
+        self.file_scroll.place(x=2, y=30, height=(parent.winfo_screenheight() - 370))
 
         self.treeview.configure(yscrollcommand=self.file_scroll.set)
         self.tree_parents = []
         self.tags = ['odd', 'even', 'toggle']
         self.current_selection = "I000"
 
+        dur_label = Label(self.frame, text="Duration Bindings", font=('Purisa', 10))
+        dur_label.place(x=355, y=15, anchor=CENTER)
+
         self.treeview1 = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
-        self.treeview1.place(x=20, y=(parent.winfo_screenheight() / 2 - 175) + 50,
-                             height=(parent.winfo_screenheight() / 2 - 200), width=210)
+        self.treeview1.place(x=250, y=30, height=(parent.winfo_screenheight() - 370), width=210)
 
         self.treeview1["columns"] = ["1", "2", "3", "4"]
         self.treeview1.heading("1", text="Char", anchor='c')
@@ -416,8 +417,7 @@ class KeystrokeDataFields:
         self.treeview1.bind("<Double-Button-1>", self.change_keybind1)
 
         self.file_scroll1 = Scrollbar(self.frame, orient="vertical", command=self.treeview1.yview)
-        self.file_scroll1.place(x=2, y=(parent.winfo_screenheight() / 2 - 175) + 50,
-                                height=(parent.winfo_screenheight() / 2 - 200))
+        self.file_scroll1.place(x=232, y=30, height=(parent.winfo_screenheight() - 370))
 
         self.treeview1.configure(yscrollcommand=self.file_scroll1.set)
         self.tree_parents1 = []
@@ -427,13 +427,38 @@ class KeystrokeDataFields:
         self.populate_bindings1()
 
         self.delete_button1 = Button(self.frame, text="Delete Key", command=self.delete_dur_binding, width=8)
-        self.delete_button1.place(x=20, y=parent.winfo_screenheight() - 325)
+        self.delete_button1.place(x=250, y=parent.winfo_screenheight() - 340)
 
         self.add_button1 = Button(self.frame, text="Add Key", command=self.add_dur_popup, width=9)
-        self.add_button1.place(x=125, y=parent.winfo_screenheight() - 325, anchor=N)
+        self.add_button1.place(x=355, y=parent.winfo_screenheight() - 340, anchor=N)
 
         self.save_button1 = Button(self.frame, text="Save File", command=self.save_binding, width=8)
-        self.save_button1.place(x=230, y=parent.winfo_screenheight() - 325, anchor=NE)
+        self.save_button1.place(x=460, y=parent.winfo_screenheight() - 340, anchor=NE)
+
+        self.file_scroll2 = Scrollbar(self.frame, orient="vertical", command=self.treeview1.yview)
+        self.file_scroll2.place(x=462, y=30, height=(parent.winfo_screenheight() - 370))
+
+        dur_label = Label(self.frame, text="Session History", font=('Purisa', 10))
+        dur_label.place(x=585, y=15, anchor=CENTER)
+
+        self.treeview2 = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
+        self.treeview2.place(x=480, y=30, height=(parent.winfo_screenheight() - 370), width=210)
+
+        self.treeview2["columns"] = ["1", "2", "3", "4"]
+        self.treeview2.heading("1", text="Char", anchor='c')
+        self.treeview2.column("1", width=40, stretch=NO, anchor='c')
+        self.treeview2.heading("2", text="Dur")
+        self.treeview2.column("2", width=40, stretch=NO, anchor='c')
+        self.treeview2.heading("3", text="Total")
+        self.treeview2.column("3", width=45, stretch=NO, anchor='c')
+        self.treeview2.heading("4", text="Tag")
+        self.treeview2.column("4", width=65, stretch=YES, anchor='c')
+
+        self.treeview2.tag_configure('odd', background='#E8E8E8')
+        self.treeview2.tag_configure('even', background='#DFDFDF')
+        self.treeview2.tag_configure('toggle', background='red')
+
+        self.treeview2.configure(yscrollcommand=self.file_scroll2.set)
 
     def delete_dur_binding(self):
         if self.current_selection1:

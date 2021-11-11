@@ -405,10 +405,11 @@ class SessionManagerWindow:
 
         self.menu = MenuBar(root, self)
         # self.kdf = KeystrokeDataFields(root, keystroke_file)
+        self.stf = SessionTimeFields(self, root)
         self.ovu = OutputViewPanel(root, keystroke_file)
+        self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date,
                                      self.session_time, self.ovu.key_view.conditions)
-        self.stf = SessionTimeFields(self, root, self.ovu.key_view)
 
         self.edf = EmpaticaDataFields(root, self.ovu)
         # self.hvp = HistoryViewPanel(root)
