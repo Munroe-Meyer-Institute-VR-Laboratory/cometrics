@@ -10,10 +10,13 @@ from logger_util import *
 def main():
     ExperimentSelection = ExperimentSelectWindow()
     if not ExperimentSelection.cancel:
+        print(ExperimentSelection.experiment_dir)
         UserSelection = patient_select_ui.PatientSelectWindow(ExperimentSelection.experiment_dir)
         if not UserSelection.cancel:
+            print(UserSelection.patient_file)
             KeystrokeSelection = keystroke_file_ui.KeystrokeSelectWindow(ExperimentSelection.experiment_dir, UserSelection.patient_file)
             if not KeystrokeSelection.cancel:
+                print(KeystrokeSelection.keystroke_file)
                 SessionManager = session_manager_ui.SessionManagerWindow(UserSelection.patient_file, KeystrokeSelection.keystroke_file)
                 return SessionManager.close_program
             else:

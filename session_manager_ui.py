@@ -15,6 +15,7 @@ from logger_util import *
 from output_view_ui import OutputViewPanel
 from input_view_ui import KeystrokeDataFields, EmpaticaDataFields
 from menu_bar import MenuBar
+from history_view_ui import HistoryViewPanel
 
 
 class SessionTimeFields:
@@ -403,12 +404,15 @@ class SessionManagerWindow:
         self.unmc_shield_canvas.create_image(0, 0, anchor=NW, image=self.unmc_shield_img)
 
         self.menu = MenuBar(root, self)
-        self.kdf = KeystrokeDataFields(root, keystroke_file)
+        # self.kdf = KeystrokeDataFields(root, keystroke_file)
+        self.ovu = OutputViewPanel(root, keystroke_file)
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date,
-                                     self.session_time, self.kdf.conditions)
-        self.stf = SessionTimeFields(self, root, self.kdf)
-        self.ovu = OutputViewPanel(root)
+                                     self.session_time, self.ovu.key_view.conditions)
+        self.stf = SessionTimeFields(self, root, self.ovu.key_view)
+
         self.edf = EmpaticaDataFields(root, self.ovu)
+        # self.hvp = HistoryViewPanel(root)
+
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
 
