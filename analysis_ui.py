@@ -42,50 +42,57 @@ class AccuracyPopup:
         self.window_label = None
         self.popup = None
         self.window_var = None
-        self.prim_filename, self.rel_filename = None, None
+        self.prim_filename, self.rel_filename, self.ksf_filename = None, None, None
         self.generate_accuracy(root)
 
     def generate_accuracy(self, root):
         # Create a Toplevel window
         self.popup = popup_root = Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x175")
+        popup_root.geometry("300x200")
         popup_root.title("Generate Accuracy")
 
+        self.ksf_browse = Button(self.popup, text="Keystroke File", command=self.select_ksf_file, width=15, bd=2)
+        self.ksf_browse.place(x=145, y=10, anchor=NE)
+        self.ksf_file_var = StringVar(self.popup)
+        self.ksf_file_var.set("No File Chosen")
+        self.ksf_file_label = Label(self.popup, textvariable=self.ksf_file_var, width=16, bg='white')
+        self.ksf_file_label.place(x=150, y=20, anchor=W)
+
         self.window_label = Label(self.popup, text="Window Size (s)", bg='white')
-        self.window_label.place(x=100, y=10, anchor=NE)
+        self.window_label.place(x=145, y=50, anchor=NE)
 
         self.window_var = StringVar(self.popup)
         self.window_var.set(str(10))
-        self.window_entry = Entry(self.popup, bd=2, width=25, textvariable=self.window_var)
-        self.window_entry.place(x=105, y=10)
+        self.window_entry = Entry(self.popup, bd=2, width=10, textvariable=self.window_var)
+        self.window_entry.place(x=150, y=50)
 
         self.prim_browse = Button(self.popup, text="Primary File", command=self.select_prim_file, width=15, bd=2)
-        self.prim_browse.place(x=145, y=40, anchor=NE)
+        self.prim_browse.place(x=145, y=80, anchor=NE)
         self.prim_file_var = StringVar(self.popup)
         self.prim_file_var.set("No File Chosen")
         self.prim_file_label = Label(self.popup, textvariable=self.prim_file_var, width=16, bg='white')
-        self.prim_file_label.place(x=145, y=70, anchor=NE)
+        self.prim_file_label.place(x=145, y=110, anchor=NE)
 
         self.rel_browse = Button(self.popup, text="Reliability File", command=self.select_rel_file, width=15, bd=2)
-        self.rel_browse.place(x=155, y=40, anchor=NW)
+        self.rel_browse.place(x=155, y=80, anchor=NW)
         self.rel_file_var = StringVar(self.popup)
         self.rel_file_var.set("No File Chosen")
         self.rel_file_label = Label(self.popup, textvariable=self.rel_file_var, width=16, bg='white')
-        self.rel_file_label.place(x=155, y=70, anchor=NW)
+        self.rel_file_label.place(x=155, y=110, anchor=NW)
 
         self.acc_button = Button(self.popup, text="Calculate Accuracy", width=15, bd=2, command=self.cal_acc)
-        self.acc_button.place(x=150, y=100, anchor=N)
+        self.acc_button.place(x=150, y=140, anchor=N)
 
         self.acc_var = StringVar(self.popup)
         self.acc_var.set("Not Calculated")
         self.acc_report = Label(self.popup, textvariable=self.acc_var, width=16, bg='white')
-        self.acc_report.place(x=150, y=130, anchor=N)
+        self.acc_report.place(x=150, y=170, anchor=N)
 
     def cal_acc(self):
-        if path.isfile(self.rel_filename) and path.isfile(self.prim_filename):
+        if path.isfile(self.rel_filename) and path.isfile(self.prim_filename) and path.isfile(self.ksf_filename):
             try:
-                with open(self.ksf) as f:
+                with open(self.ksf_filename) as f:
                     keystroke_json = json.load(f)
                 freq_bindings = []
                 dur_bindings = []
@@ -268,6 +275,10 @@ class AccuracyPopup:
     def select_prim_file(self):
         self.prim_filename = filedialog.askopenfilename(filetypes=(("Session Files", "*.json"), ("All Files", "*.*")))
         self.prim_file_var.set(pathlib.Path(self.prim_filename).name)
+
+    def select_ksf_file(self):
+        self.ksf_filename = filedialog.askopenfilename(filetype=(("Keystroke Files", "*.json"), ("All Files", "*.*")))
+        self.ksf_file_var.set(pathlib.Path(self.ksf_filename).name)
 
     def select_rel_file(self):
         self.rel_filename = filedialog.askopenfilename(filetypes=(("Session Files", "*.json"), ("All Files", "*.*")))
