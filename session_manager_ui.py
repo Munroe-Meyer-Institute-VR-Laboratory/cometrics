@@ -231,6 +231,7 @@ class PatientDataFields:
                                                                anchor=NW,
                                                                font=('Purisa', 10))
         # Setup input variables
+        self.session_number = session_number
         self.session_number_var = StringVar(self.frame, session_number)
         self.session_number_entry = Entry(self.frame, textvariable=self.session_number_var)
         self.session_number_entry.place(x=125, y=540, width=75)
@@ -313,6 +314,8 @@ class PatientDataFields:
             return "Data recorder not set!"
         elif self.prim_data_var.get() == "":
             return "Data type not set!"
+        elif int(self.session_number_var.get()) < self.session_number and self.prim_data_var.get() == "Primary":
+            return "Session number already exists!"
         else:
             return False
 
