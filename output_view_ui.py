@@ -464,8 +464,9 @@ class KeystrokeDataFields:
     def add_session_event(self, events, event_time):
         for event in events:
             self.event_history.append((event, event_time))
-        self.clear_listbox2()
-        self.populate_bindings2()
+            self.tree_parents2.append(self.treeview2.insert("", 'end', str(len(self.event_history)),
+                                                            values=(self.event_history[-1][0], self.event_history[-1][1]),
+                                                            tags=(self.tags[len(self.event_history) % 2])))
 
     def delete_event(self, event):
         self.current_selection2 = self.treeview2.identify_row(event.y)

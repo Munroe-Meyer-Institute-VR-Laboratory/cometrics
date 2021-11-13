@@ -180,7 +180,7 @@ class SessionTimeFields:
 
 
 class PatientDataFields:
-    def __init__(self, parent, patient_file, session_number, session_date, session_time, conditions):
+    def __init__(self, parent, patient_file, session_number, session_date, session_time, conditions, debug=False):
         self.conditions = conditions
         self.patient = PatientContainer(patient_file)
         self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight()-280))
@@ -290,6 +290,16 @@ class PatientDataFields:
         self.rel_data_radio.place(x=125, y=455)
 
         self.label_canvas.place(x=0, y=0)
+
+        if debug:
+            self.sess_loc_var.set("Debug")
+            self.assess_name_var.set("Debug")
+            self.cond_name_var.set("Debug")
+            self.case_mgr_var.set("Debug")
+            self.sess_ther_var.set("Debug")
+            self.data_rec_var.set("Debug")
+            self.prim_ther_var.set("Debug")
+
 
     def check_radio(self):
         pass
@@ -412,7 +422,7 @@ class SessionManagerWindow:
         self.ovu = OutputViewPanel(root, keystroke_file)
         self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date,
-                                     self.session_time, self.ovu.key_view.conditions)
+                                     self.session_time, self.ovu.key_view.conditions, debug=True)
 
         self.edf = EmpaticaDataFields(root, self.ovu)
         # self.hvp = HistoryViewPanel(root)
@@ -509,7 +519,7 @@ class SessionManagerWindow:
         for val, field in zip(dict_vals, dict_fields):
             x[field] = val
         for i in range(0, len(event_history)):
-            x[str(i)] = [self.event_history[i][0], self.event_history[i][1]]
+            x[str(i)] = [event_history[i][0], event_history[i][1]]
         with open(self.session_file, 'w') as f:
             json.dump(x, f)
         self.ovu.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"), self.tag_history)
