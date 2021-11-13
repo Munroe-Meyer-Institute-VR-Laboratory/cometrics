@@ -336,6 +336,7 @@ class KeystrokeDataFields:
         self.keystroke_json = None
         self.new_keystroke = False
         self.bindings = []
+        self.event_history = [('AGG', 12), ('AGG SB', 25)]
         self.dur_bindings = []
         self.bindings_freq = []
         self.key_file = keystroke_file
@@ -423,9 +424,6 @@ class KeystrokeDataFields:
         self.tree_parents1 = []
         self.current_selection1 = "I000"
 
-        self.populate_bindings()
-        self.populate_bindings1()
-
         self.delete_button1 = Button(self.frame, text="Delete Key", command=self.delete_dur_binding, width=8)
         self.delete_button1.place(x=250, y=parent.winfo_screenheight() - 340)
 
@@ -444,21 +442,36 @@ class KeystrokeDataFields:
         self.treeview2 = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
         self.treeview2.place(x=480, y=30, height=(parent.winfo_screenheight() - 370), width=210)
 
-        self.treeview2["columns"] = ["1", "2", "3", "4"]
-        self.treeview2.heading("1", text="Char", anchor='c')
-        self.treeview2.column("1", width=40, stretch=NO, anchor='c')
-        self.treeview2.heading("2", text="Dur")
-        self.treeview2.column("2", width=40, stretch=NO, anchor='c')
-        self.treeview2.heading("3", text="Total")
-        self.treeview2.column("3", width=45, stretch=NO, anchor='c')
-        self.treeview2.heading("4", text="Tag")
-        self.treeview2.column("4", width=65, stretch=YES, anchor='c')
+        self.treeview2["columns"] = ["1", "2"]
+        self.treeview2.heading("1", text="Event", anchor='c')
+        self.treeview2.column("1", width=104, stretch=NO, anchor='c')
+        self.treeview2.heading("2", text="Time")
+        self.treeview2.column("2", width=104, stretch=NO, anchor='c')
 
         self.treeview2.tag_configure('odd', background='#E8E8E8')
         self.treeview2.tag_configure('even', background='#DFDFDF')
         self.treeview2.tag_configure('toggle', background='red')
 
         self.treeview2.configure(yscrollcommand=self.file_scroll2.set)
+        self.treeview2.bind("<Double-Button-1>", self.delete_event)
+        self.tree_parents2 = []
+        self.current_selection2 = "I000"
+
+        self.populate_bindings()
+        self.populate_bindings1()
+        self.populate_bindings2()
+
+    def add_session_event(self, event, event_time):
+        self.event_history.append((event, event_time))
+        self.clear_listbox2()
+        self.populate_bindings2()
+
+    def delete_event(self, event):
+        self.current_selection2 = self.treeview2.identify_row(event.y)
+        if self.current_selection2:
+            self.event_history.pop(int(self.current_selection2))
+            self.clear_listbox2()
+            self.populate_bindings2()
 
     def delete_dur_binding(self):
         if self.current_selection1:
@@ -499,6 +512,9 @@ class KeystrokeDataFields:
 
     def add_key_popup(self):
         NewKeyPopup(self, self.frame, False)
+
+    def get_selection2(self, event):
+        self.current_selection2 = self.treeview2.identify_row(event.y)
 
     def get_selection1(self, event):
         self.current_selection1 = self.treeview1.identify_row(event.y)
@@ -567,6 +583,10 @@ class KeystrokeDataFields:
         self.clear_listbox1()
         self.populate_bindings1()
 
+    def clear_listbox2(self):
+        for children in self.treeview2.get_children():
+            self.treeview2.delete(children)
+
     def clear_listbox1(self):
         for children in self.treeview1.get_children():
             self.treeview1.delete(children)
@@ -608,6 +628,13 @@ class KeystrokeDataFields:
             self.sticky_dur.append(0)
             self.tree_parents1.append(self.treeview1.insert("", 'end', str(i),
                                                             values=(bind[1], 0, 0, bind[0]),
+                                                            tags=(self.tags[i % 2])))
+
+    def populate_bindings2(self):
+        for i in range(0, len(self.event_history)):
+            bind = self.event_history[i]
+            self.tree_parents2.append(self.treeview2.insert("", 'end', str(i),
+                                                            values=(bind[0], bind[1]),
                                                             tags=(self.tags[i % 2])))
 
 
