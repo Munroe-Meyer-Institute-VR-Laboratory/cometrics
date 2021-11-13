@@ -13,9 +13,8 @@ import winsound
 # Custom library imports
 from logger_util import *
 from output_view_ui import OutputViewPanel
-from input_view_ui import KeystrokeDataFields, EmpaticaDataFields
+from input_view_ui import EmpaticaDataFields
 from menu_bar import MenuBar
-from history_view_ui import HistoryViewPanel
 
 
 class SessionTimeFields:
@@ -384,7 +383,8 @@ class SessionManagerWindow:
         parts = pathlib.Path(keystroke_file).parts
         self.session_files = []
         self.session_file = None
-        self.session_dir = path.join(parts[0], parts[1], parts[2], parts[3], 'sessions')
+        self.session_dir = path.join(*parts[0:-2], 'sessions')
+        print(self.session_dir)
 
         self.close_program = False
         self.session_number = 1
@@ -472,7 +472,7 @@ class SessionManagerWindow:
     def handle_key_press(self, key):
         try:
             if self.session_started:
-                events, key_type, dur = self.kdf.check_key(key, self.stf.session_time)
+                events, key_type, dur = self.ovu.key_view.check_key(key, self.stf.session_time)
                 for event in events:
                     if event:
                         if key_type:
