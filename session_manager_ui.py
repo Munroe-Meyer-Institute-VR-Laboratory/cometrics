@@ -79,6 +79,10 @@ class SessionTimeFields:
                                            font=('Purisa', 11), command=self.caller.pause_session)
         self.session_pause_button.place(x=527, y=36)
 
+        self.key_explanation = Label(self.frame, text="Esc Key\n\nLeft Control", font=('Purisa', 11), bg='white',
+                                     justify=LEFT)
+        self.key_explanation.place(x=675, y=4)
+
         self.session_duration = None
         self.beep_th = None
         self.interval_thread = None
@@ -418,7 +422,6 @@ class SessionManagerWindow:
         self.unmc_shield_canvas.create_image(0, 0, anchor=NW, image=self.unmc_shield_img)
 
         self.menu = MenuBar(root, self)
-        # self.kdf = KeystrokeDataFields(root, keystroke_file)
         self.stf = SessionTimeFields(self, root)
         self.ovu = OutputViewPanel(root, keystroke_file)
         self.stf.kdf = self.ovu.key_view
@@ -426,7 +429,6 @@ class SessionManagerWindow:
                                      self.session_time, self.ovu.key_view.conditions, debug=True)
 
         self.edf = EmpaticaDataFields(root, self.ovu)
-        # self.hvp = HistoryViewPanel(root)
 
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.mainloop()
