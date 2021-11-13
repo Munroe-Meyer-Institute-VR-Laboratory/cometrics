@@ -471,15 +471,15 @@ class KeystrokeDataFields:
     def delete_event(self, event):
         self.current_selection2 = self.treeview2.identify_row(event.y)
         if self.current_selection2:
-            self.event_history.pop(int(self.current_selection2))
-            self.clear_listbox2()
-            self.populate_bindings2()
+            self.treeview2.delete(self.tree_parents2[int(self.current_selection2) - 1])
+            self.tree_parents2.pop(int(self.current_selection2) - 1)
+            self.event_history.pop(int(self.current_selection2) - 1)
 
     def delete_last_event(self):
         if self.event_history:
+            self.treeview2.delete(self.tree_parents2[len(self.event_history) - 1])
+            self.tree_parents2.pop(len(self.event_history) - 1)
             self.event_history.pop(len(self.event_history) - 1)
-            self.clear_listbox2()
-            self.populate_bindings2()
 
     def delete_dur_binding(self):
         if self.current_selection1:
@@ -640,11 +640,13 @@ class KeystrokeDataFields:
                                                             tags=(self.tags[i % 2])))
 
     def populate_bindings2(self):
-        for i in range(0, len(self.event_history)):
-            bind = self.event_history[i]
-            self.tree_parents2.append(self.treeview2.insert("", 'end', str(i),
-                                                            values=(bind[0], bind[1]),
-                                                            tags=(self.tags[i % 2])))
+        if self.event_history:
+            for i in range(0, len(self.event_history)):
+                print(str(i))
+                bind = self.event_history[i]
+                self.tree_parents2.append(self.treeview2.insert("", 'end', str(i),
+                                                                values=(bind[0], bind[1]),
+                                                                tags=(self.tags[i % 2])))
 
 
 class NewKeyPopup:
