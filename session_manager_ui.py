@@ -486,6 +486,7 @@ class SessionManagerWindow:
     def save_session(self):
         self.pdf.save_patient_fields()
         dict_vals, dict_fields = self.pdf.get_session_fields()
+        event_history = self.ovu.key_view.event_history
         if dict_vals[-1] != self.session_number:
             if dict_vals[-2] == "Reliability":
                 self.session_file = path.join(pathlib.Path(self.session_file).parent, "session_" +
@@ -504,8 +505,8 @@ class SessionManagerWindow:
         }
         for val, field in zip(dict_vals, dict_fields):
             x[field] = val
-        for i in range(0, len(self.tag_history)):
-            x[str(i)] = [self.tag_history[i][0], self.tag_history[i][1]]
+        for i in range(0, len(event_history)):
+            x[str(i)] = [self.event_history[i][0], self.event_history[i][1]]
         with open(self.session_file, 'w') as f:
             json.dump(x, f)
         self.ovu.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"), self.tag_history)

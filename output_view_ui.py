@@ -461,8 +461,9 @@ class KeystrokeDataFields:
         self.populate_bindings1()
         self.populate_bindings2()
 
-    def add_session_event(self, event, event_time):
-        self.event_history.append((event, event_time))
+    def add_session_event(self, events, event_time):
+        for event in events:
+            self.event_history.append((event, event_time))
         self.clear_listbox2()
         self.populate_bindings2()
 
@@ -508,6 +509,7 @@ class KeystrokeDataFields:
                     self.sticky_start[i] = start_time
                 key_type = True
         if return_bindings:
+            self.add_session_event(return_bindings, start_time)
             return return_bindings, key_type, duration
 
     def add_key_popup(self):
