@@ -384,7 +384,8 @@ class SessionManagerWindow:
         self.keystroke_file = keystroke_file
         self.global_commands = {
             "Toggle Session": keyboard.Key.esc,
-            "Pause Session": keyboard.Key.ctrl_l
+            "Pause Session": keyboard.Key.ctrl_l,
+            "Delete Last Event": keyboard.Key.backspace
         }
         self.tag_history = []
         self.listener = keyboard.Listener(
@@ -481,6 +482,8 @@ class SessionManagerWindow:
                             messagebox.showwarning("Warning", response)
                 elif key == "Pause Session":
                     self.pause_session()
+                elif key == "Delete Last Event":
+                    self.ovu.key_view.delete_last_event()
 
     def handle_key_press(self, key):
         try:

@@ -336,7 +336,7 @@ class KeystrokeDataFields:
         self.keystroke_json = None
         self.new_keystroke = False
         self.bindings = []
-        self.event_history = [('AGG', 12), ('AGG SB', 25)]
+        self.event_history = []
         self.dur_bindings = []
         self.bindings_freq = []
         self.key_file = keystroke_file
@@ -472,6 +472,12 @@ class KeystrokeDataFields:
         self.current_selection2 = self.treeview2.identify_row(event.y)
         if self.current_selection2:
             self.event_history.pop(int(self.current_selection2))
+            self.clear_listbox2()
+            self.populate_bindings2()
+
+    def delete_last_event(self):
+        if self.event_history:
+            self.event_history.pop(len(self.event_history) - 1)
             self.clear_listbox2()
             self.populate_bindings2()
 
