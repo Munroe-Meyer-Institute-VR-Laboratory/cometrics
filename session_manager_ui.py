@@ -490,14 +490,10 @@ class SessionManagerWindow:
     def handle_key_press(self, key):
         try:
             if self.session_started:
-                events, key_type, dur = self.ovu.key_view.check_key(key, self.stf.session_time)
+                events = self.ovu.key_view.check_key(key, self.stf.session_time)
                 for event in events:
-                    if event:
-                        if key_type:
-                            if dur:
-                                self.tag_history.append((event, dur))
-                        else:
-                            self.tag_history.append((event, self.stf.session_time))
+                    if event[0] and event[1]:
+                        self.tag_history.append(event)
         except TypeError as e:
             print(str(e))
 

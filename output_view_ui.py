@@ -465,11 +465,15 @@ class KeystrokeDataFields:
         self.populate_bindings1()
         self.populate_bindings2()
 
-    def add_session_event(self, events, event_time):
+    def add_session_event(self, events):
         for event in events:
-            self.event_history.append((event, event_time))
+            if type(event[1]) is list:
+                start_time = int(event[1][1]) - int(event[1][0])
+            else:
+                start_time = event[1]
+            self.event_history.append(event)
             self.tree_parents2.append(self.treeview2.insert("", 'end', str(len(self.event_history)),
-                                                            values=(self.event_history[-1][0], self.event_history[-1][1]),
+                                                            values=(self.event_history[-1][0], start_time),
                                                             tags=(self.tags[len(self.event_history) % 2])))
         self.treeview2.see(self.tree_parents2[-1])
 
@@ -497,21 +501,18 @@ class KeystrokeDataFields:
 
     def check_key(self, key_char, start_time):
         return_bindings = []
-        key_type = False
-        duration = None
         for i in range(0, len(self.bindings)):
             if self.bindings[i][1] == key_char:
                 self.bindings_freq[i] += 1
                 self.treeview.set(str(i), column="2", value=self.bindings_freq[i])
-                return_bindings.append(self.bindings[i][0])
-                key_type = False
+                return_bindings.append((self.bindings[i][0], start_time))
         for i in range(0, len(self.dur_bindings)):
             if self.dur_bindings[i][1] == key_char:
-                return_bindings.append(self.dur_bindings[i][0])
                 if self.dur_sticky[i]:
                     self.treeview1.item(str(i), tags=self.tags[i % 2])
                     self.dur_sticky[i] = False
-                    duration = (self.sticky_start[i], start_time)
+                    duration = [self.sticky_start[i], start_time]
+                    return_bindings.append((self.dur_bindings[i][0], duration))
                     self.sticky_dur[i] += start_time - self.sticky_start[i]
                     self.sticky_start[i] = 0
                     self.treeview1.set(str(i), column="3", value=self.sticky_dur[i])
@@ -519,10 +520,9 @@ class KeystrokeDataFields:
                     self.treeview1.item(str(i), tags=self.tags[2])
                     self.dur_sticky[i] = True
                     self.sticky_start[i] = start_time
-                key_type = True
         if return_bindings:
-            self.add_session_event(return_bindings, start_time)
-            return return_bindings, key_type, duration
+            self.add_session_event(return_bindings)
+            return return_bindings
 
     def add_key_popup(self):
         NewKeyPopup(self, self.frame, False)

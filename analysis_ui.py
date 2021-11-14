@@ -330,12 +330,12 @@ def export_columnwise_csv(root, session_dir):
 
 def populate_spreadsheet(root, patient_file, ksf, session_dir):
     parts = pathlib.Path(patient_file).parts
-    template = path.join(parts[0], parts[1], "data", pathlib.Path(ksf).stem + ".xlsx")
+    template = path.join(*parts[0:-2], "data", pathlib.Path(ksf).stem + ".xlsx")
     wb = openpyxl.load_workbook(template)
     data_wb = wb['Data']
     sessions = get_sessions(session_dir)
-    sess_parts = session_dir.split('\\')
-    analysis_dir = path.join(sess_parts[0], sess_parts[1], sess_parts[2], sess_parts[3], 'analysis')
+    sess_parts = pathlib.Path(session_dir).parts
+    analysis_dir = path.join(*sess_parts[0:-1], 'analysis')
     if not path.exists(analysis_dir):
         os.mkdir(analysis_dir)
     patient = PatientContainer(patient_file)
@@ -395,7 +395,7 @@ def populate_spreadsheet(root, patient_file, ksf, session_dir):
             dur_d[0][col].value = dur
         row += 1
         sess += 1
-    wb.save(path.join(analysis_dir, sess_parts[3] + "_analysis.xlsx"))
+    wb.save(path.join(analysis_dir, sess_parts[-2] + "_analysis.xlsx"))
     os.startfile(analysis_dir)
     root.root.iconify()
 
