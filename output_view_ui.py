@@ -458,8 +458,7 @@ class KeystrokeDataFields:
         self.current_selection2 = "I000"
 
         self.key_explanation = Label(self.frame, font=('Purisa', 10), text="Delete Last Event: Backspace\nDouble Click "
-                                                                           "Any Event to Delete",
-                                     justify=LEFT)
+                                                                           "Any Event to Delete", justify=LEFT)
         self.key_explanation.place(x=480, y=parent.winfo_screenheight() - 340)
 
         self.populate_bindings()

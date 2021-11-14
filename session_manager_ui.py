@@ -413,8 +413,8 @@ class SessionManagerWindow:
         root = self.root = Tk()
         root.config(bg="white", bd=-2)
         pad = 3
-        root.geometry("{0}x{1}+0+0".format(root.winfo_screenwidth() - pad, root.winfo_screenheight() - pad))
-        root.title("Experiment Collection & Logging v0.4.3")
+        root.geometry("{0}x{1}+0+0".format(1250, 725))
+        root.title("Experiment Collection & Logging v0.4.5")
 
         self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
