@@ -145,16 +145,19 @@ class AccuracyPopup:
                         freq_pia[cell] += x
                         if larger == 0 and smaller == 0 or larger >= 1 and smaller >= 1:
                             freq_tia_agree[cell] += 1
-                        if larger == 0 and smaller == 0:
-                            freq_nia_agree[cell] += 1
-                        else:
-                            freq_nia_disagree[cell] += 1
                         if larger == smaller:
                             freq_eia_agree[cell] += 1
+
+                        if larger == 0 and smaller == 0:
+                            freq_nia_agree[cell] += 1
+                        elif larger >= 1 and smaller == 0:
+                            freq_nia_disagree[cell] += 1
+
                         if larger >= 1 and smaller >= 1:
                             freq_oia_agree[cell] += 1
-                        else:
+                        elif larger >= 1 and smaller == 0:
                             freq_oia_disagree[cell] += 1
+
                         freq_intervals[cell] += 1
                 for row in range(0, len(prim_window_dur)):
                     for cell in range(0, len(prim_window_dur[row])):
