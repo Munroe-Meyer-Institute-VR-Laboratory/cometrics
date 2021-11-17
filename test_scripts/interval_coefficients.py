@@ -43,8 +43,8 @@ def cal_acc(rel_filename, prim_filename, ksf_filename, window_size):
                 for i in range(0, len(rel_window_dur) - len(prim_window_dur)):
                     prim_window_dur.append([0] * len(dur_bindings))
             freq_pia = [0] * len(freq_bindings)
-            freq_oia_agree = [0] * len(freq_bindings)
-            freq_nia_agree = [0] * len(freq_bindings)
+            freq_oia_agree, freq_oia_disagree = [0] * len(freq_bindings), [0] * len(freq_bindings)
+            freq_nia_agree, freq_nia_disagree = [0] * len(freq_bindings), [0] * len(freq_bindings)
             freq_eia_agree = [0] * len(freq_bindings)
             freq_tia_agree = [0] * len(freq_bindings)
             freq_intervals, dur_intervals = [0] * len(freq_bindings), [0] * len(dur_bindings)
@@ -63,15 +63,18 @@ def cal_acc(rel_filename, prim_filename, ksf_filename, window_size):
                     else:
                         x = smaller / larger
                     freq_pia[cell] += x
+                    if larger == 0 and smaller == 0 or larger >= 1 and smaller >= 1:
+                        freq_tia_agree[cell] += 1
                     if larger == 0 and smaller == 0:
                         freq_nia_agree[cell] += 1
-                        freq_tia_agree[cell] += 1
+                    else:
+                        freq_nia_disagree[cell] += 1
                     if larger == smaller:
                         freq_eia_agree[cell] += 1
                     if larger >= 1 and smaller >= 1:
                         freq_oia_agree[cell] += 1
-                    if larger > 1 and smaller > 1:
-                        freq_tia_agree[cell] += 1
+                    else:
+                        freq_oia_disagree[cell] += 1
                     freq_intervals[cell] += 1
             for row in range(0, len(prim_window_dur)):
                 for cell in range(0, len(prim_window_dur[row])):
@@ -124,7 +127,7 @@ def cal_acc(rel_filename, prim_filename, ksf_filename, window_size):
             ws.cell(row=row, column=1).value = "Freq NIA"
             for col, val in enumerate(freq_nia_agree, start=2):
                 ws.cell(row=row, column=col).value = str \
-                    (int((val / freq_intervals[freq_nia_agree.index(val)]) * 100)) + "%"
+                    (int((val / (val + freq_nia_disagree[freq_nia_agree.index(val)])) * 100)) + "%"
             row += 1
             ws.cell(row=row, column=1).value = "Freq TIA"
             for col, val in enumerate(freq_tia_agree, start=2):
@@ -139,7 +142,7 @@ def cal_acc(rel_filename, prim_filename, ksf_filename, window_size):
             ws.cell(row=row, column=1).value = "Freq OIA"
             for col, val in enumerate(freq_oia_agree, start=2):
                 ws.cell(row=row, column=col).value = str \
-                    (int((val / freq_intervals[freq_oia_agree.index(val)]) * 100)) + "%"
+                    (int((val / (val + freq_oia_disagree[freq_oia_agree.index(val)])) * 100)) + "%"
             row += 2
             for col, val in enumerate(dur_bindings, start=2):
                 ws.cell(row=row, column=col).value = val
@@ -200,9 +203,19 @@ def cal_acc(rel_filename, prim_filename, ksf_filename, window_size):
 
 
 def get_freq_pia(prim_windows, rel_windows):
+    freq_pia = [[]]
     for row in range(0, len(prim_windows)):
         for cell in range(0, len(prim_windows[row])):
-            pass
+            if prim_windows[row][cell] > rel_windows[row][cell]:
+                larger = prim_windows[row][cell]
+                smaller = rel_windows[row][cell]
+            else:
+                smaller = prim_windows[row][cell]
+                larger = rel_windows[row][cell]
+            if smaller == 0 and larger == 0:
+                x = 1
+            else:
+                x = smaller / larger
 
 
 def get_freq_oia(prim_windows, rel_windows):
@@ -286,9 +299,9 @@ def get_keystroke_window(key_file, session_file, window_size):
     return freq_windows, dur_windows
 
 
-rel_filename = r'D:\GitHub Repos\KeystrokeAnnotator\experiments\Lego Master\data\Tucan Sam\sessions\session_1.json'
-prim_filename = r'D:\GitHub Repos\KeystrokeAnnotator\experiments\Lego Master\data\Tucan Sam\sessions\session_2.json'
+rel = r'D:\GitHub Repos\KeystrokeAnnotator\experiments\Lego Master\data\Tucan Sam\sessions\session_1.json'
+prim = r'D:\GitHub Repos\KeystrokeAnnotator\experiments\Lego Master\data\Tucan Sam\sessions\session_2.json'
 ksf_file = r'D:\GitHub Repos\KeystrokeAnnotator\experiments\Lego Master\data\Tucan Sam\keystrokes\Reference_Tracker.json'
 window_size = 10
 
-cal_acc(rel_filename, prim_filename, ksf_file, window_size)
+cal_acc(rel, rel, ksf_file, window_size)

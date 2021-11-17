@@ -123,8 +123,8 @@ class AccuracyPopup:
                     for i in range(0, len(rel_window_dur) - len(prim_window_dur)):
                         prim_window_dur.append([0] * len(dur_bindings))
                 freq_pia = [0] * len(freq_bindings)
-                freq_oia_agree = [0] * len(freq_bindings)
-                freq_nia_agree = [0] * len(freq_bindings)
+                freq_oia_agree, freq_oia_disagree = [0] * len(freq_bindings), [0] * len(freq_bindings)
+                freq_nia_agree, freq_nia_disagree = [0] * len(freq_bindings), [0] * len(freq_bindings)
                 freq_eia_agree = [0] * len(freq_bindings)
                 freq_tia_agree = [0] * len(freq_bindings)
                 freq_intervals, dur_intervals = [0] * len(freq_bindings), [0] * len(dur_bindings)
@@ -143,15 +143,18 @@ class AccuracyPopup:
                         else:
                             x = smaller / larger
                         freq_pia[cell] += x
+                        if larger == 0 and smaller == 0 or larger >= 1 and smaller >= 1:
+                            freq_tia_agree[cell] += 1
                         if larger == 0 and smaller == 0:
                             freq_nia_agree[cell] += 1
-                            freq_tia_agree[cell] += 1
+                        else:
+                            freq_nia_disagree[cell] += 1
                         if larger == smaller:
                             freq_eia_agree[cell] += 1
                         if larger >= 1 and smaller >= 1:
                             freq_oia_agree[cell] += 1
-                        if larger > 1 and smaller > 1:
-                            freq_tia_agree[cell] += 1
+                        else:
+                            freq_oia_disagree[cell] += 1
                         freq_intervals[cell] += 1
                 for row in range(0, len(prim_window_dur)):
                     for cell in range(0, len(prim_window_dur[row])):
@@ -169,7 +172,8 @@ class AccuracyPopup:
                         dur_pia[cell] += x
                         dur_intervals[cell] += 1
                 headers = {
-                    "Generation Date": datetime.datetime.today().strftime("%B %d, %Y") + " " + datetime.datetime.now().strftime("%H:%M:%S"),
+                    "Generation Date": datetime.datetime.today().strftime
+                                       ("%B %d, %Y") + " " + datetime.datetime.now().strftime("%H:%M:%S"),
                     "Primary Session Date": prim_session["Session Date"] + " " + prim_session["Session Start Time"],
                     "Primary Therapist": prim_session["Primary Therapist"],
                     "Primary Case Manager": prim_session["Case Manager"],
@@ -198,23 +202,32 @@ class AccuracyPopup:
                 row += 1
                 ws.cell(row=row, column=1).value = "Freq PIA"
                 for col, val in enumerate(freq_pia, start=2):
-                    ws.cell(row=row, column=col).value = str(int((val / freq_intervals[freq_pia.index(val)]) * 100)) + "%"
+                    ws.cell(row=row, column=col).value = str(
+                        int((val / freq_intervals[freq_pia.index(val)]) * 100)) + "%"
                 row += 1
                 ws.cell(row=row, column=1).value = "Freq NIA"
                 for col, val in enumerate(freq_nia_agree, start=2):
-                    ws.cell(row=row, column=col).value = str(int((val / freq_intervals[freq_nia_agree.index(val)]) * 100)) + "%"
+                    ws.cell(row=row, column=col).value = str \
+                                                             (int((val / (val + freq_nia_disagree[
+                                                                 freq_nia_agree.index(val)])) * 100)) + "%"
                 row += 1
                 ws.cell(row=row, column=1).value = "Freq TIA"
                 for col, val in enumerate(freq_tia_agree, start=2):
-                    ws.cell(row=row, column=col).value = str(int((val / freq_intervals[freq_tia_agree.index(val)]) * 100)) + "%"
+                    ws.cell(row=row, column=col).value = str \
+                                                             (int((val / freq_intervals[
+                                                                 freq_tia_agree.index(val)]) * 100)) + "%"
                 row += 1
                 ws.cell(row=row, column=1).value = "Freq EIA"
                 for col, val in enumerate(freq_eia_agree, start=2):
-                    ws.cell(row=row, column=col).value = str(int((val / freq_intervals[freq_eia_agree.index(val)]) * 100)) + "%"
+                    ws.cell(row=row, column=col).value = str \
+                                                             (int((val / freq_intervals[
+                                                                 freq_eia_agree.index(val)]) * 100)) + "%"
                 row += 1
                 ws.cell(row=row, column=1).value = "Freq OIA"
                 for col, val in enumerate(freq_oia_agree, start=2):
-                    ws.cell(row=row, column=col).value = str(int((val / freq_intervals[freq_oia_agree.index(val)]) * 100)) + "%"
+                    ws.cell(row=row, column=col).value = str \
+                                                             (int((val / (val + freq_oia_disagree[
+                                                                 freq_oia_agree.index(val)])) * 100)) + "%"
                 row += 2
                 for col, val in enumerate(dur_bindings, start=2):
                     ws.cell(row=row, column=col).value = val
@@ -225,7 +238,9 @@ class AccuracyPopup:
                 row += 1
                 ws.cell(row=row, column=1).value = "Dur EIA"
                 for col, val in enumerate(dur_eia_agree, start=2):
-                    ws.cell(row=row, column=col).value = str(int((val / dur_intervals[dur_eia_agree.index(val)]) * 100)) + "%"
+                    ws.cell(row=row, column=col).value = str \
+                                                             (int((val / dur_intervals[
+                                                                 dur_eia_agree.index(val)]) * 100)) + "%"
                 row += 1
 
                 ws = wb["Primary Data"]

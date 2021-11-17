@@ -4,7 +4,7 @@ Frequency Keys Partial Interval Agreement Percentage (PIA)
 	Partial Interval Agreement = average all x values * 100
 
 Frequency Keys Occurrence Interval Agreement Percentage (OIA)
-	Given that one observed scored 1 or more for an interval, agreement if both scored at least 1
+	Given that one observer scored 1 or more for an interval, agreement if both scored at least 1
 	Occurrence Interval Agreement  = agreements / (agreements + disagreements) * 100
 
 Frequency Keys NonOccurrence Interval Agreement Percentage (NIA)
