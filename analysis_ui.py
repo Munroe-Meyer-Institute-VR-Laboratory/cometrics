@@ -7,6 +7,7 @@ import csv
 import datetime
 from tkinter import *
 from tkinter import filedialog, messagebox
+import traceback
 
 
 class PatientContainer:
@@ -287,6 +288,7 @@ class AccuracyPopup:
                 self.root.iconify()
             except Exception as e:
                 messagebox.showerror("Error", "Error encountered!\n" + str(e))
+                print(traceback.print_exc())
         else:
             messagebox.showwarning("Warning", "Please choose valid files!")
 
@@ -435,7 +437,7 @@ def get_keystroke_window(key_file, session_file, window_size):
         session_time += window_size - (session_time % window_size)
     freq_windows = [[0] * len(freq_bindings) for i in range(int(session_time / window_size))]
     dur_windows = [[0] * len(dur_bindings) for i in range(int(session_time / window_size))]
-    keys = list(session_file.keys())[12:]
+    keys = list(session_file.keys())[13:]
     dur_keys, freq_keys = [], []
     for key in keys:
         if type(session_file[key][1]) is list:

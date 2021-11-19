@@ -344,6 +344,7 @@ class PatientDataFields:
         self.name_entry.config(state='disabled')
         self.mrn_entry.config(state='disabled')
         self.prim_ther_entry.config(state='disabled')
+        self.sess_entry.config(state='disabled')
 
     def get_session_fields(self):
         return ([self.sess_loc_var.get(), self.assess_name_var.get(), self.cond_name_var.get(), self.prim_ther_var.get(),
@@ -414,7 +415,7 @@ class SessionManagerWindow:
         root.config(bg="white", bd=-2)
         pad = 3
         root.geometry("{0}x{1}+0+0".format(1250, 725))
-        root.title("Experiment Collection & Logging v0.5.5")
+        root.title("Experiment Collection & Logging v0.5.6")
 
         self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
