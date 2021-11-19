@@ -344,7 +344,7 @@ class PatientDataFields:
         self.name_entry.config(state='disabled')
         self.mrn_entry.config(state='disabled')
         self.prim_ther_entry.config(state='disabled')
-        self.sess_entry.config(state='disabled')
+        self.session_number_entry.config(state='disabled')
 
     def get_session_fields(self):
         return ([self.sess_loc_var.get(), self.assess_name_var.get(), self.cond_name_var.get(), self.prim_ther_var.get(),
@@ -455,6 +455,8 @@ class SessionManagerWindow:
         if path.isdir(self.session_dir):
             _, _, files = next(walk(directory))
             for file in files:
+                if len(pathlib.Path(file).stem.split('_')) == 3:
+                    continue
                 if pathlib.Path(file).suffix == ".json":
                     self.session_number += 1
             self.session_file = path.join(directory, 'session_' + str(self.session_number) + '.json')
