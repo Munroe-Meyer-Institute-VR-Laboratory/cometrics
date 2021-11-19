@@ -52,6 +52,7 @@ class ExperimentSelectWindow:
         self.cancel_button = Button(self.main_root, text="Cancel", command=self.quit_app, width=11)
         self.cancel_button.place(x=290, y=411, anchor=NE)
 
+        self.top_dir = None
         self.experiment_dirs = []
         self.experiment_dir = None
         self.load_experiments()
@@ -68,18 +69,19 @@ class ExperimentSelectWindow:
                                                           tags=(self.tags[i % 2])))
 
     def load_experiments(self):
-        directory = None
-        while not directory:
-            directory = filedialog.askdirectory(title='Select root directory to save files')
-            if not directory:
+        self.top_dir = None
+        while not self.top_dir:
+            self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
+            print(self.top_dir)
+            if not self.top_dir:
                 if not messagebox.askokcancel("Exit", "Press cancel to close program"):
                     sys.exit()
-        if path.isdir(directory):
-            _, dirs, _ = next(walk(directory))
+        if path.isdir(self.top_dir):
+            _, dirs, _ = next(walk(self.top_dir))
             for dir in dirs:
-                self.experiment_dirs.append(path.join(directory, dir))
+                self.experiment_dirs.append(path.join(self.top_dir, dir))
         else:
-            os.mkdir('./experiments')
+            os.mkdir(path.join(self.top_dir, 'experiments'))
 
     def on_closing(self):
         if self.main_root:
@@ -111,8 +113,8 @@ class ExperimentSelectWindow:
         self.main_root.destroy()
 
     def create_experiment(self, experiment_name):
-        os.mkdir(path.join('./experiments', experiment_name))
-        self.experiment_dir = path.join('./experiments', experiment_name)
+        os.mkdir(path.join(self.top_dir, experiment_name))
+        self.experiment_dir = path.join(self.top_dir, experiment_name)
 
     def fixed_map(self, option):
         # https://stackoverflow.com/a/62011081

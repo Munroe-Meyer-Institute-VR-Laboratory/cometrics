@@ -480,9 +480,10 @@ class KeystrokeDataFields:
     def delete_event(self, event):
         self.current_selection2 = self.treeview2.identify_row(event.y)
         if self.current_selection2:
-            self.treeview2.delete(self.tree_parents2[int(self.current_selection2) - 1])
-            self.tree_parents2.pop(int(self.current_selection2) - 1)
-            self.event_history.pop(int(self.current_selection2) - 1)
+            index = self.tree_parents2.index(str(self.current_selection2))
+            self.treeview2.delete(self.tree_parents2[index])
+            self.tree_parents2.pop(index)
+            self.event_history.pop(index)
 
     def delete_last_event(self):
         if self.event_history:
