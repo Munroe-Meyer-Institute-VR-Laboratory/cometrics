@@ -213,32 +213,28 @@ class AccuracyPopup:
                 for col, val in enumerate(freq_nia_agree, start=2):
                     # This protects from when there are no occurrences at all in the session
                     if val == 0 and freq_nia_disagree[freq_nia_agree.index(val)] == 0:
-                        ws.cell(row=row, column=col).value = str(0) + "%"
+                        ws.cell(row=row, column=col).value = "N/A"
                     else:
-                        ws.cell(row=row, column=col).value = str \
-                                                                 (int((val / (val + freq_nia_disagree[
+                        ws.cell(row=row, column=col).value = str(int((val / (val + freq_nia_disagree[
                                                                      freq_nia_agree.index(val)])) * 100)) + "%"
                 row += 1
                 ws.cell(row=row, column=1).value = "Freq TIA"
                 for col, val in enumerate(freq_tia_agree, start=2):
-                    ws.cell(row=row, column=col).value = str \
-                                                             (int((val / freq_intervals[
+                    ws.cell(row=row, column=col).value = str(int((val / freq_intervals[
                                                                  freq_tia_agree.index(val)]) * 100)) + "%"
                 row += 1
                 ws.cell(row=row, column=1).value = "Freq EIA"
                 for col, val in enumerate(freq_eia_agree, start=2):
-                    ws.cell(row=row, column=col).value = str \
-                                                             (int((val / freq_intervals[
+                    ws.cell(row=row, column=col).value = str(int((val / freq_intervals[
                                                                  freq_eia_agree.index(val)]) * 100)) + "%"
                 row += 1
                 ws.cell(row=row, column=1).value = "Freq OIA"
                 for col, val in enumerate(freq_oia_agree, start=2):
                     # This protects from when there are no occurrences at all in the session
                     if val == 0 and freq_oia_disagree[freq_oia_agree.index(val)] == 0:
-                        ws.cell(row=row, column=col).value = str(0) + "%"
+                        ws.cell(row=row, column=col).value = "N/A"
                     else:
-                        ws.cell(row=row, column=col).value = str \
-                                                                 (int((val / (val + freq_oia_disagree[
+                        ws.cell(row=row, column=col).value = str(int((val / (val + freq_oia_disagree[
                                                                      freq_oia_agree.index(val)])) * 100)) + "%"
                 row += 2
                 for col, val in enumerate(dur_bindings, start=2):
@@ -250,8 +246,7 @@ class AccuracyPopup:
                 row += 1
                 ws.cell(row=row, column=1).value = "Dur EIA"
                 for col, val in enumerate(dur_eia_agree, start=2):
-                    ws.cell(row=row, column=col).value = str \
-                                                             (int((val / dur_intervals[
+                    ws.cell(row=row, column=col).value = str(int((val / dur_intervals[
                                                                  dur_eia_agree.index(val)]) * 100)) + "%"
                 row += 1
 
