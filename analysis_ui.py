@@ -494,6 +494,7 @@ def get_keystroke_info(key_file, session_file):
                 key_dur[i] += int(session_param[1][1]) - int(session_param[1][0])
         except Exception as e:
             print(str(e))
+            print(traceback.print_exc())
             continue
     return key_freq, key_dur
 

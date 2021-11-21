@@ -1,5 +1,6 @@
 import os
 import pathlib
+import traceback
 from os import walk
 from tkinter import *
 from tkinter import filedialog, messagebox
@@ -259,6 +260,7 @@ class Popup:
                         self.close_win()
             except Exception as e:
                 messagebox.showwarning("Warning", "Excel format is not correct!\n" + str(e))
+                print(traceback.print_exc())
         else:
             messagebox.showwarning("Warning", "Select the protocol Excel tracker spreadsheet.")
 

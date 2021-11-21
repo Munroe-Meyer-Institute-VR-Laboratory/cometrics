@@ -1,6 +1,7 @@
 import json
 import threading
 import time
+import traceback
 from tkinter import *
 from tkinter import messagebox
 from tkinter.ttk import Treeview, Style
@@ -431,6 +432,7 @@ class EmpaticaDataFields:
                         self.connect_button.config(text="Disconnect")
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
+                print(traceback.print_exc())
         else:
             messagebox.showwarning("Warning", "Connect to server first!")
 
@@ -445,6 +447,7 @@ class EmpaticaDataFields:
                     except Exception as e:
                         messagebox.showerror("Exception Encountered",
                                              "Encountered an error when connecting to E4:\n" + str(e))
+                        print(traceback.print_exc())
                 else:
                     messagebox.showwarning("Warning", "Device is not connected!")
             else:
@@ -459,12 +462,14 @@ class EmpaticaDataFields:
                 self.empatica_button['text'] = "List Devices"
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
+                print(traceback.print_exc())
         else:
             try:
                 self.devices_thread = threading.Thread(target=self.list_devices_thread)
                 self.devices_thread.start()
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
+                print(traceback.print_exc())
 
     def list_devices_thread(self):
         self.emp_client.list_connected_devices()

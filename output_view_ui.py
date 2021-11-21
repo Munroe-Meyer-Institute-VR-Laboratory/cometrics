@@ -14,7 +14,7 @@ from matplotlib.backends.backend_tkagg import (
 # Implement the default Matplotlib key bindings.
 from matplotlib.figure import Figure
 from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient
-
+import traceback
 from gif_player import ImageLabel
 # Custom library imports
 
@@ -108,6 +108,7 @@ class OutputViewPanel:
                             self.e4_view.windowed_readings[int(keystroke[1]) - 1][-1].append(keystroke[0])
                     except Exception as e:
                         print(str(e))
+                        print(traceback.print_exc())
                 with open(filename, 'wb') as f:
                     pickle.dump(self.e4_view.windowed_readings, f)
             except TypeError as e:
@@ -820,6 +821,7 @@ class EmpaticaDataFields:
                         self.connect_button.config(text="Disconnect")
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
+                print(traceback.print_exc())
         else:
             messagebox.showwarning("Warning", "Connect to server first!")
 
@@ -834,6 +836,7 @@ class EmpaticaDataFields:
                     except Exception as e:
                         messagebox.showerror("Exception Encountered",
                                              "Encountered an error when connecting to E4:\n" + str(e))
+                        print(traceback.print_exc())
                 else:
                     messagebox.showwarning("Warning", "Device is not connected!")
             else:
@@ -848,12 +851,14 @@ class EmpaticaDataFields:
                 self.empatica_button['text'] = "List Devices"
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
+                print(traceback.print_exc())
         else:
             try:
                 self.devices_thread = threading.Thread(target=self.list_devices_thread)
                 self.devices_thread.start()
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
+                print(traceback.print_exc())
 
     def list_devices_thread(self):
         self.emp_client.list_connected_devices()
