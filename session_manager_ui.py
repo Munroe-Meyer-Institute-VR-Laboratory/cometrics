@@ -419,7 +419,7 @@ class SessionManagerWindow:
         root.config(bg="white", bd=-2)
         pad = 3
         root.geometry("{0}x{1}+0+0".format(1250, 725))
-        root.title("Experiment Collection & Logging v0.6.9")
+        root.title("Experiment Collection & Logging v0.7.10")
 
         self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
@@ -522,7 +522,8 @@ class SessionManagerWindow:
             "Session Date": self.session_date,
             "Session Start Time": self.session_time,
             "Session Time": self.stf.session_time,
-            "Pause Time": self.stf.break_time
+            "Pause Time": self.stf.break_time,
+            "Keystroke File": self.keystroke_file
         }
         for val, field in zip(dict_vals, dict_fields):
             x[field] = val

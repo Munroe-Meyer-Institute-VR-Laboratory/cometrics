@@ -43,7 +43,7 @@ class AccuracyPopup:
         self.window_label = None
         self.popup = None
         self.window_var = None
-        self.prim_filename, self.rel_filename, self.ksf_filename = None, None, None
+        self.prim_filename, self.rel_filename, self.ksf_filename = r"", r"", r""
         self.generate_accuracy(root)
 
     def generate_accuracy(self, root):
@@ -108,6 +108,17 @@ class AccuracyPopup:
                     prim_session = json.load(f)
                 with open(self.rel_filename, 'r') as f:
                     rel_session = json.load(f)
+                prim_ksf, rel_ksf, rel_type = prim_session["Keystroke File"], rel_session["Keystroke File"], rel_session["Primary Data"]
+                # Perform error checking before causing errors
+                if not os.path.samefile(prim_ksf, self.ksf_filename):
+                    messagebox.showerror("Error", "Primary session does not use the selected KSF!")
+                    return
+                elif not os.path.samefile(rel_ksf, self.ksf_filename):
+                    messagebox.showerror("Error", "Reliability session does not use the selected KSF!")
+                    return
+                elif rel_type == "Primary":
+                    messagebox.showerror("Error", "Selected reliability file is not a reliability collection!")
+                    return
                 prim_window_freq, prim_window_dur = get_keystroke_window(self.ksf, prim_session, int(self.window_var.get()))
                 rel_window_freq, rel_window_dur = get_keystroke_window(self.ksf, rel_session, int(self.window_var.get()))
 
@@ -301,6 +312,7 @@ class AccuracyPopup:
 
     def select_ksf_file(self):
         self.ksf_filename = filedialog.askopenfilename(filetype=(("Keystroke Files", "*.json"), ("All Files", "*.*")))
+        print(self.ksf_filename)
         self.ksf_file_var.set(pathlib.Path(self.ksf_filename).name)
 
     def select_rel_file(self):
@@ -440,7 +452,7 @@ def get_keystroke_window(key_file, session_file, window_size):
         session_time += window_size - (session_time % window_size)
     freq_windows = [[0] * len(freq_bindings) for i in range(int(session_time / window_size))]
     dur_windows = [[0] * len(dur_bindings) for i in range(int(session_time / window_size))]
-    keys = list(session_file.keys())[13:]
+    keys = list(session_file.keys())[14:]
     dur_keys, freq_keys = [], []
     for key in keys:
         if type(session_file[key][1]) is list:
