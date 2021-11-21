@@ -1,6 +1,12 @@
 # Introduction 
 Experiment Collection & Logging (ECL) is a Windows-based computer program that allows for the real-time collection of frequency- and duration-based behavior metrics.
 
+![Main Screen](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/ECL/blob/main/gui_images/MainScreen.jpg)
+
+![E4 Screen](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/ECL/blob/main/gui_images/E4Screen.jpg)
+
+![Interval Coefficients](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/ECL/blob/main/gui_images/AccuracyScreen.jpg)
+
 # Getting Started
 TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
 1.	Installation process
