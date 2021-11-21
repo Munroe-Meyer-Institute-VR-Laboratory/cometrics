@@ -431,7 +431,7 @@ class SessionManagerWindow:
         self.ovu = OutputViewPanel(root, keystroke_file)
         self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date,
-                                     self.session_time, self.ovu.key_view.conditions, debug=True)
+                                     self.session_time, self.ovu.key_view.conditions, debug=False)
 
         self.edf = EmpaticaDataFields(root, self.ovu)
 
