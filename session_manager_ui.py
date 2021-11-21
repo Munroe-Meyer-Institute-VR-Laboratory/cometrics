@@ -79,9 +79,13 @@ class SessionTimeFields:
                                            font=('Purisa', 11), command=self.caller.pause_session)
         self.session_pause_button.place(x=527, y=36)
 
-        self.key_explanation = Label(self.frame, text="Esc Key\n\nLeft Control", font=('Purisa', 11), bg='white',
+        self.key_explanation = Label(self.frame, text="Esc Key", font=('Purisa', 11), bg='white',
                                      justify=LEFT)
-        self.key_explanation.place(x=675, y=4)
+        self.key_explanation.place(x=675, y=8)
+
+        self.key_explanation = Label(self.frame, text="Left Control", font=('Purisa', 11), bg='white',
+                                     justify=LEFT)
+        self.key_explanation.place(x=675, y=38)
 
         self.session_duration = None
         self.beep_th = None
