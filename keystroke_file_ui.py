@@ -52,7 +52,7 @@ class KeystrokeSelectWindow:
         self.select_button = Button(self.main_root, text="Select File", command=self.save_and_quit, width=12)
         self.select_button.place(x=155, y=411, anchor=N)
 
-        self.cancel_button = Button(self.main_root, text="Cancel", command=self.quit_app, width=11)
+        self.cancel_button = Button(self.main_root, text="Delete", command=self.delete_ksf, width=11)
         self.cancel_button.place(x=290, y=411, anchor=NE)
 
         # Configure keystroke file information
@@ -74,6 +74,12 @@ class KeystrokeSelectWindow:
             self.tree_parents.append(self.treeview.insert("", 'end', str(i), text=str(i),
                                                           values=(pathlib.Path(self.keystroke_files[i]).stem,),
                                                           tags=(self.tags[i % 2])))
+
+    def clear_treeview(self):
+        for parent in self.tree_parents:
+            self.treeview.delete(parent)
+        self.tree_parents = []
+        self.keystroke_files = []
 
     def load_keystrokes(self, directory):
         if path.isdir(directory):
@@ -123,6 +129,18 @@ class KeystrokeSelectWindow:
             self.main_root.destroy()
         else:
             messagebox.showwarning("Warning", "Select protocol from list below first or click 'New File'")
+
+    def delete_ksf(self):
+        if self.keystroke_file:
+            try:
+                os.remove(self.keystroke_file)
+                self.load_keystrokes(self.keystroke_directory)
+                self.clear_treeview()
+                self.populate_keystrokes()
+            except Exception as e:
+                messagebox.showerror("Error", "Error encountered when deleting keystroke file:\n" + str(e))
+                print(str(e))
+                print(traceback.print_exc())
 
     def quit_app(self):
         self.new_keystroke, self.cancel, self.selected = False, True, False
