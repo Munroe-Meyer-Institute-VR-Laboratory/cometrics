@@ -265,6 +265,7 @@ class Popup:
                             messagebox.showwarning("Warning", "Conditions not found in selected spreadsheet!\n"
                                                               "Add sheet called 'Conditions' for this feature!")
                         name = pathlib.Path(filename).stem
+                        # TODO: Seth encountered a File Not Found error here
                         with open(path.join(self.caller.keystroke_directory, name + '.json'), 'w') as f:
                             x = {
                                 "Name": name,
