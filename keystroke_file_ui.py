@@ -89,7 +89,7 @@ class KeystrokeSelectWindow:
                 if pathlib.Path(file).suffix == ".json":
                     if not valid_dir:
                         valid_dir = True
-                    self.keystroke_files.append(path.join(directory, file))
+                    self.keystroke_files.append(path.normpath(path.join(directory, file)))
         else:
             if not path.isdir(self.experiment_dir):
                 os.mkdir(self.experiment_dir)
@@ -110,7 +110,7 @@ class KeystrokeSelectWindow:
                 "Duration": []
             }
             json.dump(x, f)
-        self.keystroke_file = path.join(self.keystroke_directory, name + '.json')
+        self.keystroke_file = path.normpath(path.join(self.keystroke_directory, name + '.json'))
 
     def new_keystroke_quit(self, name):
         if name and name != "":
@@ -266,7 +266,7 @@ class Popup:
                                                               "Add sheet called 'Conditions' for this feature!")
                         name = pathlib.Path(filename).stem
                         # TODO: Seth encountered a File Not Found error here
-                        with open(path.join(self.caller.keystroke_directory, name + '.json'), 'w') as f:
+                        with open(path.normpath(path.join(self.caller.keystroke_directory, name + '.json')), 'w') as f:
                             x = {
                                 "Name": name,
                                 "Frequency": freq_keys,

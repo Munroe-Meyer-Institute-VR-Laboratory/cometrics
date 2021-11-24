@@ -76,7 +76,7 @@ class PatientSelectWindow:
                 if pathlib.Path(file).suffix == ".json":
                     if not valid_dir:
                         valid_dir = True
-                    self.patient_files.append(path.join(directory, file))
+                    self.patient_files.append(path.normpath(path.join(directory, file)))
         else:
             os.mkdir(self.patients_dir)
 
@@ -116,7 +116,7 @@ class PatientSelectWindow:
                 "MRN": ""
             }
             json.dump(x, f)
-        self.patient_file = path.join(self.patients_dir, patient_name + '.json')
+        self.patient_file = path.normpath(path.join(self.patients_dir, patient_name + '.json'))
 
     def fixed_map(self, option):
         # https://stackoverflow.com/a/62011081

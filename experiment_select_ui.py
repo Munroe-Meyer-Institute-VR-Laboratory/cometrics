@@ -71,7 +71,7 @@ class ExperimentSelectWindow:
     def load_experiments(self):
         self.top_dir = None
         while not self.top_dir:
-            self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
+            self.top_dir = path.normpath(filedialog.askdirectory(title='Select root directory to save files'))
             print(self.top_dir)
             if not self.top_dir:
                 if not messagebox.askokcancel("Exit", "Press cancel to close program"):
@@ -79,7 +79,7 @@ class ExperimentSelectWindow:
         if path.isdir(self.top_dir):
             _, dirs, _ = next(walk(self.top_dir))
             for dir in dirs:
-                self.experiment_dirs.append(path.join(self.top_dir, dir))
+                self.experiment_dirs.append(path.normpath(path.join(self.top_dir, dir)))
         else:
             os.mkdir(path.join(self.top_dir, 'experiments'))
 
@@ -114,7 +114,7 @@ class ExperimentSelectWindow:
 
     def create_experiment(self, experiment_name):
         os.mkdir(path.join(self.top_dir, experiment_name))
-        self.experiment_dir = path.join(self.top_dir, experiment_name)
+        self.experiment_dir = path.normpath(path.join(self.top_dir, experiment_name))
 
     def fixed_map(self, option):
         # https://stackoverflow.com/a/62011081
