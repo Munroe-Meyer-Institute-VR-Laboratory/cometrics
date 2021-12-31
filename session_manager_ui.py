@@ -417,8 +417,8 @@ class SessionManagerWindow:
         self.get_session_file(self.session_dir)
         root = self.root = Tk()
         root.config(bg="white", bd=-2)
-        pad = 3
-        root.geometry("{0}x{1}+0+0".format(1250, 725))
+        # pad = 3
+        # root.geometry("{0}x{1}+0+0".format(1250, 725))
         root.title("Experiment Collection & Logging v0.7.11")
 
         self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
@@ -432,10 +432,12 @@ class SessionManagerWindow:
         self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date,
                                      self.session_time, self.ovu.key_view.conditions, debug=False)
-
         self.edf = EmpaticaDataFields(root, self.ovu)
 
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        root.state('zoomed')
+        root.update()
+        print(root.winfo_width(), root.winfo_height())
         root.mainloop()
 
     def restart_program(self):
