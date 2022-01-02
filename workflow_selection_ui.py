@@ -37,10 +37,38 @@ class WorkflowSelectionWindow:
         self.main_root.mainloop()
 
     def new_project_clicked(self):
-        print("Clicked new project")
+        self.top_dir = None
+        while not self.top_dir:
+            self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
+            print(self.top_dir)
+            if not self.top_dir:
+                if not messagebox.askokcancel("Exit", "Press cancel to close program"):
+                    sys.exit()
+            else:
+                self.top_dir = path.normpath(self.top_dir)
+        if path.isdir(self.top_dir):
+            _, dirs, _ = next(walk(self.top_dir))
+            for dir in dirs:
+                self.experiment_dirs.append(path.normpath(path.join(self.top_dir, dir)))
+        else:
+            os.mkdir(path.join(self.top_dir, 'experiments'))
 
     def open_project_clicked(self):
-        print("Clicked open project")
+        self.top_dir = None
+        while not self.top_dir:
+            self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
+            print(self.top_dir)
+            if not self.top_dir:
+                if not messagebox.askokcancel("Exit", "Press cancel to close program"):
+                    sys.exit()
+            else:
+                self.top_dir = path.normpath(self.top_dir)
+        if path.isdir(self.top_dir):
+            _, dirs, _ = next(walk(self.top_dir))
+            for dir in dirs:
+                self.experiment_dirs.append(path.normpath(path.join(self.top_dir, dir)))
+        else:
+            os.mkdir(path.join(self.top_dir, 'experiments'))
 
     @staticmethod
     def center(toplevel):
