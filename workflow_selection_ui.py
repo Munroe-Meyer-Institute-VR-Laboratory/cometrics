@@ -14,23 +14,23 @@ class WorkflowSelectionWindow:
         self.main_root = Tk()
         self.main_root.config(bg="white", bd=-2)
         self.main_root.geometry("{0}x{1}+0+0".format(400, 200))
-        self.main_root.title("ECL")
+        self.main_root.title("Cometric")
         new_project_label = Label(self.main_root, text="New Project", bg='white',
                                   font=('Purisa', 14))
-        new_project_label.place(anchor=CENTER, x=100, y=150)
+        new_project_label.place(anchor=CENTER, x=125, y=150)
         click_btn = PhotoImage(file='images/newproject.png')
         img_label = Label(image=click_btn)
         button = Button(self.main_root, image=click_btn, command=self.new_project_clicked,
                         borderwidth=0, highlightthickness=0)
-        button.place(anchor=CENTER, x=100, y=75)
+        button.place(anchor=CENTER, x=125, y=75)
         click_btn2 = PhotoImage(file='images/openproject.png')
         img_label2 = Label(image=click_btn2)
         button2 = Button(self.main_root, image=click_btn2, command=self.open_project_clicked,
                          borderwidth=0, highlightthickness=0)
-        button2.place(anchor=CENTER, x=300, y=75)
+        button2.place(anchor=CENTER, x=275, y=75)
         open_project_label = Label(self.main_root, text="Open Project", bg='white',
                                   font=('Purisa', 14))
-        open_project_label.place(anchor=CENTER, x=300, y=150)
+        open_project_label.place(anchor=CENTER, x=275, y=150)
         self.new_project_button = Button()
         self.center(self.main_root)
         self.main_root.resizable(width=False, height=False)
