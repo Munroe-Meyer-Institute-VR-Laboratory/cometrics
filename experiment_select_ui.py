@@ -71,11 +71,13 @@ class ExperimentSelectWindow:
     def load_experiments(self):
         self.top_dir = None
         while not self.top_dir:
-            self.top_dir = path.normpath(filedialog.askdirectory(title='Select root directory to save files'))
+            self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
             print(self.top_dir)
             if not self.top_dir:
                 if not messagebox.askokcancel("Exit", "Press cancel to close program"):
                     sys.exit()
+            else:
+                self.top_dir = path.normpath(self.top_dir)
         if path.isdir(self.top_dir):
             _, dirs, _ = next(walk(self.top_dir))
             for dir in dirs:

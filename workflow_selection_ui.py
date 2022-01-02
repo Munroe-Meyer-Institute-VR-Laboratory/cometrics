@@ -12,9 +12,9 @@ from logger_util import *
 class WorkflowSelectionWindow:
     def __init__(self):
         self.main_root = Tk()
-        self.main_root.config(bg="white", bd=-2)
+        self.main_root.config(bg="white")
         self.main_root.geometry("{0}x{1}+0+0".format(400, 200))
-        self.main_root.title("Cometric")
+        self.main_root.title("ECL")
         new_project_label = Label(self.main_root, text="New Project", bg='white',
                                   font=('Purisa', 14))
         new_project_label.place(anchor=CENTER, x=125, y=150)
@@ -29,7 +29,7 @@ class WorkflowSelectionWindow:
                          borderwidth=0, highlightthickness=0)
         button2.place(anchor=CENTER, x=275, y=75)
         open_project_label = Label(self.main_root, text="Open Project", bg='white',
-                                  font=('Purisa', 14))
+                                   font=('Purisa', 14))
         open_project_label.place(anchor=CENTER, x=275, y=150)
         self.new_project_button = Button()
         self.center(self.main_root)
