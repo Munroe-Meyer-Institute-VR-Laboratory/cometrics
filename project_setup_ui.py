@@ -103,10 +103,11 @@ class ProjectSetupWindow:
                 self.patient_treeview.insert("", 'end', str((len(self.patient_treeview_parents) + 1)), text=data,
                                              tags=treeview_tags[(len(self.patient_treeview_parents) + 1) % 2]))
             select_focus(self.patient_treeview, len(self.patient_treeview_parents))
-            self.patient_creation_check()
+            # self.patient_creation_check()
             self.load_patient(self.patient_dir)
         elif caller == 2:
             self.concerns.append(data)
+            self.write_concern_file()
             self.concern_treeview_parents.append(
                 self.concern_treeview.insert("", 'end', str((len(self.concern_treeview_parents) + 1)), text=data,
                                              tags=treeview_tags[(len(self.concern_treeview_parents) + 1) % 2]))
@@ -133,18 +134,18 @@ class ProjectSetupWindow:
 
     def populate_recent_projects(self):
         self.project_treeview_parents.append(self.project_treeview.insert("", 'end', str(0), text="Create or Import New Project",
-                                                                          tags=treeview_tags[0]))
+                                                                          tags=treeview_tags[2]))
         if self.recent_projects:
             for i in range(0, len(self.recent_projects)):
                 self.project_treeview_parents.append(
                     self.project_treeview.insert("", 'end', str(i + 1), text=str(pathlib.Path(
                         self.recent_projects[i]).stem),
-                                                 tags=(treeview_tags[i % 2])))
+                                                 tags=(treeview_tags[(i + 1) % 2])))
 
-    def load_project(self, dir):
-        print("Load", dir)
+    def load_project(self, directory):
+        self.project_dir = directory
         try:
-            _, self.patients, _ = next(os.walk(dir))
+            _, self.patients, _ = next(os.walk(directory))
         except StopIteration:
             messagebox.showerror("Error", "Selected project cannot be found!")
             return
@@ -154,12 +155,12 @@ class ProjectSetupWindow:
     # region Patient UI Controls
     def populate_patients(self):
         self.patient_treeview_parents.append(self.patient_treeview.insert("", 'end', str(0), text="Create New Patient",
-                                                                          tags=treeview_tags[0]))
+                                                                          tags=treeview_tags[2]))
         if self.patients:
             for i in range(0, len(self.patients)):
                 self.patient_treeview_parents.append(
                     self.patient_treeview.insert("", 'end', str(i + 1), text=str(self.patients[i]),
-                                                 tags=(treeview_tags[i % 2])))
+                                                 tags=(treeview_tags[(i + 1) % 2])))
 
     def create_new_patient(self):
         EntryPopup(self, self.main_root, "Enter New Patient Name", 1)
@@ -182,26 +183,21 @@ class ProjectSetupWindow:
 
     def load_patient(self, directory):
         if self.config.get_patient_concerns():
-            data_folders = config.get_data_folders()
             _concern_file = config.get_patient_concerns()
-            self.concern_file = os.path.join(directory, data_folders[1], _concern_file)
-            if os.path.exists(self.concern_file):
-                with open(self.concern_file, 'r') as file:
-                    self.concerns = yaml.safe_load(file)
-            else:
-                self.concerns = []
+            self.concern_file = os.path.join(self.project_dir, directory, _concern_file)
             self.populate_patient_concerns()
     # endregion
 
     # region Concern UI Controls
     def populate_patient_concerns(self):
+        self.read_concern_file()
         self.concern_treeview_parents.append(self.concern_treeview.insert("", 'end', str(0), text="Create New Concern",
-                                                                          tags=treeview_tags[0]))
+                                                                          tags=treeview_tags[2]))
         if self.concerns:
             for i in range(0, len(self.concerns)):
                 self.concern_treeview_parents.append(
                     self.concern_treeview.insert("", 'end', str(i + 1), text=str(self.concerns[i]),
-                                                 tags=(treeview_tags[i % 2])))
+                                                 tags=(treeview_tags[(i + 1) % 2])))
 
     def select_concern(self, event):
         selection = self.project_treeview.identify_row(event.y)
@@ -209,7 +205,19 @@ class ProjectSetupWindow:
             self.create_new_concern()
 
     def create_new_concern(self):
-        EntryPopup(self, self.main_root, "Enter New Concern Name", 2)
+        EntryPopup(self, self.main_root, "Enter Concern Name", 2)
+
+    def read_concern_file(self):
+        if os.path.exists(self.concern_file):
+            with open(self.concern_file, 'r') as file:
+                self.concerns = yaml.safe_load(file)
+        else:
+            self.concerns = []
+
+    def write_concern_file(self):
+        with open(self.concern_file, 'w') as file:
+            yaml.dump(self.concerns, file)
+        self.read_concern_file()
     # endregion
 
 

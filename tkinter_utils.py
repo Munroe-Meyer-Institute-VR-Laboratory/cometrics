@@ -58,6 +58,7 @@ def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, se
             treeview.column(col, width=column_dict[col][2], stretch=column_dict[col][3], anchor=column_dict[col][4])
     treeview.tag_configure('odd', background='#E8E8E8')
     treeview.tag_configure('even', background='#DFDFDF')
+    treeview.tag_configure('header', background='#C4C4C4')
     if button_1_bind:
         treeview.bind("<Button-1>", button_1_bind)
     if double_bind:
