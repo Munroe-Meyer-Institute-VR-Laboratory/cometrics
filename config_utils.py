@@ -11,6 +11,12 @@ class ConfigUtils:
         if self.config:
             return self.config['recent-projects']
 
+    def set_recent_projects(self, projects):
+        if self.config:
+            self.config['recent-projects'] = projects
+            with open(self.config_file, 'w') as file:
+                yaml.dump(self.config, file)
+
     def get_phases(self):
         if self.config:
             return self.config['phases']

@@ -2,13 +2,13 @@ import os
 import pathlib
 from os import walk
 from tkinter import *
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from tkinter.ttk import Treeview, Style
 import json
 
 from config_utils import ConfigUtils
 from logger_util import *
-from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup
+from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus
 from ui_params import project_treeview_params as ptp, treeview_tags
 
 
@@ -75,11 +75,28 @@ class ProjectSetupWindow:
         else:
             self.load_project(self.recent_projects[int(selection) - 1])
 
-    def popup_return(self, data):
-        print("popup returned", data)
+    def popup_return(self, data, caller):
+        print(data, caller)
+        if caller == 0:
+            self.project_dir = os.path.join(self.top_dir, data)
+            if not os.path.exists(self.project_dir):
+                os.mkdir(self.project_dir)
+            self.project_treeview_parents.append(
+                self.project_treeview.insert("", 'end', str((len(self.project_treeview_parents) + 1)), text=data,
+                                             tags=treeview_tags[(len(self.project_treeview_parents) + 1) % 2]))
+            self.recent_projects.append(self.project_dir)
+            config.set_recent_projects(self.recent_projects)
+            select_focus(self.project_treeview, len(self.project_treeview_parents))
 
     def create_new_project(self):
-        EntryPopup(self, self.main_root, "Enter New Project Name")
+        self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
+        print(self.top_dir)
+        if not self.top_dir:
+            if not messagebox.askokcancel("Exit", "Press cancel to close program"):
+                messagebox.showwarning("Warning", "No root filepath chosen! Please try again.")
+        else:
+            self.top_dir = path.normpath(self.top_dir)
+        EntryPopup(self, self.main_root, "Enter New Project Name", 0)
 
     def load_project(self, dir):
         print("load project from", dir)

@@ -71,6 +71,12 @@ def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, se
     return treeview, file_scroll
 
 
+def select_focus(widget: Treeview, selection):
+    selection = str(selection)
+    widget.selection_set(selection)
+    widget.focus(selection)
+
+
 def fixed_map(option):
     # https://stackoverflow.com/a/62011081
     # Fix for setting text colour for Tkinter 8.6.9
@@ -87,8 +93,9 @@ def fixed_map(option):
 
 
 class EntryPopup:
-    def __init__(self, top, root, name):
+    def __init__(self, top, root, name, popup_call):
         assert top.popup_return
+        self.popup_call = popup_call
         self.caller = top
         self.entry = None
         self.popup_root = None
@@ -114,5 +121,5 @@ class EntryPopup:
         self.entry.focus()
 
     def close_win(self):
-        self.caller.popup_return(self.entry.get())
+        self.caller.popup_return(self.entry.get(), self.popup_call)
         self.popup_root.destroy()
