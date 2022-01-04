@@ -1,1 +1,8 @@
-recent-projects: ['C:\Users\wsarc\Desktop\ExpDir']
+phases:
+- Assessment
+- Treatment
+recent-projects:
+- C:\Users\wsarc\Desktop\ExpDir
+window-size:
+- 864
+- 1536
