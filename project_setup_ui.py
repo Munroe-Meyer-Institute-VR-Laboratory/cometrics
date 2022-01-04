@@ -44,7 +44,8 @@ class ProjectSetupWindow:
                                                                         ptp[1] + int(self.window_height * 0.35),
                                                                         int(self.window_height * 0.2),
                                                                         int(self.window_width * 0.45),
-                                                                        patient_heading_dict)
+                                                                        patient_heading_dict,
+                                                                        double_bind=self.select_patient)
 
         self.concern_treeview, self.concern_filescroll = build_treeview(self.main_root, ptp[0],
                                                                         ptp[1] + int(self.window_height * 0.35) + int(
@@ -68,6 +69,42 @@ class ProjectSetupWindow:
         self.main_root.resizable(width=False, height=False)
         self.main_root.mainloop()
 
+    # region External Data Entry
+    def popup_return(self, data, caller):
+        print(data, caller)
+        if not data:
+            messagebox.showwarning("Warning", "No project name entered! Please try again.")
+            return
+        if caller == 0:
+            # Update path to project and create if it doesn't exist
+            self.project_dir = os.path.join(self.top_dir, data)
+            if not os.path.exists(self.project_dir):
+                os.mkdir(self.project_dir)
+            # Add to treeview
+            self.project_treeview_parents.append(
+                self.project_treeview.insert("", 'end', str((len(self.project_treeview_parents) + 1)), text=data,
+                                             tags=treeview_tags[(len(self.project_treeview_parents) + 1) % 2]))
+            select_focus(self.project_treeview, len(self.project_treeview_parents))
+            # Save recent path to config
+            if not self.recent_projects:
+                self.recent_projects = []
+            self.recent_projects.append(self.project_dir)
+            config.set_recent_projects(self.recent_projects)
+            # Load the project
+            self.load_project(self.project_dir)
+        elif caller == 1:
+            self.patient_dir = os.path.join(self.project_dir, data)
+            if not os.path.exists(self.patient_dir):
+                os.mkdir(self.patient_dir)
+            self.patient_treeview_parents.append(
+                self.patient_treeview.insert("", 'end', str((len(self.patient_treeview_parents) + 1)), text=data,
+                                             tags=treeview_tags[(len(self.patient_treeview_parents) + 1) % 2]))
+            select_focus(self.patient_treeview, len(self.patient_treeview_parents))
+            self.patient_creation_check()
+            self.load_patient(self.patient_dir)
+    # endregion
+
+    # region Project UI Controls
     def select_project(self, event):
         selection = self.project_treeview.identify_row(event.y)
         if selection == '0':
@@ -75,40 +112,69 @@ class ProjectSetupWindow:
         else:
             self.load_project(self.recent_projects[int(selection) - 1])
 
-    def popup_return(self, data, caller):
-        print(data, caller)
-        if caller == 0:
-            self.project_dir = os.path.join(self.top_dir, data)
-            if not os.path.exists(self.project_dir):
-                os.mkdir(self.project_dir)
-            self.project_treeview_parents.append(
-                self.project_treeview.insert("", 'end', str((len(self.project_treeview_parents) + 1)), text=data,
-                                             tags=treeview_tags[(len(self.project_treeview_parents) + 1) % 2]))
-            self.recent_projects.append(self.project_dir)
-            config.set_recent_projects(self.recent_projects)
-            select_focus(self.project_treeview, len(self.project_treeview_parents))
-
     def create_new_project(self):
         self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
         print(self.top_dir)
         if not self.top_dir:
-            if not messagebox.askokcancel("Exit", "Press cancel to close program"):
-                messagebox.showwarning("Warning", "No root filepath chosen! Please try again.")
+            messagebox.showwarning("Warning", "No root filepath chosen! Please try again.")
+            return
         else:
             self.top_dir = path.normpath(self.top_dir)
         EntryPopup(self, self.main_root, "Enter New Project Name", 0)
 
-    def load_project(self, dir):
-        print("load project from", dir)
-
     def populate_recent_projects(self):
-        self.project_treeview_parents.append(self.project_treeview.insert("", 'end', str(0), text="Create New Project",
+        self.project_treeview_parents.append(self.project_treeview.insert("", 'end', str(0), text="Create or Import New Project",
                                                                           tags=treeview_tags[0]))
         if self.recent_projects:
-            for i in range(1, len(self.recent_projects)):
-                self.project_treeview_parents.append(self.project_treeview.insert("", 'end', str(i), text=str(pathlib.Path(
-                                                                                          self.recent_projects[i]).stem),
-                                                                                  tags=(treeview_tags[i % 2])))
+            for i in range(0, len(self.recent_projects)):
+                self.project_treeview_parents.append(
+                    self.project_treeview.insert("", 'end', str(i + 1), text=str(pathlib.Path(
+                        self.recent_projects[i]).stem),
+                                                 tags=(treeview_tags[i % 2])))
+
+    def load_project(self, dir):
+        print("Load", dir)
+        try:
+            _, self.patients, _ = next(os.walk(dir))
+        except StopIteration:
+            messagebox.showerror("Error", "Selected project cannot be found!")
+            return
+        self.populate_patients()
+    # endregion
+
+    # region Patient UI Controls
+    def populate_patients(self):
+        self.patient_treeview_parents.append(self.patient_treeview.insert("", 'end', str(0), text="Create New Patient",
+                                                                          tags=treeview_tags[0]))
+        if self.patients:
+            for i in range(0, len(self.patients)):
+                self.patient_treeview_parents.append(
+                    self.patient_treeview.insert("", 'end', str(i + 1), text=str(self.patients[i]),
+                                                 tags=(treeview_tags[i % 2])))
+
+    def create_new_patient(self):
+        EntryPopup(self, self.main_root, "Enter New Project Name", 1)
+
+    def select_patient(self, event):
+        selection = self.project_treeview.identify_row(event.y)
+        if selection == '0':
+            self.create_new_patient()
+        else:
+            self.load_patient(self.patients[int(selection) - 1])
+
+    def load_patient(self, directory):
+        print(directory)
+
+    def patient_creation_check(self):
+        if config.get_default_dirs():
+            for directory in config.get_default_dirs():
+                if not os.path.exists(os.path.join(self.patient_dir, directory)):
+                    os.mkdir(os.path.join(self.patient_dir, directory))
+                for data_dir in config.get_data_folders():
+                    if not os.path.exists(os.path.join(self.patient_dir, directory, data_dir)):
+                        os.mkdir(os.path.join(self.patient_dir, directory, data_dir))
+
+    # endregion
 
 
 if __name__ == '__main__':
