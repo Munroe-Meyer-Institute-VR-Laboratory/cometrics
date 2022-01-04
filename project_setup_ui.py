@@ -60,6 +60,7 @@ class ProjectSetupWindow:
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))
         center(self.main_root)
+        self.main_root.resizable(width=False, height=False)
         self.main_root.mainloop()
 
 
