@@ -8,7 +8,7 @@ import json
 
 from config_utils import ConfigUtils
 from logger_util import *
-from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview
+from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup
 from ui_params import project_treeview_params as ptp, treeview_tags
 
 
@@ -75,8 +75,11 @@ class ProjectSetupWindow:
         else:
             self.load_project(self.recent_projects[int(selection) - 1])
 
+    def popup_return(self, data):
+        print("popup returned", data)
+
     def create_new_project(self):
-        print("create new project")
+        EntryPopup(self, self.main_root, "Enter New Project Name")
 
     def load_project(self, dir):
         print("load project from", dir)

@@ -1,5 +1,5 @@
 import tkinter
-from tkinter import NO, YES
+from tkinter import NO, YES, TOP
 from tkinter.ttk import Style
 
 from ttk import Treeview
@@ -84,3 +84,35 @@ def fixed_map(option):
     style = Style()
     return [elm for elm in style.map('Treeview', query_opt=option) if
             elm[:2] != ('!disabled', '!selected')]
+
+
+class EntryPopup:
+    def __init__(self, top, root, name):
+        assert top.popup_return
+        self.caller = top
+        self.entry = None
+        self.popup_root = None
+        self.name = name
+        self.popup_entry(root)
+
+    def popup_entry(self, root):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x50")
+        popup_root.title(self.name)
+
+        # Create an Entry Widget in the Toplevel window
+        self.entry = tkinter.Entry(popup_root, bd=2, width=25)
+        self.entry.pack()
+
+        # Create a Button Widget in the Toplevel Window
+        button = tkinter.Button(popup_root, text="OK", command=self.close_win)
+        button.pack(pady=5, side=TOP)
+        center(popup_root)
+        popup_root.focus_force()
+        self.entry.focus()
+
+    def close_win(self):
+        self.caller.popup_return(self.entry.get())
+        self.popup_root.destroy()
