@@ -1,13 +1,8 @@
 import os
 import pathlib
-from os import walk
 from tkinter import *
 from tkinter import messagebox, filedialog
-from tkinter.ttk import Treeview, Style
-import json
-
 import yaml
-
 from config_utils import ConfigUtils
 from logger_util import *
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus
@@ -205,7 +200,7 @@ class ProjectSetupWindow:
             self.create_new_concern()
 
     def create_new_concern(self):
-        EntryPopup(self, self.main_root, "Enter Concern Name", 2)
+        EntryPopup(self, self.main_root, "Enter New Concern", 2)
 
     def read_concern_file(self):
         if os.path.exists(self.concern_file):
