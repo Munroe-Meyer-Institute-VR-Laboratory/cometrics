@@ -5,6 +5,7 @@ data-folders:
 default-dirs:
 - Functional Assessment
 - Treatment
+patient-concerns: 'concerns.yml'
 phases:
 - Assessment
 - Treatment

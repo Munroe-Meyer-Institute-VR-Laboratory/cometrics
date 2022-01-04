@@ -38,3 +38,13 @@ class ConfigUtils:
     def get_data_folders(self):
         if self.config:
             return self.config['data-folders']
+
+    def get_patient_concerns(self):
+        if self.config:
+            return self.config['patient-concerns']
+
+    def set_patient_concerns(self, concerns):
+        if self.config:
+            self.config['patient-concerns'] = concerns
+            with open(self.config_file, 'w') as file:
+                yaml.dump(self.config, file)

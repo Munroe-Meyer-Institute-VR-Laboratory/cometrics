@@ -6,6 +6,8 @@ from tkinter import messagebox, filedialog
 from tkinter.ttk import Treeview, Style
 import json
 
+import yaml
+
 from config_utils import ConfigUtils
 from logger_util import *
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus
@@ -52,7 +54,8 @@ class ProjectSetupWindow:
                                                                             self.window_height * 0.25),
                                                                         int(self.window_height * 0.2),
                                                                         int(self.window_width * 0.45),
-                                                                        concern_heading_dict)
+                                                                        concern_heading_dict,
+                                                                        double_bind=self.select_concern)
         # Get phases and create dropbox
         self.phases = config.get_phases()
         if self.phases:
@@ -102,6 +105,12 @@ class ProjectSetupWindow:
             select_focus(self.patient_treeview, len(self.patient_treeview_parents))
             self.patient_creation_check()
             self.load_patient(self.patient_dir)
+        elif caller == 2:
+            self.concerns.append(data)
+            self.concern_treeview_parents.append(
+                self.concern_treeview.insert("", 'end', str((len(self.concern_treeview_parents) + 1)), text=data,
+                                             tags=treeview_tags[(len(self.concern_treeview_parents) + 1) % 2]))
+            select_focus(self.concern_treeview, len(self.concern_treeview_parents))
     # endregion
 
     # region Project UI Controls
@@ -153,7 +162,7 @@ class ProjectSetupWindow:
                                                  tags=(treeview_tags[i % 2])))
 
     def create_new_patient(self):
-        EntryPopup(self, self.main_root, "Enter New Project Name", 1)
+        EntryPopup(self, self.main_root, "Enter New Patient Name", 1)
 
     def select_patient(self, event):
         selection = self.project_treeview.identify_row(event.y)
@@ -161,9 +170,6 @@ class ProjectSetupWindow:
             self.create_new_patient()
         else:
             self.load_patient(self.patients[int(selection) - 1])
-
-    def load_patient(self, directory):
-        print(directory)
 
     def patient_creation_check(self):
         if config.get_default_dirs():
@@ -174,6 +180,36 @@ class ProjectSetupWindow:
                     if not os.path.exists(os.path.join(self.patient_dir, directory, data_dir)):
                         os.mkdir(os.path.join(self.patient_dir, directory, data_dir))
 
+    def load_patient(self, directory):
+        if self.config.get_patient_concerns():
+            data_folders = config.get_data_folders()
+            _concern_file = config.get_patient_concerns()
+            self.concern_file = os.path.join(directory, data_folders[1], _concern_file)
+            if os.path.exists(self.concern_file):
+                with open(self.concern_file, 'r') as file:
+                    self.concerns = yaml.safe_load(file)
+            else:
+                self.concerns = []
+            self.populate_patient_concerns()
+    # endregion
+
+    # region Concern UI Controls
+    def populate_patient_concerns(self):
+        self.concern_treeview_parents.append(self.concern_treeview.insert("", 'end', str(0), text="Create New Concern",
+                                                                          tags=treeview_tags[0]))
+        if self.concerns:
+            for i in range(0, len(self.concerns)):
+                self.concern_treeview_parents.append(
+                    self.concern_treeview.insert("", 'end', str(i + 1), text=str(self.concerns[i]),
+                                                 tags=(treeview_tags[i % 2])))
+
+    def select_concern(self, event):
+        selection = self.project_treeview.identify_row(event.y)
+        if selection == '0':
+            self.create_new_concern()
+
+    def create_new_concern(self):
+        EntryPopup(self, self.main_root, "Enter New Concern Name", 2)
     # endregion
 
 
