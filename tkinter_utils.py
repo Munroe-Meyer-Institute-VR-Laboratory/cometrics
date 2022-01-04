@@ -42,7 +42,7 @@ def get_treeview_style():
     return style
 
 
-def build_treeview(root, x, y, height, width, heading_dict, column_dict, selectmode='browse', t_height=18,
+def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, selectmode='browse', t_height=18,
                    filescroll=True, button_1_bind=None, double_bind=None):
     treeview = Treeview(root, style="mystyle.Treeview", height=t_height, selectmode=selectmode)
     treeview.place(x=x, y=y, height=height, width=width)
@@ -51,10 +51,11 @@ def build_treeview(root, x, y, height, width, heading_dict, column_dict, selectm
     treeview.heading("#0", text=heading[0], anchor=heading[1])
     treeview.column("#0", width=heading[2], stretch=heading[3], anchor=heading[4])
     # Define columns
-    treeview["columns"] = list(column_dict.keys())
-    for col in column_dict:
-        treeview.heading(col, text=column_dict[col][0], anchor=column_dict[col][1])
-        treeview.column(col, width=column_dict[col][2], stretch=column_dict[col][3], anchor=column_dict[col][4])
+    if column_dict:
+        treeview["columns"] = list(column_dict.keys())
+        for col in column_dict:
+            treeview.heading(col, text=column_dict[col][0], anchor=column_dict[col][1])
+            treeview.column(col, width=column_dict[col][2], stretch=column_dict[col][3], anchor=column_dict[col][4])
     treeview.tag_configure('odd', background='#E8E8E8')
     treeview.tag_configure('even', background='#DFDFDF')
     if button_1_bind:
