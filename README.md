@@ -1,5 +1,5 @@
 # Introduction 
-Experiment Collection & Logging (ECL) is a Windows-based computer program that allows for the real-time collection of frequency- and duration-based behavior metrics.
+Cometrics is a Windows-based computer program that allows for the real-time coregistration of frequency- and duration-based behavior metrics, physiological signals from an Empatica E4, and video data.
 
 ![Main Screen](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/ECL/blob/main/gui_images/MainScreen.jpg)
 
