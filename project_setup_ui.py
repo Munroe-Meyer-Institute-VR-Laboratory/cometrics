@@ -8,9 +8,7 @@ import json
 
 from config_utils import ConfigUtils
 from logger_util import *
-import tkinter
-
-from tkinter_utils import center, get_display_size
+from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview
 
 
 class ProjectSetupWindow:
@@ -23,6 +21,11 @@ class ProjectSetupWindow:
         else:
             self.main_root, self.window_height, self.window_width = get_display_size()
             config.set_screen_size(self.window_height, self.window_width)
+        style = get_treeview_style()
+        heading_dict = {"#0": ["#", 'c', 65, NO, 'c']}
+        column_dict = {"1": ["Col 1", 'c', 65, YES, 'c'],
+                       "2": ["Col 2", 'c', 65, YES, 'c']}
+        project_treeview, project_filescroll = build_treeview(self.main_root, 20, 20, 400, 300, heading_dict, column_dict)
         self.main_root.geometry("{0}x{1}+0+0".format(int(self.window_width * 0.7), int(self.window_height * 0.7)))
         center(self.main_root)
         self.main_root.mainloop()
