@@ -76,8 +76,9 @@ class ProjectSetupWindow:
         self.ksf_path = Label(self.main_root, text="Select Condition and Phase to Load", font=('Purisa', 11, 'italic'),
                               bg='white', width=35, anchor='w')
         self.ksf_path.place(x=ptp[0] + ptp[3] * ksf_distance, y=ptp[1])
-        self.ksf_import = Button(self.main_root, text="Import", font=('Purisa', 11), width=10)
+        self.ksf_import = Button(self.main_root, text="Import", font=('Purisa', 11), width=10, command=self.import_concern_ksf)
         self.ksf_import.place(x=330 + ptp[0] + ptp[3] * ksf_distance, y=ptp[1] - 4)
+        self.ksf_import.config(state='disabled')
         # Define frequency and duration key headers
         freq_heading_dict = {"#0": ["Frequency Key", 'w', 1, YES, 'w']}
         dur_heading_dict = {"#0": ["Duration Key", 'w', 1, YES, 'w']}
@@ -279,20 +280,35 @@ class ProjectSetupWindow:
             try:
                 self.ksf_file = max(ksf_dir.glob(ksf_pattern), key=lambda f: f.stat().st_ctime)
                 self.ksf_path['text'] = pathlib.Path(self.ksf_file).stem
+                self.load_concern_ksf()
             except ValueError:
                 self.ksf_file = None
                 self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
+                self.ksf_import.config(state='active')
         else:
             os.mkdir(ksf_dir)
             self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
+            self.ksf_import.config(state='active')
     # endregion
 
     # region KSF UI Controls
     def load_concern_ksf(self):
-        print("Load concern ksf")
+        print("Load concern ksf", self.ksf_file)
 
     def import_concern_ksf(self):
         print("Import concern ksf")
+
+    def create_frequency_key(self):
+        print()
+
+    def create_duration_key(self):
+        print()
+
+    def delete_frequency_key(self):
+        print()
+
+    def delete_duration_key(self):
+        print()
     # endregion
 
 
