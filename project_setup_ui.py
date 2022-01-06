@@ -153,10 +153,11 @@ class ProjectSetupWindow:
     # region Project UI Controls
     def select_project(self, event):
         selection = self.project_treeview.identify_row(event.y)
-        if selection == '0':
-            self.create_new_project()
-        else:
-            self.load_project(self.recent_projects[int(selection) - 1])
+        if selection:
+            if selection == '0':
+                self.create_new_project()
+            else:
+                self.load_project(self.recent_projects[int(selection) - 1])
 
     def create_new_project(self):
         self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
@@ -204,11 +205,13 @@ class ProjectSetupWindow:
         EntryPopup(self, self.main_root, "Enter New Patient Name", 1)
 
     def select_patient(self, event):
-        selection = self.project_treeview.identify_row(event.y)
-        if selection == '0':
-            self.create_new_patient()
-        else:
-            self.load_patient(self.patients[int(selection) - 1])
+        selection = self.patient_treeview.identify_row(event.y)
+        if selection:
+            if selection == '0':
+                self.create_new_patient()
+            else:
+                self.patient_dir = os.path.join(self.project_dir, self.patients[int(selection) - 1])
+                self.load_patient(self.patients[int(selection) - 1])
 
     def patient_creation_check(self):
         if config.get_default_dirs():
@@ -239,11 +242,13 @@ class ProjectSetupWindow:
                                                  tags=(treeview_tags[(i + 1) % 2])))
 
     def select_concern(self, event):
-        selection = self.project_treeview.identify_row(event.y)
-        if selection == '0':
-            self.create_new_concern()
-        else:
-            self.phases_menu.config(state='active')
+        selection = self.concern_treeview.identify_row(event.y)
+        if selection:
+            if selection == '0':
+                self.create_new_concern()
+            else:
+                self.selected_concern = self.concerns[int(selection) - 1]
+                self.phases_menu.config(state='active')
 
     def create_new_concern(self):
         EntryPopup(self, self.main_root, "Enter New Concern", 2)
@@ -263,7 +268,23 @@ class ProjectSetupWindow:
 
     # region Phase UI Controls
     def phase_callback(self, *args):
-        print(f"the variable has changed to '{self.phases_var.get()}'")
+        phase_dir = os.path.join(self.patient_dir, self.selected_concern + " " + self.phases_var.get())
+        if not os.path.exists(phase_dir):
+            os.mkdir(phase_dir)
+        ksf_dir = os.path.join(self.patient_dir, self.selected_concern + " " + self.phases_var.get(),
+                               config.get_data_folders()[2])
+        if os.path.exists(ksf_dir):
+            ksf_dir = pathlib.Path(ksf_dir)
+            ksf_pattern = r'*.json'
+            try:
+                self.ksf_file = max(ksf_dir.glob(ksf_pattern), key=lambda f: f.stat().st_ctime)
+                self.ksf_path['text'] = pathlib.Path(self.ksf_file).stem
+            except ValueError:
+                self.ksf_file = None
+                self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
+        else:
+            os.mkdir(ksf_dir)
+            self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
     # endregion
 
     # region KSF UI Controls
