@@ -67,17 +67,17 @@ class ProjectSetupWindow:
             self.phases_menu = OptionMenu(self.main_root, self.phases_var, *self.phases)
             self.phases_menu.place(x=ptp[0],
                                    y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
-                                       self.window_height * 0.22),
+                                       self.window_height * 0.21),
                                    width=int(self.window_width * 0.2))
             self.phases_menu.config(state='disabled')
         # Create KSF label
         self.ksf_setup_label = Label(self.main_root, text="Keystroke File Setup", font=('Purisa', 15, 'bold'))
-        self.ksf_setup_label.place(x=ptp[0] + ptp[3] * ksf_distance, y=ptp[1] / 2, anchor=W)
+        self.ksf_setup_label.place(x=10 + self.window_width / 2, y=ptp[1] / 2, anchor=W)
         self.ksf_path = Label(self.main_root, text="Select Condition and Phase to Load", font=('Purisa', 11, 'italic'),
-                              bg='white', width=35, anchor='w')
-        self.ksf_path.place(x=ptp[0] + ptp[3] * ksf_distance, y=ptp[1])
+                              bg='white', width=30, anchor='w')
+        self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1])
         self.ksf_import = Button(self.main_root, text="Import", font=('Purisa', 11), width=10, command=self.import_concern_ksf)
-        self.ksf_import.place(x=330 + ptp[0] + ptp[3] * ksf_distance, y=ptp[1] - 4)
+        self.ksf_import.place(x=300 + 10 + self.window_width / 2, y=ptp[1] - 4)
         self.ksf_import.config(state='disabled')
         # Define frequency and duration key headers
         freq_heading_dict = {"#0": ["Frequency Key", 'w', 1, YES, 'w']}
@@ -85,20 +85,22 @@ class ProjectSetupWindow:
         key_column_dict = {"1": ["Tag", 'w', 1, YES, 'w']}
         key_treeview_height = int(self.window_height * 0.2)
         self.frequency_key_treeview, self.frequency_key_filescroll = build_treeview(self.main_root,
-                                                                                    ptp[0] + ptp[3] * ksf_distance,
+                                                                                    20 + self.window_width / 2,
                                                                                     ptp[1] + (self.window_height * 0.1),
                                                                                     key_treeview_height,
                                                                                     treeview_width,
                                                                                     freq_heading_dict,
-                                                                                    key_column_dict)
+                                                                                    key_column_dict,
+                                                                                    double_bind=self.select_frequency_key)
 
         self.duration_key_treeview, self.duration_key_filescroll = build_treeview(self.main_root,
-                                                                                  ptp[0] + ptp[3] * ksf_distance,
+                                                                                  20 + self.window_width / 2,
                                                                                   ptp[1] + (self.window_height * 0.15) + (self.window_height * 0.2),
                                                                                   key_treeview_height,
                                                                                   treeview_width,
                                                                                   dur_heading_dict,
-                                                                                  key_column_dict)
+                                                                                  key_column_dict,
+                                                                                  double_bind=self.select_duration_key)
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))
         center(self.main_root)
@@ -106,6 +108,7 @@ class ProjectSetupWindow:
         self.icon = PhotoImage(file=r'images/cometrics_icon.png')
         self.main_root.iconphoto(True, self.icon)
         self.main_root.resizable(width=False, height=False)
+        print(self.main_root.winfo_vrootwidth())
         self.main_root.mainloop()
 
     # region External Data Entry
@@ -297,6 +300,22 @@ class ProjectSetupWindow:
 
     def import_concern_ksf(self):
         print("Import concern ksf")
+
+    def select_frequency_key(self, event):
+        selection = self.frequency_key_treeview.identify_row(event.y)
+        if selection:
+            if selection == '0':
+                self.create_frequency_key()
+            else:
+                self.delete_frequency_key()
+
+    def select_duration_key(self, event):
+        selection = self.duration_key_treeview.identify_row(event.y)
+        if selection:
+            if selection == '0':
+                self.create_duration_key()
+            else:
+                self.delete_duration_key()
 
     def create_frequency_key(self):
         print()
