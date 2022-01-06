@@ -43,8 +43,8 @@ def get_treeview_style(name="mystyle.Treeview", font=('Calibri', 11), heading_fo
 
 
 def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, selectmode='browse', t_height=18,
-                   filescroll=True, button_1_bind=None, double_bind=None):
-    treeview = Treeview(root, style="mystyle.Treeview", height=t_height, selectmode=selectmode)
+                   filescroll=True, button_1_bind=None, double_bind=None, style="mystyle.Treeview"):
+    treeview = Treeview(root, style=style, height=t_height, selectmode=selectmode)
     treeview.place(x=x, y=y, height=height, width=width)
     # Define header
     heading = heading_dict["#0"]

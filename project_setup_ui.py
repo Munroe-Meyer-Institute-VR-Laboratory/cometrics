@@ -22,6 +22,9 @@ class ProjectSetupWindow:
             config.set_screen_size(self.window_height, self.window_width)
             self.window_width = int(self.window_width * 0.7)
             self.window_height = int(self.window_height * 0.7)
+        # Create Project Setup label
+        self.project_setup_label = Label(self.main_root, text="Project Setup", font=('Purisa', 15, 'bold'))
+        self.project_setup_label.place(x=ptp[0], y=ptp[1] / 2, anchor=W)
         # Create global style
         _ = get_treeview_style()
         # Define heading dicts
@@ -30,25 +33,28 @@ class ProjectSetupWindow:
         concern_heading_dict = {"#0": ["Presenting Concerns", 'w', 1, YES, 'w']}
         # Build treeviews
         self.project_treeview_parents, self.patient_treeview_parents, self.concern_treeview_parents = [], [], []
+        project_treeview_height = int(self.window_height * 0.3)
+        treeview_width = int(self.window_width * 0.45)
         self.project_treeview, self.project_filescroll = build_treeview(self.main_root, ptp[0], ptp[1],
-                                                                        int(self.window_height * 0.3),
-                                                                        int(self.window_width * 0.45),
+                                                                        project_treeview_height,
+                                                                        treeview_width,
                                                                         project_heading_dict,
                                                                         double_bind=self.select_project)
         self.recent_projects = config.get_recent_projects()
         self.populate_recent_projects()
+        patient_treeview_height = int(self.window_height * 0.2)
         self.patient_treeview, self.patient_filescroll = build_treeview(self.main_root, ptp[0],
                                                                         ptp[1] + int(self.window_height * 0.35),
-                                                                        int(self.window_height * 0.2),
-                                                                        int(self.window_width * 0.45),
+                                                                        patient_treeview_height,
+                                                                        treeview_width,
                                                                         patient_heading_dict,
                                                                         double_bind=self.select_patient)
 
         self.concern_treeview, self.concern_filescroll = build_treeview(self.main_root, ptp[0],
                                                                         ptp[1] + int(self.window_height * 0.35) + int(
                                                                             self.window_height * 0.25),
-                                                                        int(self.window_height * 0.2),
-                                                                        int(self.window_width * 0.45),
+                                                                        patient_treeview_height,
+                                                                        treeview_width,
                                                                         concern_heading_dict,
                                                                         double_bind=self.select_concern)
         # Get phases and create dropbox
@@ -61,9 +67,40 @@ class ProjectSetupWindow:
                                    y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
                                        self.window_height * 0.22),
                                    width=int(self.window_width * 0.2))
+        # Create KSF label
+        self.ksf_setup_label = Label(self.main_root, text="Keystroke File Setup", font=('Purisa', 15, 'bold'))
+        self.ksf_setup_label.place(x=ptp[0] + ptp[3] * 1.8, y=ptp[1] / 2, anchor=W)
+        self.ksf_path = Label(self.main_root, text="Select Condition to Load", font=('Purisa', 11, 'italic'),
+                              bg='white', width=35, anchor='w')
+        self.ksf_path.place(x=ptp[0] + ptp[3] * 1.8, y=ptp[1])
+        self.ksf_import = Button(self.main_root, text="Import", font=('Purisa', 11), width=10)
+        self.ksf_import.place(x=330 + ptp[0] + ptp[3] * 1.8, y=ptp[1] - 4)
+        # Define frequency and duration key headers
+        freq_heading_dict = {"#0": ["Frequency Key", 'w', 1, YES, 'w']}
+        dur_heading_dict = {"#0": ["Duration Key", 'w', 1, YES, 'w']}
+        key_column_dict = {"1": ["Tag", 'w', 1, YES, 'w']}
+        key_treeview_height = int(self.window_height * 0.2)
+        self.frequency_key_treeview, self.frequency_key_filescroll = build_treeview(self.main_root,
+                                                                                    ptp[0] + ptp[3] * 1.8,
+                                                                                    ptp[1] + (self.window_height * 0.1),
+                                                                                    key_treeview_height,
+                                                                                    treeview_width,
+                                                                                    freq_heading_dict,
+                                                                                    key_column_dict)
+
+        self.duration_key_treeview, self.duration_key_filescroll = build_treeview(self.main_root,
+                                                                                  ptp[0] + ptp[3] * 1.8,
+                                                                                  ptp[1] + (self.window_height * 0.15) + (self.window_height * 0.2),
+                                                                                  key_treeview_height,
+                                                                                  treeview_width,
+                                                                                  dur_heading_dict,
+                                                                                  key_column_dict)
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))
         center(self.main_root)
+        self.main_root.title("cometrics - v0.8.0")
+        self.icon = PhotoImage(file=r'images/cometrics_icon.png')
+        self.main_root.iconphoto(True, self.icon)
         self.main_root.resizable(width=False, height=False)
         self.main_root.mainloop()
 
@@ -107,6 +144,7 @@ class ProjectSetupWindow:
                 self.concern_treeview.insert("", 'end', str((len(self.concern_treeview_parents) + 1)), text=data,
                                              tags=treeview_tags[(len(self.concern_treeview_parents) + 1) % 2]))
             select_focus(self.concern_treeview, len(self.concern_treeview_parents))
+
     # endregion
 
     # region Project UI Controls
@@ -128,8 +166,9 @@ class ProjectSetupWindow:
         EntryPopup(self, self.main_root, "Enter New Project Name", 0)
 
     def populate_recent_projects(self):
-        self.project_treeview_parents.append(self.project_treeview.insert("", 'end', str(0), text="Create or Import New Project",
-                                                                          tags=treeview_tags[2]))
+        self.project_treeview_parents.append(
+            self.project_treeview.insert("", 'end', str(0), text="Create or Import New Project",
+                                         tags=treeview_tags[2]))
         if self.recent_projects:
             for i in range(0, len(self.recent_projects)):
                 self.project_treeview_parents.append(
@@ -145,6 +184,7 @@ class ProjectSetupWindow:
             messagebox.showerror("Error", "Selected project cannot be found!")
             return
         self.populate_patients()
+
     # endregion
 
     # region Patient UI Controls
@@ -181,6 +221,7 @@ class ProjectSetupWindow:
             _concern_file = config.get_patient_concerns()
             self.concern_file = os.path.join(self.project_dir, directory, _concern_file)
             self.populate_patient_concerns()
+
     # endregion
 
     # region Concern UI Controls
@@ -213,6 +254,11 @@ class ProjectSetupWindow:
         with open(self.concern_file, 'w') as file:
             yaml.dump(self.concerns, file)
         self.read_concern_file()
+    # endregion
+
+    # region KSF UI Controls
+    # def load_concern_ksf(self):
+
     # endregion
 
 
