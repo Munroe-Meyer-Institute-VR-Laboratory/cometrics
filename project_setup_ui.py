@@ -1,11 +1,14 @@
+import json
 import os
 import pathlib
 from tkinter import *
 from tkinter import messagebox, filedialog
 import yaml
 from config_utils import ConfigUtils
+from ksf_utils import import_ksf
 from logger_util import *
-from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus
+from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
+    NewKeyPopup
 from ui_params import project_treeview_params as ptp, treeview_tags, ksf_distance, window_ratio
 
 
@@ -76,7 +79,8 @@ class ProjectSetupWindow:
         self.ksf_path = Label(self.main_root, text="Select Condition and Phase to Load", font=('Purisa', 11, 'italic'),
                               bg='white', width=30, anchor='w')
         self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1])
-        self.ksf_import = Button(self.main_root, text="Import", font=('Purisa', 11), width=10, command=self.import_concern_ksf)
+        self.ksf_import = Button(self.main_root, text="Import", font=('Purisa', 11), width=10,
+                                 command=self.import_concern_ksf)
         self.ksf_import.place(x=300 + 10 + self.window_width / 2, y=ptp[1] - 4)
         self.ksf_import.config(state='disabled')
         # Define frequency and duration key headers
@@ -84,6 +88,7 @@ class ProjectSetupWindow:
         dur_heading_dict = {"#0": ["Duration Key", 'w', 1, YES, 'w']}
         key_column_dict = {"1": ["Tag", 'w', 1, YES, 'w']}
         key_treeview_height = int(self.window_height * 0.2)
+        self.frequency_treeview_parents = []
         self.frequency_key_treeview, self.frequency_key_filescroll = build_treeview(self.main_root,
                                                                                     20 + self.window_width / 2,
                                                                                     ptp[1] + (self.window_height * 0.1),
@@ -92,10 +97,12 @@ class ProjectSetupWindow:
                                                                                     freq_heading_dict,
                                                                                     key_column_dict,
                                                                                     double_bind=self.select_frequency_key)
-
+        self.duration_treeview_parents = []
         self.duration_key_treeview, self.duration_key_filescroll = build_treeview(self.main_root,
                                                                                   20 + self.window_width / 2,
-                                                                                  ptp[1] + (self.window_height * 0.15) + (self.window_height * 0.2),
+                                                                                  ptp[1] + (
+                                                                                          self.window_height * 0.15) + (
+                                                                                          self.window_height * 0.2),
                                                                                   key_treeview_height,
                                                                                   treeview_width,
                                                                                   dur_heading_dict,
@@ -108,7 +115,6 @@ class ProjectSetupWindow:
         self.icon = PhotoImage(file=r'images/cometrics_icon.png')
         self.main_root.iconphoto(True, self.icon)
         self.main_root.resizable(width=False, height=False)
-        print(self.main_root.winfo_vrootwidth())
         self.main_root.mainloop()
 
     # region External Data Entry
@@ -268,6 +274,7 @@ class ProjectSetupWindow:
         with open(self.concern_file, 'w') as file:
             yaml.dump(self.concerns, file)
         self.read_concern_file()
+
     # endregion
 
     # region Phase UI Controls
@@ -275,10 +282,10 @@ class ProjectSetupWindow:
         phase_dir = os.path.join(self.patient_dir, self.selected_concern + " " + self.phases_var.get())
         if not os.path.exists(phase_dir):
             os.mkdir(phase_dir)
-        ksf_dir = os.path.join(self.patient_dir, self.selected_concern + " " + self.phases_var.get(),
-                               config.get_data_folders()[2])
-        if os.path.exists(ksf_dir):
-            ksf_dir = pathlib.Path(ksf_dir)
+        self.ksf_dir = os.path.join(self.patient_dir, self.selected_concern + " " + self.phases_var.get(),
+                                    config.get_data_folders()[2])
+        if os.path.exists(self.ksf_dir):
+            ksf_dir = pathlib.Path(self.ksf_dir)
             ksf_pattern = r'*.json'
             try:
                 self.ksf_file = max(ksf_dir.glob(ksf_pattern), key=lambda f: f.stat().st_ctime)
@@ -289,23 +296,68 @@ class ProjectSetupWindow:
                 self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
                 self.ksf_import.config(state='active')
         else:
-            os.mkdir(ksf_dir)
+            os.mkdir(self.ksf_dir)
             self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
             self.ksf_import.config(state='active')
     # endregion
 
     # region KSF UI Controls
+    def key_popup_return(self, tag, key, caller):
+        print(tag, key, caller)
+        if not tag or not key:
+            messagebox.showwarning("Warning", "Invalid key entered! Please try again.")
+        if caller == 1:
+            self.create_frequency_key()
+        elif caller == 2:
+            self.create_duration_key()
+
     def load_concern_ksf(self):
-        print("Load concern ksf", self.ksf_file)
+        with open(self.ksf_file) as f:
+            self._ksf = json.load(f)
+        self.frequency_keys = self._ksf["Frequency"]
+        self.duration_keys = self._ksf["Duration"]
+        self.populate_frequency_treeview()
+        self.populate_duration_treeview()
 
     def import_concern_ksf(self):
-        print("Import concern ksf")
+        tracker_file = filedialog.askopenfilename(filetypes=(("Excel Files", "*.xlsx"),))
+        if tracker_file:
+            self.ksf_file, self._ksf = import_ksf(tracker_file, self.ksf_dir)
+            self.ksf_path['text'] = pathlib.Path(self.ksf_file).stem
+            self.frequency_keys = self._ksf["Frequency"]
+            self.duration_keys = self._ksf["Duration"]
+            self.populate_frequency_treeview()
+            self.populate_duration_treeview()
+        else:
+            messagebox.showwarning("Warning", "No tracker file selected! Please try again.")
+
+    def populate_frequency_treeview(self):
+        self.frequency_treeview_parents.append(
+            self.frequency_key_treeview.insert("", 'end', str(0), text="Create New Frequency Key",
+                                               tags=treeview_tags[2]))
+        if self.frequency_keys:
+            for i in range(0, len(self.frequency_keys)):
+                self.frequency_treeview_parents.append(
+                    self.frequency_key_treeview.insert("", 'end', str(i + 1), text=str(self.frequency_keys[i][1]),
+                                                       values=str(self.frequency_keys[i][0]),
+                                                       tags=(treeview_tags[(i + 1) % 2])))
+
+    def populate_duration_treeview(self):
+        self.duration_treeview_parents.append(
+            self.duration_key_treeview.insert("", 'end', str(0), text="Create New Duration Key",
+                                              tags=treeview_tags[2]))
+        if self.duration_keys:
+            for i in range(0, len(self.duration_keys)):
+                self.duration_treeview_parents.append(
+                    self.duration_key_treeview.insert("", 'end', str(i + 1), text=str(self.duration_keys[i][1]),
+                                                      values=str(self.duration_keys[i][0]),
+                                                      tags=(treeview_tags[(i + 1) % 2])))
 
     def select_frequency_key(self, event):
         selection = self.frequency_key_treeview.identify_row(event.y)
         if selection:
             if selection == '0':
-                self.create_frequency_key()
+                NewKeyPopup(self, self.main_root, 1)
             else:
                 self.delete_frequency_key()
 
@@ -313,7 +365,7 @@ class ProjectSetupWindow:
         selection = self.duration_key_treeview.identify_row(event.y)
         if selection:
             if selection == '0':
-                self.create_duration_key()
+                NewKeyPopup(self, self.main_root, 2)
             else:
                 self.delete_duration_key()
 

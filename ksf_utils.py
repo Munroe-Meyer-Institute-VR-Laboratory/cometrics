@@ -12,7 +12,7 @@ import openpyxl
 from shutil import copy2
 
 
-def import_ksf(filename):
+def import_ksf(filename, ksf_dir):
     if filename:
         try:
             wb = openpyxl.load_workbook(filename)
@@ -73,19 +73,17 @@ def import_ksf(filename):
                         messagebox.showwarning("Warning", "Conditions not found in selected spreadsheet!\n"
                                                           "Add sheet called 'Conditions' for this feature!")
                     name = pathlib.Path(filename).stem
-                    # TODO: Seth encountered a File Not Found error here
-                    # FIX: Use normpath to fix this across the board
-                    with open(path.normpath(path.join(self.caller.keystroke_directory, name + '.json')), 'w') as f:
-                        x = {
-                            "Name": name,
-                            "Frequency": freq_keys,
-                            "Duration": dur_keys,
-                            "Conditions": conditions
-                        }
+                    x = {
+                        "Name": name,
+                        "Frequency": freq_keys,
+                        "Duration": dur_keys,
+                        "Conditions": conditions
+                    }
+                    with open(path.normpath(path.join(ksf_dir, name + '.json')), 'w') as f:
                         json.dump(x, f)
-                    self.caller.keystroke_file = path.join(self.caller.keystroke_directory, name + '.json')
-                    copy2(filename, path.join(self.caller.experiment_dir, pathlib.Path(filename).name))
-                    self.close_win()
+                    keystroke_file = path.join(ksf_dir, name + '.json')
+                    copy2(filename, path.join(ksf_dir, pathlib.Path(filename).name))
+                    return keystroke_file, x
         except Exception as e:
             messagebox.showwarning("Warning", "Excel format is not correct!\n" + str(e))
             print(traceback.print_exc())
@@ -308,3 +306,237 @@ def cal_acc(self):
             print(traceback.print_exc())
     else:
         messagebox.showwarning("Warning", "Please choose valid files!")
+
+
+def export_columnwise_csv(root, session_dir):
+    sessions = get_session_files(session_dir)
+    sess_parts = session_dir.split('\\')
+    export_dir = path.join(sess_parts[0], sess_parts[1], sess_parts[2], sess_parts[3], 'export')
+    export_files = []
+    date = datetime.datetime.today().strftime("%B %d, %Y")
+    time = datetime.datetime.now().strftime("%H:%M:%S")
+    if not path.exists(export_dir):
+        os.mkdir(export_dir)
+    else:
+        export_files = get_export_files(export_dir)
+    for file in sessions:
+        name = pathlib.Path(file).stem
+        if name in export_files:
+            continue
+        with open(path.join(session_dir, file), 'r') as f:
+            session = json.load(f)
+        with open(path.join(export_dir, name + ".csv"), 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow([name, 'Generated on', date, time])
+            writer.writerow(['Event', 'Tag', 'Onset', 'Offset'])
+            for key in session:
+                # Event
+                if type(session[key]) is list:
+                    row = [key, session[key][0]]
+                    # Duration event
+                    if type(session[key][1]) is list:
+                        row.append(session[key][1][0])
+                        row.append(session[key][1][1])
+                    # Frequency event
+                    else:
+                        row.append(session[key][1])
+                # Data Field
+                else:
+                    row = ['', key, session[key]]
+                writer.writerow(row)
+    os.startfile(export_dir)
+    root.root.iconify()
+
+
+def populate_spreadsheet(root, patient_file, ksf, session_dir):
+    parts = pathlib.Path(patient_file).parts
+    template = path.join(*parts[0:-2], "data", pathlib.Path(ksf).stem + ".xlsx")
+    wb = openpyxl.load_workbook(template)
+    data_wb = wb['Data']
+    sessions = get_sessions(session_dir)
+    sess_parts = pathlib.Path(session_dir).parts
+    analysis_dir = path.join(*sess_parts[0:-1], 'analysis')
+    if not path.exists(analysis_dir):
+        os.mkdir(analysis_dir)
+    patient = PatientContainer(patient_file)
+    m_cells = data_wb.merged_cells
+    freq_cell, freq_coords = None, None
+    dur_cell, dur_coords = None, None
+    st_cell, pt_cell = None, None
+    for row in data_wb.iter_rows(3, 3):
+        for cell in row:
+            if cell.value == 'ST':
+                st_cell = cell
+            if cell.value == 'PT':
+                pt_cell = cell
+    for cell in m_cells:
+        try:
+            if cell.start_cell.coordinate == 'J2' and cell.start_cell.value == "Frequency":
+                freq_cell = cell
+                coordinates = cell.coord.split(':')
+                freq_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
+                               ''.join([i for i in coordinates[1] if not i.isdigit()])]
+                break
+        except AttributeError:
+            continue
+    for cell in m_cells:
+        try:
+            if cell.min_col == freq_cell.max_col + 1 and cell.start_cell.value == "Duration":
+                dur_cell = cell
+                coordinates = cell.coord.split(':')
+                dur_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
+                              ''.join([i for i in coordinates[1] if not i.isdigit()])]
+                break
+        except AttributeError:
+            continue
+    data_wb['A1'].value = "Assessment: " + sessions[0]['Assessment Name']
+    data_wb['A2'].value = "Client: " + patient.name
+    row, col, sess = 5, 7, 1
+    for session in sessions:
+        st_cell = data_wb[''.join([i for i in st_cell.coordinate if not i.isdigit()]) + str(row)]
+        pt_cell = data_wb[''.join([i for i in pt_cell.coordinate if not i.isdigit()]) + str(row)]
+        key_freq, key_dur = get_keystroke_info(ksf, session)
+        d = data_wb['A' + str(row):'H' + str(row)]
+        freq_d = data_wb[freq_coords[0] + str(row):freq_coords[1] + str(row)]
+        dur_d = data_wb[dur_coords[0] + str(row):dur_coords[1] + str(row)]
+        d[0][0].value = sess
+        d[0][1].value = session['Condition Name']
+        d[0][2].value = session['Session Date']
+        d[0][3].value = session['Session Therapist']
+        d[0][4].value = session['Primary Therapist']
+        d[0][5].value = session['Primary Data']
+        d[0][7].value = int(session['Session Time'])/60
+        data_wb[st_cell.coordinate].value = session['Session Time']
+        data_wb[pt_cell.coordinate].value = session['Pause Time']
+        # Populate frequency and duration keys
+        for freq, col in zip(key_freq, range(0, len(key_freq))):
+            freq_d[0][col].value = freq
+        for dur, col in zip(key_dur, range(0, len(key_dur))):
+            dur_d[0][col].value = dur
+        row += 1
+        sess += 1
+    wb.save(path.join(analysis_dir, sess_parts[-2] + "_analysis.xlsx"))
+    os.startfile(analysis_dir)
+    root.root.iconify()
+
+
+def get_keystroke_window(key_file, session_file, window_size):
+    session_time = int(session_file["Session Time"])
+    with open(key_file) as f:
+        keystroke_json = json.load(f)
+    freq_bindings = []
+    dur_bindings = []
+    for key in keystroke_json:
+        if key == "Frequency":
+            for bindings in keystroke_json[key]:
+                freq_bindings.append(bindings[0])
+        if key == "Duration":
+            for bindings in keystroke_json[key]:
+                dur_bindings.append(bindings[0])
+    if session_time % window_size != 0:
+        session_time += window_size - (session_time % window_size)
+    freq_windows = [[0] * len(freq_bindings) for i in range(int(session_time / window_size))]
+    dur_windows = [[0] * len(dur_bindings) for i in range(int(session_time / window_size))]
+    keys = list(session_file.keys())[14:]
+    dur_keys, freq_keys = [], []
+    for key in keys:
+        if type(session_file[key][1]) is list:
+            dur_keys.append(key)
+        else:
+            freq_keys.append(key)
+    for i in range(0, session_time, window_size):
+        for key in freq_keys[:]:
+            if i <= session_file[key][1] < (i + window_size):
+                freq_windows[int(i / window_size)][freq_bindings.index(session_file[key][0])] += 1
+                freq_keys.remove(key)
+            else:
+                break
+    for i in range(0, session_time, window_size):
+        for key in dur_keys[:]:
+            if i <= session_file[key][1][0] < (i + window_size):
+                dur_windows[int(i / window_size)][dur_bindings.index(session_file[key][0])] += 1
+                if i <= session_file[key][1][1] < (i + window_size):
+                    dur_keys.remove(key)
+            elif i <= session_file[key][1][1] < (i + window_size):
+                dur_windows[int(i / window_size)][dur_bindings.index(session_file[key][0])] += 1
+                dur_keys.remove(key)
+            else:
+                break
+    return freq_windows, dur_windows
+
+
+def get_keystroke_info(key_file, session_file):
+    freq_bindings = []
+    dur_bindings = []
+    key_freq = []
+    key_dur = []
+    with open(key_file) as f:
+        keystroke_json = json.load(f)
+    for key in keystroke_json:
+        if key == "Frequency":
+            for bindings in keystroke_json[key]:
+                freq_bindings.append(bindings[0])
+            key_freq = [0]*len(freq_bindings)
+        if key == "Duration":
+            for bindings in keystroke_json[key]:
+                dur_bindings.append(bindings[0])
+            key_dur = [0]*len(dur_bindings)
+    for session_info in session_file:
+        session_param = session_file[session_info]
+        try:
+            if session_param[0] in freq_bindings:
+                key_freq[freq_bindings.index(session_param[0])] += 1
+            elif session_param[0] in dur_bindings:
+                i = dur_bindings.index(session_param[0])
+                key_dur[i] += int(session_param[1][1]) - int(session_param[1][0])
+        except Exception as e:
+            print(str(e))
+            print(traceback.print_exc())
+            continue
+    return key_freq, key_dur
+
+
+def get_export_files(export_dir):
+    export_files = []
+    if path.isdir(export_dir):
+        _, _, files = next(walk(export_dir))
+        for file in files:
+            if pathlib.Path(file).suffix == ".csv":
+                export_files.append(pathlib.Path(file).stem)
+    return export_files
+
+
+def get_session_files(session_dir):
+    session_files = []
+    if path.isdir(session_dir):
+        _, _, files = next(walk(session_dir))
+        for file in files:
+            if pathlib.Path(file).suffix == ".json":
+                session_files.append(file)
+    return session_files
+
+
+def get_sessions(session_dir):
+    session_files = []
+    sessions = []
+    if path.isdir(session_dir):
+        _, _, files = next(walk(session_dir))
+        for file in files:
+            if pathlib.Path(file).suffix == ".json":
+                session_files.append(file)
+    for file in session_files:
+        with open(path.join(session_dir, file), 'r') as f:
+            data = json.load(f)
+            if data['Primary Data'] == "Primary":
+                sessions.append(data)
+    return sessions
+
+
+def open_keystroke_file(key_file):
+    bindings = []
+    with open(key_file) as f:
+        keystroke_json = json.load(f)
+    for key in keystroke_json:
+        if key != "Name":
+            bindings.append((key, keystroke_json[key]))
+    return bindings

@@ -1,5 +1,5 @@
 import tkinter
-from tkinter import NO, YES, TOP
+from tkinter import NO, YES, TOP, W, N
 from tkinter.ttk import Style
 
 from ttk import Treeview
@@ -124,3 +124,41 @@ class EntryPopup:
     def close_win(self):
         self.caller.popup_return(self.entry.get(), self.popup_call)
         self.popup_root.destroy()
+
+
+class NewKeyPopup:
+    def __init__(self, top, root, dur_freq):
+        assert top.key_popup_return
+        self.caller = top
+        self.dur_freq = dur_freq
+        self.tag_entry = None
+        self.key_entry = None
+        self.popup_root = None
+        self.new_key_name_entry(root)
+
+    def new_key_name_entry(self, root):
+        # Create a Toplevel window
+        popup_root = self.popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x100")
+        popup_root.title("Enter New Binding")
+
+        # Create an Entry Widget in the Toplevel window
+        self.tag_label = tkinter.Label(popup_root, text="Key Tag", bg='white')
+        self.tag_label.place(x=30, y=20, anchor=W)
+        self.tag_entry = tkinter.Entry(popup_root, bd=2, width=25, bg='white')
+        self.tag_entry.place(x=90, y=20, anchor=W)
+
+        self.key_label = tkinter.Label(popup_root, text="Key", bg='white')
+        self.key_label.place(x=30, y=50, anchor=W)
+        self.key_entry = tkinter.Entry(popup_root, bd=2, width=25, bg='white')
+        self.key_entry.place(x=90, y=50, anchor=W)
+
+        # Create a Button Widget in the Toplevel Window
+        button = tkinter.Button(popup_root, text="OK", command=self.close_win)
+        button.place(x=150, y=70, anchor=N)
+
+    def close_win(self):
+        if len(self.key_entry.get()) == 1:
+            self.caller.key_popup_return(self.tag_entry.get(), self.key_entry.get(), self.dur_freq)
+            self.popup_root.destroy()
