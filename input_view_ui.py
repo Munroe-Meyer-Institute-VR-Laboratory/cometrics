@@ -11,8 +11,8 @@ from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStream
 
 
 class KeystrokeDataFields:
-    def __init__(self, parent, keystroke_file):
-        self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight() - 280))
+    def __init__(self, parent, keystroke_file, height, width):
+        self.frame = Frame(parent, width=250, height=(height - 280))
         self.frame.place(x=520, y=120)
         self.keystroke_json = None
         self.new_keystroke = False
@@ -24,7 +24,6 @@ class KeystrokeDataFields:
         self.open_keystroke_file()
         self.freq_strings = []
         self.freq_key_strings = []
-
 
         self.dur_sticky = []
         self.sticky_start = []
@@ -41,7 +40,7 @@ class KeystrokeDataFields:
                   background=self.fixed_map('background'))
         # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
         self.treeview = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
-        self.treeview.place(x=20, y=30, height=(parent.winfo_screenheight() / 2 - 200), width=210)
+        self.treeview.place(x=20, y=30, height=(height / 2 - 200), width=210)
 
         self.treeview["columns"] = ["1", "2", "3"]
         self.treeview.heading("1", text="Char", anchor='c')
@@ -59,16 +58,16 @@ class KeystrokeDataFields:
         self.treeview.bind("<Double-Button-1>", self.change_keybind)
 
         self.delete_button = Button(self.frame, text="Delete Key", command=self.delete_binding, width=8)
-        self.delete_button.place(x=20, y=parent.winfo_screenheight() / 2 - 170, anchor=NW)
+        self.delete_button.place(x=20, y=height / 2 - 170, anchor=NW)
 
         self.add_button = Button(self.frame, text="Add Key", command=self.add_key_popup, width=9)
-        self.add_button.place(x=125, y=parent.winfo_screenheight() / 2 - 170, anchor=N)
+        self.add_button.place(x=125, y=height / 2 - 170, anchor=N)
 
         self.save_button = Button(self.frame, text="Save File", command=self.save_binding, width=8)
-        self.save_button.place(x=230, y=parent.winfo_screenheight() / 2 - 170, anchor=NE)
+        self.save_button.place(x=230, y=height / 2 - 170, anchor=NE)
 
         self.file_scroll = Scrollbar(self.frame, orient="vertical", command=self.treeview.yview)
-        self.file_scroll.place(x=2, y=30, height=(parent.winfo_screenheight() / 2 - 200))
+        self.file_scroll.place(x=2, y=30, height=(height / 2 - 200))
 
         self.treeview.configure(yscrollcommand=self.file_scroll.set)
         self.tree_parents = []
@@ -76,8 +75,8 @@ class KeystrokeDataFields:
         self.current_selection = "I000"
 
         self.treeview1 = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
-        self.treeview1.place(x=20, y=(parent.winfo_screenheight() / 2 - 175) + 50,
-                             height=(parent.winfo_screenheight() / 2 - 200), width=210)
+        self.treeview1.place(x=20, y=(height / 2 - 175) + 50,
+                             height=(height / 2 - 200), width=210)
 
         self.treeview1["columns"] = ["1", "2", "3", "4"]
         self.treeview1.heading("1", text="Char", anchor='c')
@@ -97,8 +96,8 @@ class KeystrokeDataFields:
         self.treeview1.bind("<Double-Button-1>", self.change_keybind1)
 
         self.file_scroll1 = Scrollbar(self.frame, orient="vertical", command=self.treeview1.yview)
-        self.file_scroll1.place(x=2, y=(parent.winfo_screenheight() / 2 - 175) + 50,
-                                height=(parent.winfo_screenheight() / 2 - 200))
+        self.file_scroll1.place(x=2, y=(height / 2 - 175) + 50,
+                                height=(height / 2 - 200))
 
         self.treeview1.configure(yscrollcommand=self.file_scroll1.set)
         self.tree_parents1 = []
@@ -108,13 +107,13 @@ class KeystrokeDataFields:
         self.populate_bindings1()
 
         self.delete_button1 = Button(self.frame, text="Delete Key", command=self.delete_dur_binding, width=8)
-        self.delete_button1.place(x=20, y=parent.winfo_screenheight() - 325)
+        self.delete_button1.place(x=20, y=height - 325)
 
         self.add_button1 = Button(self.frame, text="Add Key", command=self.add_dur_popup, width=9)
-        self.add_button1.place(x=125, y=parent.winfo_screenheight() - 325, anchor=N)
+        self.add_button1.place(x=125, y=height - 325, anchor=N)
 
         self.save_button1 = Button(self.frame, text="Save File", command=self.save_binding, width=8)
-        self.save_button1.place(x=230, y=parent.winfo_screenheight() - 325, anchor=NE)
+        self.save_button1.place(x=230, y=height - 325, anchor=NE)
 
     def delete_dur_binding(self):
         if self.current_selection1:
@@ -341,10 +340,10 @@ class Popup:
 
 
 class EmpaticaDataFields:
-    def __init__(self, parent, output_view):
+    def __init__(self, parent, output_view, height, width):
         self.ovu = output_view
         self.parent = parent
-        self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight() - 280))
+        self.frame = Frame(parent, width=250, height=(height - 280))
         self.frame.place(x=265, y=120)
 
         self.emp_client = None
@@ -365,7 +364,7 @@ class EmpaticaDataFields:
                   background=self.fixed_map('background'))
         # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
         self.treeview = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse')
-        self.treeview.place(x=20, y=65, height=(parent.winfo_screenheight() - 450), width=210)
+        self.treeview.place(x=20, y=65, height=(height - 450), width=210)
 
         self.treeview.heading("#0", text="#", anchor='c')
         self.treeview["columns"] = ["1"]
@@ -378,7 +377,7 @@ class EmpaticaDataFields:
         self.treeview.bind("<Button-1>", self.get_selection)
 
         self.file_scroll = Scrollbar(self.frame, orient="vertical", command=self.treeview.yview)
-        self.file_scroll.place(x=2, y=65, height=(parent.winfo_screenheight() - 450))
+        self.file_scroll.place(x=2, y=65, height=(height - 450))
 
         self.treeview.configure(yscrollcommand=self.file_scroll.set)
         self.tree_parents = []
@@ -386,10 +385,10 @@ class EmpaticaDataFields:
         self.current_selection = "I000"
 
         self.connect_button = Button(self.frame, text="Connect", command=self.connect_to_e4, width=12)
-        self.connect_button.place(x=20, y=(parent.winfo_screenheight() - 385))
+        self.connect_button.place(x=20, y=(height - 385))
 
         self.streaming_button = Button(self.frame, text="Stream", command=self.start_e4_streaming, width=12)
-        self.streaming_button.place(x=230, y=(parent.winfo_screenheight() - 385), anchor=NE)
+        self.streaming_button.place(x=230, y=(height - 385), anchor=NE)
 
         self.connected_label = Label(self.frame, text="CONNECTED", fg='green')
         self.streaming_label = Label(self.frame, text="STREAMING", fg='green')
@@ -428,7 +427,7 @@ class EmpaticaDataFields:
                             self.error_thread.start()
                         for stream in EmpaticaDataStreams.ALL_STREAMS:
                             self.e4_client.subscribe_to_stream(stream)
-                        self.connected_label.place(x=125, y=(self.parent.winfo_screenheight() - 350), anchor=N)
+                        self.connected_label.place(x=125, y=(self.height - 350), anchor=N)
                         self.connect_button.config(text="Disconnect")
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
@@ -443,7 +442,7 @@ class EmpaticaDataFields:
                     try:
                         self.e4_client.start_streaming()
                         self.ovu.e4_view.start_plot(self.e4_client)
-                        self.streaming_label.place(x=125, y=(self.parent.winfo_screenheight() - 320), anchor=N)
+                        self.streaming_label.place(x=125, y=(self.height - 320), anchor=N)
                     except Exception as e:
                         messagebox.showerror("Exception Encountered",
                                              "Encountered an error when connecting to E4:\n" + str(e))

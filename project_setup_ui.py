@@ -4,7 +4,6 @@ import pathlib
 from tkinter import *
 from tkinter import messagebox, filedialog
 import yaml
-from config_utils import ConfigUtils
 from ksf_utils import import_ksf
 from logger_util import *
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
@@ -123,7 +122,8 @@ class ProjectSetupWindow:
         self.icon = PhotoImage(file=r'images/cometrics_icon.png')
         self.main_root.iconphoto(True, self.icon)
         self.main_root.resizable(width=False, height=False)
-        self.main_root.overrideredirect()
+        self.main_root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        # self.main_root.overrideredirect(1)
         self.main_root.mainloop()
 
     # region External Data Entry
@@ -416,6 +416,9 @@ class ProjectSetupWindow:
     # endregion
 
     # region Exit UI Controls
+    def on_closing(self):
+        sys.exit(1)
+
     def continue_project(self):
         self.main_root.destroy()
 

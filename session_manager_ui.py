@@ -188,18 +188,20 @@ class SessionTimeFields:
 
 
 class PatientDataFields:
-    def __init__(self, parent, patient_file, session_number, session_date, session_time, conditions, debug=False):
+    def __init__(self, parent, height, width, patient_file, session_number, session_date, session_time, conditions,
+                 debug=False):
         self.conditions = conditions
         self.patient = PatientContainer(patient_file)
-        self.frame = Frame(parent, width=250, height=(parent.winfo_screenheight()-280))
+        self.frame = Frame(parent, width=250, height=(height-280))
         self.frame.place(x=5, y=120)
         # Create label canvas
-        self.label_canvas = Canvas(self.frame, width=250, height=(parent.winfo_screenheight()-280))
+        self.label_canvas = Canvas(self.frame, width=250, height=(height-280))
         # Frame Information
         self.frame_info = self.label_canvas.create_text(125, 15, text="Patient Information", anchor=CENTER,
                                                         font=('Purisa', 12))
-        field_count = ((parent.winfo_screenheight()-280) - 30) % 45
-        print(field_count)
+        field_count = ((height-280) - 30) % 45
+        print(f"Number of frames: {int((13 / field_count) + 0.5)}")
+
         # Patient name field
         self.name_label = self.label_canvas.create_text(5, 30, text="Name", anchor=NW,
                                                         font=('Purisa', 10))
@@ -429,9 +431,10 @@ class SessionManagerWindow:
 
         self.menu = MenuBar(root, self)
         self.stf = SessionTimeFields(self, root)
-        self.ovu = OutputViewPanel(root, self.keystroke_file)
+        self.ovu = OutputViewPanel(root, self.keystroke_file, self.window_height, self.window_width)
         self.stf.kdf = self.ovu.key_view
-        self.pdf = PatientDataFields(root, self.patient_file, self.session_number, self.session_date,
+        self.pdf = PatientDataFields(root, self.window_height, self.window_width,
+                                     self.patient_file, self.session_number, self.session_date,
                                      self.session_time, self.ovu.key_view.conditions, debug=False)
         self.edf = EmpaticaDataFields(root, self.ovu)
 
