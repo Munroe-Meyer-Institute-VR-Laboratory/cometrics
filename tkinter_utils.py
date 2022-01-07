@@ -157,6 +157,9 @@ class NewKeyPopup:
         # Create a Button Widget in the Toplevel Window
         button = tkinter.Button(popup_root, text="OK", command=self.close_win)
         button.place(x=150, y=70, anchor=N)
+        center(popup_root)
+        popup_root.focus_force()
+        self.tag_entry.focus()
 
     def close_win(self):
         if len(self.key_entry.get()) == 1:

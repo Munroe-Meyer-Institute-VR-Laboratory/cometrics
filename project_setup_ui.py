@@ -95,8 +95,8 @@ class ProjectSetupWindow:
                                                                                     key_treeview_height,
                                                                                     treeview_width,
                                                                                     freq_heading_dict,
-                                                                                    key_column_dict,
-                                                                                    double_bind=self.select_frequency_key)
+                                                                                    key_column_dict)
+                                                                                    # double_bind=self.select_frequency_key)
         self.duration_treeview_parents = []
         self.duration_key_treeview, self.duration_key_filescroll = build_treeview(self.main_root,
                                                                                   20 + self.window_width / 2,
@@ -106,8 +106,8 @@ class ProjectSetupWindow:
                                                                                   key_treeview_height,
                                                                                   treeview_width,
                                                                                   dur_heading_dict,
-                                                                                  key_column_dict,
-                                                                                  double_bind=self.select_duration_key)
+                                                                                  key_column_dict)
+                                                                                  # double_bind=self.select_duration_key)
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))
         center(self.main_root)
@@ -295,10 +295,14 @@ class ProjectSetupWindow:
                 self.ksf_file = None
                 self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
                 self.ksf_import.config(state='active')
+                self.clear_duration_treeview()
+                self.clear_frequency_treeview()
         else:
             os.mkdir(self.ksf_dir)
             self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
             self.ksf_import.config(state='active')
+            self.clear_duration_treeview()
+            self.clear_frequency_treeview()
     # endregion
 
     # region KSF UI Controls
@@ -332,26 +336,36 @@ class ProjectSetupWindow:
             messagebox.showwarning("Warning", "No tracker file selected! Please try again.")
 
     def populate_frequency_treeview(self):
-        self.frequency_treeview_parents.append(
-            self.frequency_key_treeview.insert("", 'end', str(0), text="Create New Frequency Key",
-                                               tags=treeview_tags[2]))
+        # self.frequency_treeview_parents.append(
+        #     self.frequency_key_treeview.insert("", 'end', str(0), text="Create New Frequency Key",
+        #                                        tags=treeview_tags[2]))
         if self.frequency_keys:
             for i in range(0, len(self.frequency_keys)):
                 self.frequency_treeview_parents.append(
-                    self.frequency_key_treeview.insert("", 'end', str(i + 1), text=str(self.frequency_keys[i][1]),
+                    self.frequency_key_treeview.insert("", 'end', str(i), text=str(self.frequency_keys[i][1]),
                                                        values=str(self.frequency_keys[i][0]),
-                                                       tags=(treeview_tags[(i + 1) % 2])))
+                                                       tags=(treeview_tags[(i) % 2])))
+
+    def clear_frequency_treeview(self):
+        for parent in self.frequency_treeview_parents:
+            self.frequency_key_treeview.delete(parent)
+        self.frequency_treeview_parents = []
+
+    def clear_duration_treeview(self):
+        for parent in self.duration_treeview_parents:
+            self.duration_key_treeview.delete(parent)
+        self.duration_treeview_parents = []
 
     def populate_duration_treeview(self):
-        self.duration_treeview_parents.append(
-            self.duration_key_treeview.insert("", 'end', str(0), text="Create New Duration Key",
-                                              tags=treeview_tags[2]))
+        # self.duration_treeview_parents.append(
+        #     self.duration_key_treeview.insert("", 'end', str(0), text="Create New Duration Key",
+        #                                       tags=treeview_tags[2]))
         if self.duration_keys:
             for i in range(0, len(self.duration_keys)):
                 self.duration_treeview_parents.append(
-                    self.duration_key_treeview.insert("", 'end', str(i + 1), text=str(self.duration_keys[i][1]),
+                    self.duration_key_treeview.insert("", 'end', str(i), text=str(self.duration_keys[i][1]),
                                                       values=str(self.duration_keys[i][0]),
-                                                      tags=(treeview_tags[(i + 1) % 2])))
+                                                      tags=(treeview_tags[(i) % 2])))
 
     def select_frequency_key(self, event):
         selection = self.frequency_key_treeview.identify_row(event.y)
