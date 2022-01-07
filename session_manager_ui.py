@@ -198,6 +198,8 @@ class PatientDataFields:
         # Frame Information
         self.frame_info = self.label_canvas.create_text(125, 15, text="Patient Information", anchor=CENTER,
                                                         font=('Purisa', 12))
+        field_count = ((parent.winfo_screenheight()-280) - 30) % 45
+        print(field_count)
         # Patient name field
         self.name_label = self.label_canvas.create_text(5, 30, text="Name", anchor=NW,
                                                         font=('Purisa', 10))
@@ -389,6 +391,7 @@ def beep_thread():
 
 class SessionManagerWindow:
     def __init__(self, config, project_setup):
+        self.window_height, self.window_width = project_setup.window_height, project_setup.window_width
         self.patient_file = project_setup.patient_data_file
         self.keystroke_file = project_setup.ksf_file
         self.global_commands = {
@@ -434,8 +437,6 @@ class SessionManagerWindow:
 
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.state('zoomed')
-        self.icon = PhotoImage(file=r'images/cometrics_icon.png')
-        root.iconphoto(True, self.icon)
         root.mainloop()
 
     def restart_program(self):
