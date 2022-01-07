@@ -388,7 +388,7 @@ def beep_thread():
 
 
 class SessionManagerWindow:
-    def __init__(self, patient_file, keystroke_file):
+    def __init__(self, project_setup):
         self.patient_file = patient_file
         self.keystroke_file = keystroke_file
         self.global_commands = {

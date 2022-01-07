@@ -1,7 +1,6 @@
 import sys
 from tkinter import *
 from analysis_ui import populate_spreadsheet, export_columnwise_csv, AccuracyPopup
-from ecl_ui import main
 import os
 import pathlib
 

@@ -108,6 +108,14 @@ class ProjectSetupWindow:
                                                                                   dur_heading_dict,
                                                                                   key_column_dict)
                                                                                   # double_bind=self.select_duration_key)
+
+        self.continue_button = Button(self.main_root, text='Continue', width=12, command=self.continue_project)
+        self.continue_button.place(x=self.window_width*0.75, y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
+                                       self.window_height * 0.21))
+        self.continue_button.config(state='disabled')
+        self.cancel_button = Button(self.main_root, text='Cancel', width=12, command=self.cancel_project)
+        self.cancel_button.place(x=self.window_width*0.88, y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
+                                       self.window_height * 0.21))
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))
         center(self.main_root)
@@ -137,7 +145,7 @@ class ProjectSetupWindow:
             if not self.recent_projects:
                 self.recent_projects = []
             self.recent_projects.append(self.project_dir)
-            config.set_recent_projects(self.recent_projects)
+            self.config.set_recent_projects(self.recent_projects)
             # Load the project
             self.load_project(self.project_dir)
         elif caller == 1:
@@ -224,17 +232,17 @@ class ProjectSetupWindow:
                 self.load_patient(self.patients[int(selection) - 1])
 
     def patient_creation_check(self):
-        if config.get_default_dirs():
-            for directory in config.get_default_dirs():
+        if self.config.get_default_dirs():
+            for directory in self.config.get_default_dirs():
                 if not os.path.exists(os.path.join(self.patient_dir, directory)):
                     os.mkdir(os.path.join(self.patient_dir, directory))
-                for data_dir in config.get_data_folders():
+                for data_dir in self.config.get_data_folders():
                     if not os.path.exists(os.path.join(self.patient_dir, directory, data_dir)):
                         os.mkdir(os.path.join(self.patient_dir, directory, data_dir))
 
     def load_patient(self, directory):
         if self.config.get_patient_concerns():
-            _concern_file = config.get_patient_concerns()
+            _concern_file = self.config.get_patient_concerns()
             self.concern_file = os.path.join(self.project_dir, directory, _concern_file)
             self.populate_patient_concerns()
 
@@ -283,7 +291,7 @@ class ProjectSetupWindow:
         if not os.path.exists(phase_dir):
             os.mkdir(phase_dir)
         self.ksf_dir = os.path.join(self.patient_dir, self.selected_concern + " " + self.phases_var.get(),
-                                    config.get_data_folders()[2])
+                                    self.config.get_data_folders()[2])
         if os.path.exists(self.ksf_dir):
             ksf_dir = pathlib.Path(self.ksf_dir)
             ksf_pattern = r'*.json'
@@ -322,6 +330,7 @@ class ProjectSetupWindow:
         self.duration_keys = self._ksf["Duration"]
         self.populate_frequency_treeview()
         self.populate_duration_treeview()
+        self.continue_button.config(state='active')
 
     def import_concern_ksf(self):
         tracker_file = filedialog.askopenfilename(filetypes=(("Excel Files", "*.xlsx"),))
@@ -332,6 +341,7 @@ class ProjectSetupWindow:
             self.duration_keys = self._ksf["Duration"]
             self.populate_frequency_treeview()
             self.populate_duration_treeview()
+            self.continue_button.config(state='active')
         else:
             messagebox.showwarning("Warning", "No tracker file selected! Please try again.")
 
@@ -364,7 +374,7 @@ class ProjectSetupWindow:
             for i in range(0, len(self.duration_keys)):
                 self.duration_treeview_parents.append(
                     self.duration_key_treeview.insert("", 'end', str(i), text=str(self.duration_keys[i][1]),
-                                                      values=str(self.duration_keys[i][0]),
+                                                      values=(self.duration_keys[i][0]),
                                                       tags=(treeview_tags[(i) % 2])))
 
     def select_frequency_key(self, event):
@@ -396,7 +406,8 @@ class ProjectSetupWindow:
         print()
     # endregion
 
+    def continue_project(self):
+        self.main_root.destroy()
 
-if __name__ == '__main__':
-    config = ConfigUtils()
-    ProjectSetupWindow(config)
+    def cancel_project(self):
+        sys.exit(1)
