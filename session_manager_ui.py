@@ -424,7 +424,7 @@ class SessionManagerWindow:
 
         self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
-        self.unmc_shield_img = ImageTk.PhotoImage(Image.open('images/UNMCLogo.jpg').resize((250, 100), Image.ANTIALIAS))
+        self.unmc_shield_img = ImageTk.PhotoImage(Image.open('images/cometrics_logo.png').resize((250, int(250/5.7)), Image.ANTIALIAS))
         self.unmc_shield_canvas.create_image(0, 0, anchor=NW, image=self.unmc_shield_img)
 
         self.menu = MenuBar(root, self)

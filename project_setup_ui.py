@@ -123,6 +123,7 @@ class ProjectSetupWindow:
         self.icon = PhotoImage(file=r'images/cometrics_icon.png')
         self.main_root.iconphoto(True, self.icon)
         self.main_root.resizable(width=False, height=False)
+        self.main_root.overrideredirect()
         self.main_root.mainloop()
 
     # region External Data Entry
