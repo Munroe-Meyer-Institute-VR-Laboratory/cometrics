@@ -388,9 +388,9 @@ def beep_thread():
 
 
 class SessionManagerWindow:
-    def __init__(self, project_setup):
-        self.patient_file = patient_file
-        self.keystroke_file = keystroke_file
+    def __init__(self, config, project_setup):
+        self.patient_file = project_setup.patient_data_file
+        self.keystroke_file = project_setup.ksf_file
         self.global_commands = {
             "Toggle Session": keyboard.Key.esc,
             "Pause Session": keyboard.Key.ctrl_l,
@@ -403,7 +403,7 @@ class SessionManagerWindow:
         self.listener.start()
         self.session_started = False
         self.session_paused = False
-        parts = pathlib.Path(keystroke_file).parts
+        parts = pathlib.Path(self.keystroke_file).parts
         self.session_files = []
         self.session_file = None
         self.session_dir = path.join(*parts[0:-2], 'sessions')
@@ -417,9 +417,7 @@ class SessionManagerWindow:
         self.get_session_file(self.session_dir)
         root = self.root = Tk()
         root.config(bg="white", bd=-2)
-        # pad = 3
-        # root.geometry("{0}x{1}+0+0".format(1250, 725))
-        root.title("Experiment Collection & Logging v0.7.11")
+        root.title("cometrics v0.8.0")
 
         self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
@@ -428,16 +426,16 @@ class SessionManagerWindow:
 
         self.menu = MenuBar(root, self)
         self.stf = SessionTimeFields(self, root)
-        self.ovu = OutputViewPanel(root, keystroke_file)
+        self.ovu = OutputViewPanel(root, self.keystroke_file)
         self.stf.kdf = self.ovu.key_view
-        self.pdf = PatientDataFields(root, patient_file, self.session_number, self.session_date,
+        self.pdf = PatientDataFields(root, self.patient_file, self.session_number, self.session_date,
                                      self.session_time, self.ovu.key_view.conditions, debug=False)
         self.edf = EmpaticaDataFields(root, self.ovu)
 
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.state('zoomed')
-        root.update()
-        print(root.winfo_width(), root.winfo_height())
+        self.icon = PhotoImage(file=r'images/cometrics_icon.png')
+        root.iconphoto(True, self.icon)
         root.mainloop()
 
     def restart_program(self):

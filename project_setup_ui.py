@@ -119,7 +119,7 @@ class ProjectSetupWindow:
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))
         center(self.main_root)
-        self.main_root.title("cometrics - v0.8.0")
+        self.main_root.title("cometrics v0.8.0")
         self.icon = PhotoImage(file=r'images/cometrics_icon.png')
         self.main_root.iconphoto(True, self.icon)
         self.main_root.resizable(width=False, height=False)
@@ -156,7 +156,6 @@ class ProjectSetupWindow:
                 self.patient_treeview.insert("", 'end', str((len(self.patient_treeview_parents) + 1)), text=data,
                                              tags=treeview_tags[(len(self.patient_treeview_parents) + 1) % 2]))
             select_focus(self.patient_treeview, len(self.patient_treeview_parents))
-            # self.patient_creation_check()
             self.load_patient(self.patient_dir)
         elif caller == 2:
             self.concerns.append(data)
@@ -245,6 +244,15 @@ class ProjectSetupWindow:
             _concern_file = self.config.get_patient_concerns()
             self.concern_file = os.path.join(self.project_dir, directory, _concern_file)
             self.populate_patient_concerns()
+            self.patient_data_file = os.path.normpath(
+                os.path.join(self.patient_dir, pathlib.Path(self.patient_dir).stem + '.json'))
+            if not os.path.exists(self.patient_data_file):
+                with open(self.patient_data_file, 'w') as f:
+                    x = {
+                        "Name": pathlib.Path(self.patient_dir).stem,
+                        "MRN": ""
+                    }
+                    json.dump(x, f)
 
     # endregion
 
@@ -406,8 +414,10 @@ class ProjectSetupWindow:
         print()
     # endregion
 
+    # region Exit UI Controls
     def continue_project(self):
         self.main_root.destroy()
 
     def cancel_project(self):
         sys.exit(1)
+    # endregion
