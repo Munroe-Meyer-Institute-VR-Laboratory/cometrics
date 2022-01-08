@@ -17,12 +17,13 @@ from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClien
 import traceback
 from gif_player import ImageLabel
 # Custom library imports
+from ui_params import view_button_place
 
 
 class OutputViews:
     KEY_VIEW = 0
     E4_VIEW = 1
-    TACTOR_VIEW = 2
+    VIDEO_VIEW = 2
 
 
 class OutputViewPanel:
@@ -43,6 +44,9 @@ class OutputViewPanel:
         # e4_frame.place(x=780, y=120)
         self.view_frames.append(e4_frame)
 
+        video_frame = Frame(parent, width=700, height=(height - 280))
+        self.view_frames.append(video_frame)
+
         # tactor_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
         # test_label = Label(tactor_frame, text="Tactor Frame")
         # test_label.place(x=200, y=200)
@@ -50,12 +54,16 @@ class OutputViewPanel:
 
         key_button = Button(self.frame, text="Key Bindings", command=self.switch_key_frame, width=12)
         self.view_buttons.append(key_button)
-        self.view_buttons[0].place(x=0, y=0)
-        self.view_buttons[0].config(relief=SUNKEN)
+        self.view_buttons[OutputViews.KEY_VIEW].place(x=(len(self.view_buttons) - 1) * view_button_place, y=0)
+        self.view_buttons[OutputViews.KEY_VIEW].config(relief=SUNKEN)
 
         e4_output_button = Button(self.frame, text="E4 Streams", command=self.switch_e4_frame, width=12)
         self.view_buttons.append(e4_output_button)
-        self.view_buttons[1].place(x=92, y=0)
+        self.view_buttons[OutputViews.E4_VIEW].place(x=(len(self.view_buttons) - 1) * view_button_place, y=0)
+
+        video_button = Button(self.frame, text="Video View", command=self.switch_video_frame, width=12)
+        self.view_buttons.append(video_button)
+        self.view_buttons[OutputViews.VIDEO_VIEW].place(x=(len(self.view_buttons) - 1) * view_button_place, y=0)
 
         # tactor_view_button = Button(self.frame, text="Tactor View", command=self.switch_tactor_frame, width=12)
         # self.view_buttons.append(tactor_view_button)
@@ -75,6 +83,9 @@ class OutputViewPanel:
 
     def switch_e4_frame(self):
         self.switch_frame(OutputViews.E4_VIEW)
+
+    def switch_video_frame(self):
+        self.switch_frame(OutputViews.VIDEO_VIEW)
 
     def switch_frame(self, view):
         """

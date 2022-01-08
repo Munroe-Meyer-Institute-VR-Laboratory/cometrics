@@ -109,11 +109,13 @@ class ProjectSetupWindow:
                                                                                   # double_bind=self.select_duration_key)
 
         self.continue_button = Button(self.main_root, text='Continue', width=12, command=self.continue_project)
-        self.continue_button.place(x=self.window_width*0.78, y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
+        self.continue_button.place(x=self.window_width*0.78,
+                                   y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
                                        self.window_height * 0.21))
         self.continue_button.config(state='disabled')
         self.cancel_button = Button(self.main_root, text='Cancel', width=12, command=self.cancel_project)
-        self.cancel_button.place(x=self.window_width*0.78+100, y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
+        self.cancel_button.place(x=self.window_width*0.78+100,
+                                 y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
                                        self.window_height * 0.21))
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))

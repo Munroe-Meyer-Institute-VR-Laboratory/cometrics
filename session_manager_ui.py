@@ -15,6 +15,7 @@ from logger_util import *
 from output_view_ui import OutputViewPanel
 from input_view_ui import EmpaticaDataFields
 from menu_bar import MenuBar
+import math
 
 
 class SessionTimeFields:
@@ -187,121 +188,150 @@ class SessionTimeFields:
         self.timer_running = False
 
 
+class PatientDataVar:
+    PATIENT_NAME = 0
+    MRN = 1
+    SESS_LOC = 2
+    ASSESS_NAME = 3
+    COND_NAME = 4
+    PRIM_THER = 5
+    CASE_MGR = 6
+    SESS_THER = 7
+    DATA_REC = 8
+    SESS_NUM = 9
+    PRIM_DATA = 10
+
+
 class PatientDataFields:
     def __init__(self, parent, height, width, patient_file, session_number, session_date, session_time, conditions,
                  debug=False):
         self.conditions = conditions
         self.patient = PatientContainer(patient_file)
-        self.frame = Frame(parent, width=250, height=(height-280))
-        self.frame.place(x=5, y=120)
-        # Create label canvas
-        self.label_canvas = Canvas(self.frame, width=250, height=(height-280))
-        # Frame Information
-        self.frame_info = self.label_canvas.create_text(125, 15, text="Patient Information", anchor=CENTER,
-                                                        font=('Purisa', 12))
-        field_count = ((height-280) - 30) % 45
-        print(f"Number of frames: {int((13 / field_count) + 0.5)}")
-
-        # Patient name field
-        self.name_label = self.label_canvas.create_text(5, 30, text="Name", anchor=NW,
-                                                        font=('Purisa', 10))
-        # Patient MRN field
-        self.mrn_label = self.label_canvas.create_text(5, 75, text="Medical Record Number", anchor=NW,
-                                                       font=('Purisa', 10))
-        # Session location field
-        self.sess_loc_label = self.label_canvas.create_text(5, 120, text="Session Location", anchor=NW,
-                                                            font=('Purisa', 10))
-        # Assessment name field
-        self.assess_name_label = self.label_canvas.create_text(5, 165, text="Assessment Name", anchor=NW,
-                                                               font=('Purisa', 10))
-        # Condition name field
-        self.cond_name_label = self.label_canvas.create_text(5, 210, text="Condition Name", anchor=NW,
-                                                             font=('Purisa', 10))
-        # Primary therapist field
-        self.prim_ther_label = self.label_canvas.create_text(5, 255, text="Primary Therapist Name", anchor=NW,
-                                                             font=('Purisa', 10))
-        # Case manager field
-        self.case_mgr_label = self.label_canvas.create_text(5, 300, text="Case Manager Name", anchor=NW,
-                                                            font=('Purisa', 10))
-        # Session therapist field
-        self.sess_ther_label = self.label_canvas.create_text(5, 345, text="Session Therapist Name", anchor=NW,
-                                                             font=('Purisa', 10))
-        # Data recorder name
-        self.data_rec_label = self.label_canvas.create_text(5, 390, text="Data Recorder Name", anchor=NW,
-                                                            font=('Purisa', 10))
-        # Primary data field
-        self.prim_data_label = self.label_canvas.create_text(5, 435, text="Primary or Reliability Data", anchor=NW,
-                                                             font=('Purisa', 10))
-        # Session date field
-        self.date_label = self.label_canvas.create_text(5, 500, text="Session Date: " + session_date, anchor=NW,
-                                                        font=('Purisa', 10))
-        # Session start time field
-        self.start_label = self.label_canvas.create_text(5, 520, text="Session Start Time: " + session_time, anchor=NW,
-                                                         font=('Purisa', 10))
-        # Session number field
-        self.sess_number_label = self.label_canvas.create_text(5, 540, text="Session Number: ",
-                                                               anchor=NW,
-                                                               font=('Purisa', 10))
-        # Setup input variables
-        self.session_number = session_number
-        self.session_number_var = StringVar(self.frame, session_number)
-        self.session_number_entry = Entry(self.frame, textvariable=self.session_number_var)
-        self.session_number_entry.place(x=125, y=540, width=75)
-        self.patient_name_var = StringVar(self.frame)
+        self.patient_vars = [
+            StringVar(),
+            StringVar(),
+            StringVar(),
+            StringVar(),
+            StringVar(),
+            StringVar(),
+            StringVar(),
+            StringVar(),
+            StringVar(),
+            StringVar(value=session_number),
+            StringVar(value="Primary")
+        ]
+        self.label_texts = [
+            "Name",
+            "Medical Record Number",
+            "Session Location",
+            "Assessment Name",
+            "Condition Name",
+            "Primary Therapist",
+            "Case Manager",
+            "Session Therapist",
+            "Data Recorder",
+            "Session Number",
+            "Primary or Reliability Session"
+        ]
         if self.patient.name:
-            self.patient_name_var.set(self.patient.name)
-        self.name_entry = Entry(self.frame, textvariable=self.patient_name_var)
-        self.name_entry.place(x=15, y=50, width=220, anchor=NW)
-
-        self.mrn_var = StringVar(self.frame)
+            self.patient_vars[PatientDataVar.PATIENT_NAME].set(self.patient.name)
         if self.patient.medical_record_number:
-            self.mrn_var.set(self.patient.medical_record_number)
-        self.mrn_entry = Entry(self.frame, textvariable=self.mrn_var)
-        self.mrn_entry.place(x=15, y=95, width=220, anchor=NW)
+            self.patient_vars[PatientDataVar.MRN].set(self.patient.medical_record_number)
+        self.session_number = session_number
+        self.patient_frames = []
+        self.next_button_image = PhotoImage(file='images/go-next.png')
+        self.prev_button_image = PhotoImage(file='images/go-previous.png')
+        field_count = int(((height - 355) - 30) / 45)
+        frame_count = int(math.ceil(13 / field_count))
+        print(f"Number of frames: {field_count}")
+        for i in range(0, frame_count):
+            self.patient_frames.append(Frame(parent, width=250, height=(height - 280)))
+            patient_information = Label(self.patient_frames[-1], text="Patient Information", font=('Purisa', 12))
+            patient_information.place(x=125, y=15, anchor=CENTER)
+            next_button = Button(self.patient_frames[-1], image=self.next_button_image, command=self.next_patient_field)
+            prev_button = Button(self.patient_frames[-1], image=self.prev_button_image, command=self.prev_patient_field)
+            next_button.place(x=250-15, y=(height - 280)*0.9, anchor=E)
+            prev_button.place(x=15, y=(height - 280)*0.9, anchor=W)
+            page_text = Label(self.patient_frames[-1], text=f"{i + 1}/{frame_count}", font=('Purisa', 12))
+            page_text.place(x=250/2, y=(height-280)*0.9, anchor=CENTER)
+        print(f"Number of frames: {frame_count}")
+        patient_dict = [
+            [Label, self.label_texts[PatientDataVar.PATIENT_NAME]],
+            [Entry, self.label_texts[PatientDataVar.PATIENT_NAME]],
+            [Label, self.label_texts[PatientDataVar.MRN]],
+            [Entry, self.label_texts[PatientDataVar.MRN]],
+            [Label, self.label_texts[PatientDataVar.SESS_LOC]],
+            [Entry, self.label_texts[PatientDataVar.SESS_LOC]],
+            [Label, self.label_texts[PatientDataVar.ASSESS_NAME]],
+            [Entry, self.label_texts[PatientDataVar.ASSESS_NAME]],
+            [Label, self.label_texts[PatientDataVar.COND_NAME]],
+            [OptionMenu, self.label_texts[PatientDataVar.COND_NAME]],
+            [Label, self.label_texts[PatientDataVar.PRIM_THER]],
+            [Entry, self.label_texts[PatientDataVar.PRIM_THER]],
+            [Label, self.label_texts[PatientDataVar.CASE_MGR]],
+            [Entry, self.label_texts[PatientDataVar.CASE_MGR]],
+            [Label, self.label_texts[PatientDataVar.SESS_THER]],
+            [Entry, self.label_texts[PatientDataVar.SESS_THER]],
+            [Label, self.label_texts[PatientDataVar.DATA_REC]],
+            [Entry, self.label_texts[PatientDataVar.DATA_REC]],
+            [Label, self.label_texts[PatientDataVar.SESS_NUM]],
+            [Entry, self.label_texts[PatientDataVar.SESS_NUM]],
+        ]
+        info_count = 0
+        frame_select = 0
+        patient_y = 30
+        for elem in range(0, len(patient_dict), 2):
+            temp_label = patient_dict[elem][0](self.patient_frames[frame_select], text=patient_dict[elem][1], font=('Purisa', 10))
+            temp_label.place(x=5, y=patient_y, anchor=NW)
+            if patient_dict[elem + 1][0] is OptionMenu:
+                temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], patient_dict[elem][1], *self.conditions)
+                temp_entry.place(x=15, y=patient_y + 20, anchor=NW, width=220)
+            else:
+                temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], textvariable=patient_dict[elem][1])
+                temp_entry.place(x=15, y=patient_y+20, anchor=NW, width=220)
+            info_count += 1
+            if not info_count % field_count:
+                frame_select += 1
+                patient_y = 30
+            else:
+                if patient_dict[elem + 1][0] is OptionMenu:
+                    patient_y += 55
+                else:
+                    patient_y += 45
 
-        self.sess_loc_var = StringVar(self.frame)
-        self.sess_entry = Entry(self.frame, textvariable=self.sess_loc_var)
-        self.sess_entry.place(x=15, y=140, width=220, anchor=NW)
-
-        self.assess_name_var = StringVar(self.frame)
-        self.assess_name_entry = Entry(self.frame, textvariable=self.assess_name_var)
-        self.assess_name_entry.place(x=15, y=180, width=220, anchor=NW)
-
-        if self.conditions:
-            self.cond_name_var = StringVar(self.frame)
-            self.cond_name_entry = OptionMenu(self.frame, self.cond_name_var, *self.conditions)
-            self.cond_name_entry.place(x=15, y=225, width=220, anchor=NW)
+        primary_data = Label(self.patient_frames[frame_select], text=self.label_texts[PatientDataVar.PRIM_DATA],
+              font=('Purisa', 10))
+        primary_data.place(x=5, y=patient_y, anchor=NW)
+        self.prim_data_radio = Radiobutton(self.patient_frames[frame_select], text="Primary", value="Primary",
+                                           variable=self.patient_vars[PatientDataVar.PRIM_DATA], command=self.check_radio)
+        self.rel_data_radio = Radiobutton(self.patient_frames[frame_select], text="Reliability", value="Reliability",
+                                          variable=self.patient_vars[PatientDataVar.PRIM_DATA], command=self.check_radio)
+        self.prim_data_radio.place(x=15, y=patient_y+20)
+        self.rel_data_radio.place(x=125, y=patient_y+20)
+        info_count += 1
+        if not info_count % field_count:
+            frame_select += 1
+            patient_y = 30
         else:
-            self.cond_name_var = StringVar(self.frame)
-            self.cond_name_entry = Entry(self.frame, textvariable=self.cond_name_var)
-            self.cond_name_entry.place(x=15, y=230, width=220, anchor=NW)
+            patient_y += 45
+        # Session date field
+        date_label = Label(self.patient_frames[frame_select], text="Session Date: " + session_date, anchor=NW,
+                                                        font=('Purisa', 10))
+        date_label.place(x=5, y=patient_y, anchor=NW)
+        info_count += 1
+        info_count += 1
+        if not info_count % field_count:
+            frame_select += 1
+            patient_y = 30
+        else:
+            patient_y += 20
+        # Session start time field
+        start_label = Label(self.patient_frames[frame_select], text="Session Start Time: " + session_time,
+                            anchor=NW, font=('Purisa', 10))
+        start_label.place(x=5, y=patient_y, anchor=NW)
 
-        self.prim_ther_var = StringVar(self.frame)
-        self.prim_ther_entry = Entry(self.frame, textvariable=self.prim_ther_var)
-        self.prim_ther_entry.place(x=15, y=275, width=220, anchor=NW)
-
-        self.case_mgr_var = StringVar(self.frame)
-        self.case_mgr_entry = Entry(self.frame, textvariable=self.case_mgr_var)
-        self.case_mgr_entry.place(x=15, y=320, width=220, anchor=NW)
-
-        self.sess_ther_var = StringVar(self.frame)
-        self.sess_ther_entry = Entry(self.frame, textvariable=self.sess_ther_var)
-        self.sess_ther_entry.place(x=15, y=365, width=220, anchor=NW)
-
-        self.data_rec_var = StringVar(self.frame)
-        self.data_rec_entry = Entry(self.frame, textvariable=self.data_rec_var)
-        self.data_rec_entry.place(x=15, y=410, width=220, anchor=NW)
-
-        self.prim_data_var = StringVar(self.frame, "Primary")
-        self.prim_data_radio = Radiobutton(self.frame, text="Primary", value="Primary",
-                                           variable=self.prim_data_var, command=self.check_radio)
-        self.prim_data_radio.place(x=15, y=455)
-
-        self.rel_data_radio = Radiobutton(self.frame, text="Reliability", value="Reliability",
-                                          variable=self.prim_data_var, command=self.check_radio)
-        self.rel_data_radio.place(x=125, y=455)
-
-        self.label_canvas.place(x=0, y=0)
+        self.current_patient_field = 0
+        self.patient_frames[self.current_patient_field].place(x=5, y=120)
 
         if debug:
             self.sess_loc_var.set("Debug")
@@ -312,6 +342,26 @@ class PatientDataFields:
             self.data_rec_var.set("Debug")
             self.prim_ther_var.set("Debug")
 
+    def select_patient_fields(self, field):
+        self.patient_frames[self.current_patient_field].place_forget()
+        self.patient_frames[field].place(x=5, y=120)
+        self.current_patient_field = field
+
+    def next_patient_field(self):
+        self.patient_frames[self.current_patient_field].place_forget()
+        if self.current_patient_field + 1 >= len(self.patient_frames):
+            self.current_patient_field = 0
+        else:
+            self.current_patient_field += 1
+        self.patient_frames[self.current_patient_field].place(x=5, y=120)
+
+    def prev_patient_field(self):
+        self.patient_frames[self.current_patient_field].place_forget()
+        if self.current_patient_field - 1 < 0:
+            self.current_patient_field = len(self.patient_frames) - 1
+        else:
+            self.current_patient_field -= 1
+        self.patient_frames[self.current_patient_field].place(x=5, y=120)
 
     def check_radio(self):
         pass
@@ -393,7 +443,7 @@ def beep_thread():
 
 class SessionManagerWindow:
     def __init__(self, config, project_setup):
-        self.window_height, self.window_width = project_setup.window_height, project_setup.window_width
+        self.window_height, self.window_width = config.get_screen_size()[0], config.get_screen_size()[1]
         self.patient_file = project_setup.patient_data_file
         self.keystroke_file = project_setup.ksf_file
         self.global_commands = {
@@ -427,7 +477,7 @@ class SessionManagerWindow:
         self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
         self.unmc_shield_img = ImageTk.PhotoImage(Image.open('images/cometrics_logo.png').resize((250, int(250/5.7)), Image.ANTIALIAS))
-        self.unmc_shield_canvas.create_image(0, 0, anchor=NW, image=self.unmc_shield_img)
+        self.unmc_shield_canvas.create_image(0, 50, anchor=W, image=self.unmc_shield_img)
 
         self.menu = MenuBar(root, self)
         self.stf = SessionTimeFields(self, root)
@@ -436,7 +486,7 @@ class SessionManagerWindow:
         self.pdf = PatientDataFields(root, self.window_height, self.window_width,
                                      self.patient_file, self.session_number, self.session_date,
                                      self.session_time, self.ovu.key_view.conditions, debug=False)
-        self.edf = EmpaticaDataFields(root, self.ovu)
+        self.edf = EmpaticaDataFields(root, self.ovu, self.window_height, self.window_width)
 
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.state('zoomed')
