@@ -248,12 +248,13 @@ class PatientDataFields:
             self.patient_frames.append(Frame(parent, width=250, height=(height - 280)))
             patient_information = Label(self.patient_frames[-1], text="Patient Information", font=('Purisa', 12))
             patient_information.place(x=125, y=15, anchor=CENTER)
-            next_button = Button(self.patient_frames[-1], image=self.next_button_image, command=self.next_patient_field)
-            prev_button = Button(self.patient_frames[-1], image=self.prev_button_image, command=self.prev_patient_field)
-            next_button.place(x=250-15, y=(height - 280)*0.9, anchor=E)
-            prev_button.place(x=15, y=(height - 280)*0.9, anchor=W)
-            page_text = Label(self.patient_frames[-1], text=f"{i + 1}/{frame_count}", font=('Purisa', 12))
-            page_text.place(x=250/2, y=(height-280)*0.9, anchor=CENTER)
+            if frame_count > 1:
+                next_button = Button(self.patient_frames[-1], image=self.next_button_image, command=self.next_patient_field)
+                prev_button = Button(self.patient_frames[-1], image=self.prev_button_image, command=self.prev_patient_field)
+                next_button.place(x=250-15, y=(height - 280)*0.9, anchor=E)
+                prev_button.place(x=15, y=(height - 280)*0.9, anchor=W)
+                page_text = Label(self.patient_frames[-1], text=f"{i + 1}/{frame_count}", font=('Purisa', 12))
+                page_text.place(x=250/2, y=(height-280)*0.9, anchor=CENTER)
         print(f"Number of frames: {frame_count}")
         patient_dict = [
             [Label, self.label_texts[PatientDataVar.PATIENT_NAME]],
