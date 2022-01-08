@@ -32,13 +32,11 @@ def get_display_size():
     return root, height, width
 
 
-def get_treeview_style(name="mystyle.Treeview", font=('Calibri', 11), heading_font=('Calibri', 13, 'bold'), h_thickness=0, bd=0):
+def get_treeview_style(name="mystyle.Treeview", font=('Calibri', 13), heading_font=('Calibri', 13, 'bold'), h_thickness=0, bd=0):
     style = Style()
-    style.configure(name, highlightthickness=h_thickness, bd=bd,
-                    font=font)  # Modify the font of the body
+    style.configure(name, highlightthickness=h_thickness, bd=bd, font=font)  # Modify the font of the body
     style.configure("mystyle.Treeview.Heading", font=heading_font)  # Modify the font of the headings
-    style.map('Treeview', foreground=fixed_map('foreground'),
-              background=fixed_map('background'))
+    style.map('Treeview', foreground=fixed_map('foreground'), background=fixed_map('background'))
     return style
 
 

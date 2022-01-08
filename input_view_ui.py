@@ -372,12 +372,16 @@ class EmpaticaDataFields:
         self.streaming_button = Button(self.frame, text="Stream", command=self.start_e4_streaming, width=12)
         self.streaming_button.place(x=230, y=(height - 385), anchor=NE)
 
-        # self.connected_label = Label(self.frame, text="CONNECTED", fg='green')
-        # self.streaming_label = Label(self.frame, text="STREAMING", fg='green')
         self.disconnected_image = PhotoImage(file='images/disconnected.png')
         self.connected_image = PhotoImage(file='images/connected.png')
         self.connected_label = Label(self.frame, image=self.disconnected_image)
         self.connected_label.place(x=250*0.25, y=height - 330, anchor=CENTER)
+
+        self.streaming_image = PhotoImage(file='images/streaming.png')
+        self.nostreaming_image = PhotoImage(file='images/nostreaming.png')
+        self.streaming_label = Label(self.frame, image=self.nostreaming_image)
+        self.streaming_label.place(x=250*0.75, y=height - 330, anchor=CENTER)
+
         self.error_thread = None
         self.devices_thread = None
 
@@ -401,8 +405,8 @@ class EmpaticaDataFields:
                 if self.e4_client:
                     self.e4_client.disconnect()
                     self.connect_button.config(text="Connect")
-                    self.connected_label.place_forget()
-                    self.streaming_label.place_forget()
+                    self.connected_label.config(image=self.disconnected_image)
+                    self.streaming_label.config(image=self.nostreaming_image)
                     self.e4_client = None
                 else:
                     self.e4_client = EmpaticaE4(self.e4_address)
@@ -412,7 +416,7 @@ class EmpaticaDataFields:
                             self.error_thread.start()
                         for stream in EmpaticaDataStreams.ALL_STREAMS:
                             self.e4_client.subscribe_to_stream(stream)
-                        self.connected_label.place(x=125, y=(self.height - 350), anchor=N)
+                        self.connected_label.config(image=self.connected_image)
                         self.connect_button.config(text="Disconnect")
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
@@ -427,7 +431,7 @@ class EmpaticaDataFields:
                     try:
                         self.e4_client.start_streaming()
                         self.ovu.e4_view.start_plot(self.e4_client)
-                        self.streaming_label.place(x=125, y=(self.height - 320), anchor=N)
+                        self.streaming_label.config(image=self.streaming_image)
                     except Exception as e:
                         messagebox.showerror("Exception Encountered",
                                              "Encountered an error when connecting to E4:\n" + str(e))
@@ -468,10 +472,10 @@ class EmpaticaDataFields:
 
     def populate_device_list(self):
         for i in range(0, len(self.emp_client.device_list)):
-            self.e4_treeview_parents.append(self.e4_treeview.insert("", 'end', str(i), text=str(i),
-                                                                    values=(
-                                                                    self.emp_client.device_list[i].decode("utf-8"),),
-                                                                    tags=(treeview_tags[i % 2])))
+            self.e4_treeview_parents.append(
+                self.e4_treeview.insert("", 'end', str(i),
+                                        text=str(self.emp_client.device_list[i].decode("utf-8")),
+                                        tags=(treeview_tags[i % 2])))
 
     def get_selection(self, event):
         self.current_selection = self.e4_treeview.identify_row(event.y)

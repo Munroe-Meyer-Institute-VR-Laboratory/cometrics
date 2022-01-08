@@ -240,8 +240,8 @@ class PatientDataFields:
         self.session_number = session_number
         self.patient_entries, self.patient_labels = [], []
         self.patient_frames = []
-        self.next_button_image = PhotoImage(file='images/go-next.png')
-        self.prev_button_image = PhotoImage(file='images/go-previous.png')
+        self.next_button_image = PhotoImage(file='images/go_next.png')
+        self.prev_button_image = PhotoImage(file='images/go_previous.png')
         field_count = int(((height - 355) - 30) / 45)
         frame_count = int(math.ceil(13 / field_count))
         print(f"Number of fields: {field_count}")
