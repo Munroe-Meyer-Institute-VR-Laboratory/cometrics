@@ -72,11 +72,6 @@ def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, se
     return treeview, file_scroll
 
 
-def build_frame_label(frame, label_dict):
-    frame.create_text(125, 15, text="Patient Information", anchor=CENTER,
-                 font=('Purisa', 12))
-
-
 def select_focus(widget: Treeview, selection):
     selection = str(selection)
     widget.selection_set(selection)

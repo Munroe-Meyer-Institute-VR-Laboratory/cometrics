@@ -238,12 +238,13 @@ class PatientDataFields:
         if self.patient.medical_record_number:
             self.patient_vars[PatientDataVar.MRN].set(self.patient.medical_record_number)
         self.session_number = session_number
+        self.patient_entries, self.patient_labels = [], []
         self.patient_frames = []
         self.next_button_image = PhotoImage(file='images/go-next.png')
         self.prev_button_image = PhotoImage(file='images/go-previous.png')
         field_count = int(((height - 355) - 30) / 45)
         frame_count = int(math.ceil(13 / field_count))
-        print(f"Number of frames: {field_count}")
+        print(f"Number of fields: {field_count}")
         for i in range(0, frame_count):
             self.patient_frames.append(Frame(parent, width=250, height=(height - 280)))
             patient_information = Label(self.patient_frames[-1], text="Patient Information", font=('Purisa', 12))
@@ -283,6 +284,7 @@ class PatientDataFields:
         patient_y = 30
         for elem in range(0, len(patient_dict), 2):
             temp_label = patient_dict[elem][0](self.patient_frames[frame_select], text=patient_dict[elem][1], font=('Purisa', 10))
+            self.patient_labels.append(temp_label)
             temp_label.place(x=5, y=patient_y, anchor=NW)
             if patient_dict[elem + 1][0] is OptionMenu:
                 temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], patient_dict[elem][1], *self.conditions)
@@ -290,6 +292,7 @@ class PatientDataFields:
             else:
                 temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], textvariable=patient_dict[elem][1])
                 temp_entry.place(x=15, y=patient_y+20, anchor=NW, width=220)
+            self.patient_entries.append(temp_entry)
             info_count += 1
             if not info_count % field_count:
                 frame_select += 1
@@ -303,12 +306,14 @@ class PatientDataFields:
         primary_data = Label(self.patient_frames[frame_select], text=self.label_texts[PatientDataVar.PRIM_DATA],
               font=('Purisa', 10))
         primary_data.place(x=5, y=patient_y, anchor=NW)
-        self.prim_data_radio = Radiobutton(self.patient_frames[frame_select], text="Primary", value="Primary",
+        prim_data_radio = Radiobutton(self.patient_frames[frame_select], text="Primary", value="Primary",
                                            variable=self.patient_vars[PatientDataVar.PRIM_DATA], command=self.check_radio)
-        self.rel_data_radio = Radiobutton(self.patient_frames[frame_select], text="Reliability", value="Reliability",
+        rel_data_radio = Radiobutton(self.patient_frames[frame_select], text="Reliability", value="Reliability",
                                           variable=self.patient_vars[PatientDataVar.PRIM_DATA], command=self.check_radio)
-        self.prim_data_radio.place(x=15, y=patient_y+20)
-        self.rel_data_radio.place(x=125, y=patient_y+20)
+        prim_data_radio.place(x=15, y=patient_y+20)
+        rel_data_radio.place(x=125, y=patient_y+20)
+        self.patient_entries.append(prim_data_radio)
+        self.patient_entries.append(rel_data_radio)
         info_count += 1
         if not info_count % field_count:
             frame_select += 1
@@ -331,17 +336,22 @@ class PatientDataFields:
                             anchor=NW, font=('Purisa', 10))
         start_label.place(x=5, y=patient_y, anchor=NW)
 
+        self.patient_vars[PatientDataVar.PATIENT_NAME].set(self.patient.name)
+        if self.patient.medical_record_number:
+            self.patient_vars[PatientDataVar.MRN].set(self.patient.medical_record_number)
+        self.patient_vars[PatientDataVar.SESS_NUM].set(session_number)
+
         self.current_patient_field = 0
         self.patient_frames[self.current_patient_field].place(x=5, y=120)
 
         if debug:
-            self.sess_loc_var.set("Debug")
-            self.assess_name_var.set("Debug")
-            self.cond_name_var.set("Debug")
-            self.case_mgr_var.set("Debug")
-            self.sess_ther_var.set("Debug")
-            self.data_rec_var.set("Debug")
-            self.prim_ther_var.set("Debug")
+            self.patient_vars[PatientDataVar.SESS_LOC].set("Debug")
+            self.patient_vars[PatientDataVar.ASSESS_NAME].set("Debug")
+            self.patient_vars[PatientDataVar.COND_NAME].set("Debug")
+            self.patient_vars[PatientDataVar.CASE_MGR].set("Debug")
+            self.patient_vars[PatientDataVar.SESS_THER].set("Debug")
+            self.patient_vars[PatientDataVar.DATA_REC].set("Debug")
+            self.patient_vars[PatientDataVar.PRIM_THER].set("Debug")
 
     def select_patient_fields(self, field):
         self.patient_frames[self.current_patient_field].place_forget()
@@ -368,47 +378,40 @@ class PatientDataFields:
         pass
 
     def save_patient_fields(self):
-        self.patient.save_patient(self.patient_name_var.get(), self.mrn_var.get())
+        self.patient.save_patient(self.patient_vars[PatientDataVar.PATIENT_NAME].get(), self.patient_vars[PatientDataVar.MRN].get())
 
     def check_session_fields(self):
-        if self.sess_loc_var.get() == "":
+        if self.patient_vars[PatientDataVar.SESS_LOC].get() == "":
             return "Session location not set!"
-        elif self.assess_name_var.get() == "":
+        elif self.patient_vars[PatientDataVar.ASSESS_NAME].get() == "":
             return "Assessment name not set!"
-        elif self.cond_name_var.get() == "":
+        elif self.patient_vars[PatientDataVar.COND_NAME].get() == "":
             return "Condition name not set!"
-        elif self.prim_ther_var.get() == "":
+        elif self.patient_vars[PatientDataVar.PRIM_THER].get() == "":
             return "Primary therapist name not set!"
-        elif self.case_mgr_var.get() == "":
+        elif self.patient_vars[PatientDataVar.CASE_MGR].get() == "":
             return "Case manager name not set!"
-        elif self.sess_ther_var.get() == "":
+        elif self.patient_vars[PatientDataVar.SESS_THER].get() == "":
             return "Session therapist name not set!"
-        elif self.data_rec_var.get() == "":
+        elif self.patient_vars[PatientDataVar.DATA_REC].get() == "":
             return "Data recorder not set!"
-        elif self.prim_data_var.get() == "":
+        elif self.patient_vars[PatientDataVar.PRIM_DATA].get() == "":
             return "Data type not set!"
-        elif int(self.session_number_var.get()) < self.session_number and self.prim_data_var.get() == "Primary":
+        elif int(self.patient_vars[PatientDataVar.SESS_NUM].get()) < self.session_number and self.patient_vars[PatientDataVar.PRIM_DATA].get() == "Primary":
             return "Session number already exists!"
         else:
             return False
 
     def lock_session_fields(self):
-        self.sess_entry.config(state='disabled')
-        self.cond_name_entry.config(state='disabled')
-        self.data_rec_entry.config(state='disabled')
-        self.cond_name_entry.config(state='disabled')
-        self.sess_ther_entry.config(state='disabled')
-        self.case_mgr_entry.config(state='disabled')
-        self.assess_name_entry.config(state='disabled')
-        self.name_entry.config(state='disabled')
-        self.mrn_entry.config(state='disabled')
-        self.prim_ther_entry.config(state='disabled')
-        self.session_number_entry.config(state='disabled')
+        for entry in self.patient_entries:
+            entry.config(state='disabled')
 
     def get_session_fields(self):
-        return ([self.sess_loc_var.get(), self.assess_name_var.get(), self.cond_name_var.get(), self.prim_ther_var.get(),
-                self.case_mgr_var.get(), self.sess_ther_var.get(), self.data_rec_var.get(), self.prim_data_var.get(),
-                 self.session_number_var.get()],
+        return ([self.patient_vars[PatientDataVar.SESS_LOC].get(), self.patient_vars[PatientDataVar.ASSESS_NAME].get(),
+                 self.patient_vars[PatientDataVar.COND_NAME].get(), self.patient_vars[PatientDataVar.PRIM_THER].get(),
+                 self.patient_vars[PatientDataVar.CASE_MGR].get(), self.patient_vars[PatientDataVar.SESS_THER].get(),
+                 self.patient_vars[PatientDataVar.DATA_REC].get(), self.patient_vars[PatientDataVar.PRIM_DATA].get(),
+                 self.patient_vars[PatientDataVar.SESS_NUM].get()],
                 ["Session Location", "Assessment Name", "Condition Name", "Primary Therapist", "Case Manager",
                  "Session Therapist", "Data Recorder", "Primary Data", "Session Number"])
 

@@ -9,6 +9,9 @@ from tkinter.ttk import Treeview, Style
 # Custom library imports
 from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams
 
+from tkinter_utils import build_treeview
+from ui_params import treeview_tags
+
 
 class KeystrokeDataFields:
     def __init__(self, parent, keystroke_file, height, width):
@@ -341,6 +344,7 @@ class Popup:
 
 class EmpaticaDataFields:
     def __init__(self, parent, output_view, height, width):
+        self.height, self.width = height, width
         self.ovu = output_view
         self.parent = parent
         self.frame = Frame(parent, width=250, height=(height - 280))
@@ -356,33 +360,11 @@ class EmpaticaDataFields:
         self.empatica_button = Button(self.frame, text="Start Server", command=self.start_e4_server)
         self.empatica_button.place(x=125, y=30, anchor=N)
 
-        style = Style()
-        style.configure("mystyle.Treeview", highlightthickness=0, bd=0,
-                        font=('Calibri', 10))  # Modify the font of the body
-        style.configure("mystyle.Treeview.Heading", font=('Calibri', 13, 'bold'))  # Modify the font of the headings
-        style.map('Treeview', foreground=self.fixed_map('foreground'),
-                  background=self.fixed_map('background'))
-        # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
-        self.treeview = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse')
-        self.treeview.place(x=20, y=65, height=(height - 450), width=210)
-
-        self.treeview.heading("#0", text="#", anchor='c')
-        self.treeview["columns"] = ["1"]
-        self.treeview.column("#0", width=65, stretch=NO, anchor='c')
-        self.treeview.heading("1", text="E4 Name")
-        self.treeview.column("1", width=65, stretch=YES, anchor='c')
-
-        self.treeview.tag_configure('odd', background='#E8E8E8')
-        self.treeview.tag_configure('even', background='#DFDFDF')
-        self.treeview.bind("<Button-1>", self.get_selection)
-
-        self.file_scroll = Scrollbar(self.frame, orient="vertical", command=self.treeview.yview)
-        self.file_scroll.place(x=2, y=65, height=(height - 450))
-
-        self.treeview.configure(yscrollcommand=self.file_scroll.set)
-        self.tree_parents = []
-        self.tags = ['odd', 'even']
-        self.current_selection = "I000"
+        e4_heading_dict = {"#0": ["E4 Device Name", 'c', 1, YES, 'c']}
+        self.e4_treeview_parents = []
+        self.e4_treeview, self.e4_filescroll = build_treeview(self.frame, x=20, y=65, height=(height - 450), width=210,
+                                                              heading_dict=e4_heading_dict,
+                                                              button_1_bind=self.get_selection)
 
         self.connect_button = Button(self.frame, text="Connect", command=self.connect_to_e4, width=12)
         self.connect_button.place(x=20, y=(height - 385))
@@ -390,9 +372,12 @@ class EmpaticaDataFields:
         self.streaming_button = Button(self.frame, text="Stream", command=self.start_e4_streaming, width=12)
         self.streaming_button.place(x=230, y=(height - 385), anchor=NE)
 
-        self.connected_label = Label(self.frame, text="CONNECTED", fg='green')
-        self.streaming_label = Label(self.frame, text="STREAMING", fg='green')
-
+        # self.connected_label = Label(self.frame, text="CONNECTED", fg='green')
+        # self.streaming_label = Label(self.frame, text="STREAMING", fg='green')
+        self.disconnected_image = PhotoImage(file='images/disconnected.png')
+        self.connected_image = PhotoImage(file='images/connected.png')
+        self.connected_label = Label(self.frame, image=self.disconnected_image)
+        self.connected_label.place(x=250*0.25, y=height - 330, anchor=CENTER)
         self.error_thread = None
         self.devices_thread = None
 
@@ -477,17 +462,19 @@ class EmpaticaDataFields:
         self.populate_device_list()
 
     def clear_device_list(self):
-        for children in self.treeview.get_children():
-            self.treeview.delete(children)
+        for children in self.e4_treeview.get_children():
+            self.e4_treeview.delete(children)
+        self.e4_treeview_parents = []
 
     def populate_device_list(self):
         for i in range(0, len(self.emp_client.device_list)):
-            self.tree_parents.append(self.treeview.insert("", 'end', str(i), text=str(i),
-                                                          values=(self.emp_client.device_list[i].decode("utf-8"),),
-                                                          tags=(self.tags[i % 2])))
+            self.e4_treeview_parents.append(self.e4_treeview.insert("", 'end', str(i), text=str(i),
+                                                                    values=(
+                                                                    self.emp_client.device_list[i].decode("utf-8"),),
+                                                                    tags=(treeview_tags[i % 2])))
 
     def get_selection(self, event):
-        self.current_selection = self.treeview.identify_row(event.y)
+        self.current_selection = self.e4_treeview.identify_row(event.y)
         if self.current_selection:
             if self.emp_client:
                 if len(self.emp_client.device_list) != 0:
@@ -501,17 +488,3 @@ class EmpaticaDataFields:
         if self.e4_client:
             if self.e4_client.connected:
                 self.e4_client.save_readings(filename)
-
-    def fixed_map(self, option):
-        # https://stackoverflow.com/a/62011081
-        # Fix for setting text colour for Tkinter 8.6.9
-        # From: https://core.tcl.tk/tk/info/509cafafae
-        #
-        # Returns the style map for 'option' with any styles starting with
-        # ('!disabled', '!selected', ...) filtered out.
-
-        # style.map() returns an empty list for missing options, so this
-        # should be future-safe.
-        style = Style()
-        return [elm for elm in style.map('Treeview', query_opt=option) if
-                elm[:2] != ('!disabled', '!selected')]
