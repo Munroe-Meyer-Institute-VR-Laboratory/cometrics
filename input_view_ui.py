@@ -9,7 +9,7 @@ from tkinter.ttk import Treeview, Style
 # Custom library imports
 from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams
 
-from tkinter_utils import build_treeview
+from tkinter_utils import build_treeview, get_treeview_style
 from ui_params import treeview_tags
 
 
@@ -35,13 +35,7 @@ class KeystrokeDataFields:
         keystroke_label = Label(self.frame, text="Key Bindings", font=('Purisa', 12))
         keystroke_label.place(x=125, y=15, anchor=CENTER)
 
-        style = Style()
-        style.configure("mystyle.Treeview", highlightthickness=0, bd=0,
-                        font=('Calibri', 10))  # Modify the font of the body
-        style.configure("mystyle.Treeview.Heading", font=('Calibri', 13, 'bold'))  # Modify the font of the headings
-        style.map('Treeview', foreground=self.fixed_map('foreground'),
-                  background=self.fixed_map('background'))
-        # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
+
         self.treeview = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
         self.treeview.place(x=20, y=30, height=(height / 2 - 200), width=210)
 
@@ -181,20 +175,6 @@ class KeystrokeDataFields:
             self.bindings.pop(int(self.current_selection))
             self.clear_listbox()
             self.populate_bindings()
-
-    def fixed_map(self, option):
-        # https://stackoverflow.com/a/62011081
-        # Fix for setting text colour for Tkinter 8.6.9
-        # From: https://core.tcl.tk/tk/info/509cafafae
-        #
-        # Returns the style map for 'option' with any styles starting with
-        # ('!disabled', '!selected', ...) filtered out.
-
-        # style.map() returns an empty list for missing options, so this
-        # should be future-safe.
-        style = Style()
-        return [elm for elm in style.map('Treeview', query_opt=option) if
-                elm[:2] != ('!disabled', '!selected')]
 
     def change_keybind1(self, event):
         selection = self.treeview1.identify_row(event.y)

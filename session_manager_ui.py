@@ -17,13 +17,18 @@ from input_view_ui import EmpaticaDataFields
 from menu_bar import MenuBar
 import math
 
+from tkinter_utils import get_treeview_style
+from ui_params import large_header_font, large_field_font, large_field_offset, medium_header_font, medium_field_font, \
+    medium_field_offset, small_header_font, small_field_font, small_field_offset
+
 
 class SessionTimeFields:
-    def __init__(self, caller, parent, kdf=None):
+    def __init__(self, caller, parent, x, y, height, width,
+                 header_font=('Purisa', 14), field_font=('Purisa', 11), kdf=None):
         self.kdf = kdf
         self.caller = caller
-        self.frame = Frame(parent, width=800, height=100, bg='white')
-        self.frame.place(x=252, y=2)
+        self.frame = Frame(parent, width=width, height=height, bg='white')
+        self.frame.place(x=x, y=y)
 
         self.session_started = False
         self.session_paused = False
@@ -34,57 +39,57 @@ class SessionTimeFields:
         self.session_time = 0
         self.break_time = 0
         self.session_time_label = Label(self.frame, text="Session Time:  0:00:00", bg='white',
-                                        font=('Purisa', 14))
+                                        font=header_font)
         self.session_time_label.place(x=20, y=10)
 
         self.break_time_label = Label(self.frame, text="Break Time:      0:00:00", bg='white',
-                                      font=('Purisa', 14))
+                                      font=header_font)
         self.break_time_label.place(x=20, y=38)
 
         self.session_start_label = Label(self.frame, text="Session Started", bg='white', fg='green',
-                                         font=('Purisa', 14))
+                                         font=header_font)
         self.session_paused_label = Label(self.frame, text="Session Paused", bg='white', fg='yellow',
-                                          font=('Purisa', 14))
+                                          font=header_font)
         self.session_stopped_label = Label(self.frame, text="Session Stopped", bg='white', fg='red',
-                                           font=('Purisa', 14))
+                                           font=header_font)
         self.session_stopped_label.place(x=20, y=66)
 
         self.interval_selection = BooleanVar()
         self.interval_checkbutton = Checkbutton(self.frame, text="Reminder Beep (Seconds)",
                                                 variable=self.interval_selection, bg='white',
-                                                font=('Purisa', 14), command=self.show_beep_interval)
+                                                font=header_font, command=self.show_beep_interval)
         self.interval_checkbutton.place(x=250, y=6)
         self.interval_input_var = StringVar()
 
         interval_cmd = self.frame.register(self.validate_number)
         self.interval_input = Entry(self.frame, validate='all', validatecommand=(interval_cmd, '%P'),
-                                    font=('Purisa', 14), bg='white', width=6)
+                                    font=header_font, bg='white', width=6)
 
         session_cmd = self.frame.register(self.validate_number)
         self.session_dur_input = Entry(self.frame, validate='all', validatecommand=(session_cmd, '%P'),
-                                       font=('Purisa', 14), bg='white', width=6)
+                                       font=header_font, bg='white', width=6)
 
         self.session_dur_selection = BooleanVar()
         self.session_dur_checkbutton = Checkbutton(self.frame, text="Session Duration (Seconds)",
                                                    variable=self.session_dur_selection, bg='white',
-                                                   font=('Purisa', 14),
+                                                   font=header_font,
                                                    command=self.show_session_time)
         self.session_dur_checkbutton.place(x=250, y=34)
 
         self.session_toggle_button = Button(self.frame, text="Start Session", bg='#4abb5f',
-                                            font=('Purisa', 11), width=15,
+                                            font=field_font, width=15,
                                             command=self.caller.start_session)
         self.session_toggle_button.place(x=527, y=4)
 
         self.session_pause_button = Button(self.frame, text="Pause Session", width=15,
-                                           font=('Purisa', 11), command=self.caller.pause_session)
+                                           font=field_font, command=self.caller.pause_session)
         self.session_pause_button.place(x=527, y=36)
 
-        self.key_explanation = Label(self.frame, text="Esc Key", font=('Purisa', 11), bg='white',
+        self.key_explanation = Label(self.frame, text="Esc Key", font=field_font, bg='white',
                                      justify=LEFT)
         self.key_explanation.place(x=675, y=8)
 
-        self.key_explanation = Label(self.frame, text="Left Control", font=('Purisa', 11), bg='white',
+        self.key_explanation = Label(self.frame, text="Left Control", font=field_font, bg='white',
                                      justify=LEFT)
         self.key_explanation.place(x=675, y=38)
 
@@ -137,7 +142,8 @@ class SessionTimeFields:
                     self.session_time += 1
                     for i in range(0, len(self.kdf.dur_sticky)):
                         if self.kdf.dur_sticky[i]:
-                            self.kdf.treeview1.set(str(i), column="2", value=self.session_time - self.kdf.sticky_start[i])
+                            self.kdf.treeview1.set(str(i), column="2",
+                                                   value=self.session_time - self.kdf.sticky_start[i])
                     if self.session_duration:
                         if self.session_time >= self.session_duration:
                             self.stop_session()
@@ -203,8 +209,10 @@ class PatientDataVar:
 
 
 class PatientDataFields:
-    def __init__(self, parent, height, width, patient_file, session_number, session_date, session_time, conditions,
-                 debug=False):
+    def __init__(self, parent, x, y, height, width, patient_file, session_number,
+                 session_date, session_time, conditions, field_offset=50,
+                 header_font=('Purisa', 14), field_font=('Purisa', 12), debug=False):
+        self.x, self.y = x, y
         self.conditions = conditions
         self.patient = PatientContainer(patient_file)
         self.patient_vars = [
@@ -242,20 +250,26 @@ class PatientDataFields:
         self.patient_frames = []
         self.next_button_image = PhotoImage(file='images/go_next.png')
         self.prev_button_image = PhotoImage(file='images/go_previous.png')
-        field_count = int(((height - 355) - 30) / 45)
+
+        field_count = int(height / field_offset)
+        if field_count < 13:
+            field_count = int((height * 0.85) / field_offset)
         frame_count = int(math.ceil(13 / field_count))
+
         print(f"Number of fields: {field_count}")
         for i in range(0, frame_count):
-            self.patient_frames.append(Frame(parent, width=250, height=(height - 280)))
-            patient_information = Label(self.patient_frames[-1], text="Patient Information", font=('Purisa', 12))
-            patient_information.place(x=125, y=15, anchor=CENTER)
+            self.patient_frames.append(Frame(parent, width=width, height=height))
+            patient_information = Label(self.patient_frames[-1], text="Patient Information", font=header_font)
+            patient_information.place(x=width / 2, y=15, anchor=CENTER)
             if frame_count > 1:
-                next_button = Button(self.patient_frames[-1], image=self.next_button_image, command=self.next_patient_field)
-                prev_button = Button(self.patient_frames[-1], image=self.prev_button_image, command=self.prev_patient_field)
-                next_button.place(x=250-15, y=(height - 280)*0.9, anchor=E)
-                prev_button.place(x=15, y=(height - 280)*0.9, anchor=W)
-                page_text = Label(self.patient_frames[-1], text=f"{i + 1}/{frame_count}", font=('Purisa', 12))
-                page_text.place(x=250/2, y=(height-280)*0.9, anchor=CENTER)
+                next_button = Button(self.patient_frames[-1], image=self.next_button_image,
+                                     command=self.next_patient_field)
+                prev_button = Button(self.patient_frames[-1], image=self.prev_button_image,
+                                     command=self.prev_patient_field)
+                next_button.place(x=width - 15, y=height * 0.9, anchor=E)
+                prev_button.place(x=15, y=height * 0.9, anchor=W)
+                page_text = Label(self.patient_frames[-1], text=f"{i + 1}/{frame_count}", font=header_font)
+                page_text.place(x=width / 2, y=height * 0.9, anchor=CENTER)
         print(f"Number of frames: {frame_count}")
         patient_dict = [
             [Label, self.label_texts[PatientDataVar.PATIENT_NAME]],
@@ -283,57 +297,62 @@ class PatientDataFields:
         frame_select = 0
         patient_y = 30
         for elem in range(0, len(patient_dict), 2):
-            temp_label = patient_dict[elem][0](self.patient_frames[frame_select], text=patient_dict[elem][1], font=('Purisa', 10))
+            temp_label = patient_dict[elem][0](self.patient_frames[frame_select], text=patient_dict[elem][1],
+                                               font=field_font)
             self.patient_labels.append(temp_label)
             temp_label.place(x=5, y=patient_y, anchor=NW)
             if patient_dict[elem + 1][0] is OptionMenu:
-                temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], patient_dict[elem][1], *self.conditions)
-                temp_entry.place(x=15, y=patient_y + 20, anchor=NW, width=220)
+                temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], patient_dict[elem][1],
+                                                       *self.conditions)
+                temp_entry.place(x=15, y=patient_y + (field_offset / 2), anchor=NW, width=width*0.88)
             else:
-                temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], textvariable=patient_dict[elem][1])
-                temp_entry.place(x=15, y=patient_y+20, anchor=NW, width=220)
+                temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], font=field_font,
+                                                       textvariable=patient_dict[elem][1])
+                temp_entry.place(x=15, y=patient_y + (field_offset / 2), anchor=NW, width=width*0.88)
             self.patient_entries.append(temp_entry)
             info_count += 1
-            if not info_count % field_count:
+            if not info_count % field_count and frame_count != 1:
                 frame_select += 1
                 patient_y = 30
             else:
                 if patient_dict[elem + 1][0] is OptionMenu:
-                    patient_y += 55
+                    patient_y += field_offset
                 else:
-                    patient_y += 45
+                    patient_y += field_offset
 
         primary_data = Label(self.patient_frames[frame_select], text=self.label_texts[PatientDataVar.PRIM_DATA],
-              font=('Purisa', 10))
+                             font=field_font)
         primary_data.place(x=5, y=patient_y, anchor=NW)
         prim_data_radio = Radiobutton(self.patient_frames[frame_select], text="Primary", value="Primary",
-                                           variable=self.patient_vars[PatientDataVar.PRIM_DATA], command=self.check_radio)
+                                      variable=self.patient_vars[PatientDataVar.PRIM_DATA], command=self.check_radio,
+                                      font=field_font, width=12)
         rel_data_radio = Radiobutton(self.patient_frames[frame_select], text="Reliability", value="Reliability",
-                                          variable=self.patient_vars[PatientDataVar.PRIM_DATA], command=self.check_radio)
-        prim_data_radio.place(x=15, y=patient_y+20)
-        rel_data_radio.place(x=125, y=patient_y+20)
+                                     variable=self.patient_vars[PatientDataVar.PRIM_DATA], command=self.check_radio,
+                                     font=field_font, width=12)
+        prim_data_radio.place(x=(width / 2), y=patient_y + (field_offset / 2), anchor=NE)
+        rel_data_radio.place(x=(width / 2), y=patient_y + (field_offset / 2), anchor=NW)
         self.patient_entries.append(prim_data_radio)
         self.patient_entries.append(rel_data_radio)
         info_count += 1
-        if not info_count % field_count:
+        if not info_count % field_count and frame_count != 1:
             frame_select += 1
             patient_y = 30
         else:
-            patient_y += 45
+            patient_y += field_offset
         # Session date field
         date_label = Label(self.patient_frames[frame_select], text="Session Date: " + session_date, anchor=NW,
-                                                        font=('Purisa', 10))
+                           font=field_font)
         date_label.place(x=5, y=patient_y, anchor=NW)
         info_count += 1
         info_count += 1
-        if not info_count % field_count:
+        if not info_count % field_count and frame_count != 1:
             frame_select += 1
             patient_y = 30
         else:
-            patient_y += 20
+            patient_y += field_offset / 2
         # Session start time field
         start_label = Label(self.patient_frames[frame_select], text="Session Start Time: " + session_time,
-                            anchor=NW, font=('Purisa', 10))
+                            anchor=NW, font=field_font)
         start_label.place(x=5, y=patient_y, anchor=NW)
 
         self.patient_vars[PatientDataVar.PATIENT_NAME].set(self.patient.name)
@@ -342,7 +361,8 @@ class PatientDataFields:
         self.patient_vars[PatientDataVar.SESS_NUM].set(session_number)
 
         self.current_patient_field = 0
-        self.patient_frames[self.current_patient_field].place(x=5, y=120)
+        self.patient_frames[self.current_patient_field].place(x=self.x, y=self.y)
+        self.patient_entries[0].focus()
 
         if debug:
             self.patient_vars[PatientDataVar.SESS_LOC].set("Debug")
@@ -355,7 +375,7 @@ class PatientDataFields:
 
     def select_patient_fields(self, field):
         self.patient_frames[self.current_patient_field].place_forget()
-        self.patient_frames[field].place(x=5, y=120)
+        self.patient_frames[field].place(x=self.x, y=self.y)
         self.current_patient_field = field
 
     def next_patient_field(self):
@@ -364,7 +384,7 @@ class PatientDataFields:
             self.current_patient_field = 0
         else:
             self.current_patient_field += 1
-        self.patient_frames[self.current_patient_field].place(x=5, y=120)
+        self.patient_frames[self.current_patient_field].place(x=self.x, y=self.y)
 
     def prev_patient_field(self):
         self.patient_frames[self.current_patient_field].place_forget()
@@ -372,13 +392,14 @@ class PatientDataFields:
             self.current_patient_field = len(self.patient_frames) - 1
         else:
             self.current_patient_field -= 1
-        self.patient_frames[self.current_patient_field].place(x=5, y=120)
+        self.patient_frames[self.current_patient_field].place(x=self.x, y=self.y)
 
     def check_radio(self):
         pass
 
     def save_patient_fields(self):
-        self.patient.save_patient(self.patient_vars[PatientDataVar.PATIENT_NAME].get(), self.patient_vars[PatientDataVar.MRN].get())
+        self.patient.save_patient(self.patient_vars[PatientDataVar.PATIENT_NAME].get(),
+                                  self.patient_vars[PatientDataVar.MRN].get())
 
     def check_session_fields(self):
         if self.patient_vars[PatientDataVar.SESS_LOC].get() == "":
@@ -397,7 +418,8 @@ class PatientDataFields:
             return "Data recorder not set!"
         elif self.patient_vars[PatientDataVar.PRIM_DATA].get() == "":
             return "Data type not set!"
-        elif int(self.patient_vars[PatientDataVar.SESS_NUM].get()) < self.session_number and self.patient_vars[PatientDataVar.PRIM_DATA].get() == "Primary":
+        elif int(self.patient_vars[PatientDataVar.SESS_NUM].get()) < self.session_number and self.patient_vars[
+            PatientDataVar.PRIM_DATA].get() == "Primary":
             return "Session number already exists!"
         else:
             return False
@@ -448,6 +470,19 @@ def beep_thread():
 class SessionManagerWindow:
     def __init__(self, config, project_setup):
         self.window_height, self.window_width = config.get_screen_size()[0], config.get_screen_size()[1]
+        if self.window_width == 1920:
+            self.header_font = large_header_font
+            self.field_font = large_field_font
+            self.field_offset = large_field_offset
+        elif 1920 > self.window_width > 1280:
+            self.header_font = medium_header_font
+            self.field_font = medium_field_font
+            self.field_offset = medium_field_offset
+        else:
+            self.header_font = small_header_font
+            self.field_font = small_field_font
+            self.field_offset = small_field_offset
+        print(self.header_font, self.field_font, self.field_offset)
         self.patient_file = project_setup.patient_data_file
         self.keystroke_file = project_setup.ksf_file
         self.global_commands = {
@@ -478,19 +513,33 @@ class SessionManagerWindow:
         root.config(bg="white", bd=-2)
         root.title("cometrics v0.8.0")
 
-        self.unmc_shield_canvas = Canvas(root, width=250, height=100, bg="white", bd=-2)
+        self.field_width = int(self.window_width * 0.2)
+
+        self.logo_width = self.field_width
+        self.logo_height = int(self.logo_width / 5.7)
+        self.patient_field_height = (self.window_height - self.logo_height) * 0.85
+        print(self.patient_field_height)
+
+        self.unmc_shield_canvas = Canvas(root, width=self.logo_width, height=self.logo_height, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
-        self.unmc_shield_img = ImageTk.PhotoImage(Image.open('images/cometrics_logo.png').resize((250, int(250/5.7)), Image.ANTIALIAS))
-        self.unmc_shield_canvas.create_image(0, 50, anchor=W, image=self.unmc_shield_img)
+        self.unmc_shield_img = ImageTk.PhotoImage(
+            Image.open('images/cometrics_logo.png').resize((self.logo_width, self.logo_height), Image.ANTIALIAS))
+        self.unmc_shield_canvas.create_image(0, 0, anchor=NW, image=self.unmc_shield_img)
+
+        _ = get_treeview_style()
 
         self.menu = MenuBar(root, self)
-        self.stf = SessionTimeFields(self, root)
-        self.ovu = OutputViewPanel(root, self.keystroke_file, self.window_height, self.window_width)
-        self.stf.kdf = self.ovu.key_view
-        self.pdf = PatientDataFields(root, self.window_height, self.window_width,
+        self.stf = SessionTimeFields(self, root, self.logo_width + 10, self.logo_height + 10,
+                                     self.patient_field_height, self.field_width)
+        # self.ovu = OutputViewPanel(root, self.keystroke_file, self.window_height, self.window_width)
+        # self.stf.kdf = self.ovu.key_view
+        self.pdf = PatientDataFields(root, 5, self.logo_height + 10, self.patient_field_height, self.field_width,
                                      self.patient_file, self.session_number, self.session_date,
-                                     self.session_time, self.ovu.key_view.conditions, debug=False)
-        self.edf = EmpaticaDataFields(root, self.ovu, self.window_height, self.window_width)
+                                     self.session_time, ['None', 'None'],
+                                     header_font=self.header_font, field_font=self.field_font,
+                                     field_offset=self.field_offset, debug=False)
+        # self.session_time, self.ovu.key_view.conditions, debug=False)
+        # self.edf = EmpaticaDataFields(root, self.ovu, self.window_height, self.window_width)
 
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.state('zoomed')
@@ -505,12 +554,12 @@ class SessionManagerWindow:
         self.root.destroy()
 
     def on_closing(self):
-        self.stf.stop_timer()
-        self.ovu.close()
-        self.edf.disconnect_e4()
-        self.listener.stop()
-        self.root.quit()
-        self.root.destroy()
+        # self.stf.stop_timer()
+        # self.ovu.close()
+        # self.edf.disconnect_e4()
+        # self.listener.stop()
+        # self.root.quit()
+        # self.root.destroy()
         sys.exit(0)
 
     def get_session_file(self, directory):
@@ -589,7 +638,8 @@ class SessionManagerWindow:
             x[str(i)] = [event_history[i][0], event_history[i][1]]
         with open(self.session_file, 'w') as f:
             json.dump(x, f)
-        self.ovu.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"), self.tag_history)
+        self.ovu.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"),
+                              self.tag_history)
 
     def start_session(self):
         response = self.pdf.check_session_fields()

@@ -366,12 +366,6 @@ class KeystrokeDataFields:
         keystroke_label = Label(self.frame, text="Frequency Bindings", font=('Purisa', 10))
         keystroke_label.place(x=125, y=15, anchor=CENTER)
 
-        style = Style()
-        style.configure("mystyle.Treeview", highlightthickness=0, bd=0,
-                        font=('Calibri', 10))  # Modify the font of the body
-        style.configure("mystyle.Treeview.Heading", font=('Calibri', 13, 'bold'))  # Modify the font of the headings
-        style.map('Treeview', foreground=self.fixed_map('foreground'),
-                  background=self.fixed_map('background'))
         # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
         self.treeview = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
         self.treeview.place(x=20, y=30, height=(self.height - 370), width=210)
