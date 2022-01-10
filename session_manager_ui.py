@@ -4,6 +4,7 @@ import time
 from os import walk
 from tkinter import *
 from tkinter import messagebox
+from ttk import Combobox
 import json
 import datetime
 from PIL import Image, ImageTk
@@ -215,18 +216,41 @@ class PatientDataFields:
         self.x, self.y = x, y
         self.conditions = conditions
         self.patient = PatientContainer(patient_file)
+
+        field_count = int(height / field_offset)
+        if field_count < 13:
+            field_count = int((height * 0.85) / field_offset)
+        frame_count = int(math.ceil(13 / field_count))
+        self.patient_frames = []
+        self.next_button_image = PhotoImage(file='images/go_next.png')
+        self.prev_button_image = PhotoImage(file='images/go_previous.png')
+        print(f"Number of fields: {field_count}")
+        for i in range(0, frame_count):
+            self.patient_frames.append(Frame(parent, width=width, height=height))
+            patient_information = Label(self.patient_frames[-1], text="Patient Information", font=header_font)
+            patient_information.place(x=width / 2, y=15, anchor=CENTER)
+            if frame_count > 1:
+                next_button = Button(self.patient_frames[-1], image=self.next_button_image,
+                                     command=self.next_patient_field)
+                prev_button = Button(self.patient_frames[-1], image=self.prev_button_image,
+                                     command=self.prev_patient_field)
+                next_button.place(x=width - 15, y=height * 0.9, anchor=E)
+                prev_button.place(x=15, y=height * 0.9, anchor=W)
+                page_text = Label(self.patient_frames[-1], text=f"{i + 1}/{frame_count}", font=header_font)
+                page_text.place(x=width / 2, y=height * 0.9, anchor=CENTER)
+        print(f"Number of frames: {frame_count}")
         self.patient_vars = [
-            StringVar(),
-            StringVar(),
-            StringVar(),
-            StringVar(),
-            StringVar(),
-            StringVar(),
-            StringVar(),
-            StringVar(),
-            StringVar(),
-            StringVar(value=session_number),
-            StringVar(value="Primary")
+            StringVar(self.patient_frames[math.ceil(1 / field_count) - 1]),
+            StringVar(self.patient_frames[math.ceil(2 / field_count) - 1]),
+            StringVar(self.patient_frames[math.ceil(3 / field_count) - 1]),
+            StringVar(self.patient_frames[math.ceil(4 / field_count) - 1]),
+            StringVar(self.patient_frames[math.ceil(5 / field_count) - 1]),
+            StringVar(self.patient_frames[math.ceil(6 / field_count) - 1]),
+            StringVar(self.patient_frames[math.ceil(7 / field_count) - 1]),
+            StringVar(self.patient_frames[math.ceil(8 / field_count) - 1]),
+            StringVar(self.patient_frames[math.ceil(9 / field_count) - 1]),
+            StringVar(self.patient_frames[math.ceil(10 / field_count) - 1], value=session_number),
+            StringVar(self.patient_frames[math.ceil(11 / field_count) - 1], value="Primary")
         ]
         self.label_texts = [
             "Name",
@@ -247,52 +271,30 @@ class PatientDataFields:
             self.patient_vars[PatientDataVar.MRN].set(self.patient.medical_record_number)
         self.session_number = session_number
         self.patient_entries, self.patient_labels = [], []
-        self.patient_frames = []
-        self.next_button_image = PhotoImage(file='images/go_next.png')
-        self.prev_button_image = PhotoImage(file='images/go_previous.png')
 
-        field_count = int(height / field_offset)
-        if field_count < 13:
-            field_count = int((height * 0.85) / field_offset)
-        frame_count = int(math.ceil(13 / field_count))
-
-        print(f"Number of fields: {field_count}")
-        for i in range(0, frame_count):
-            self.patient_frames.append(Frame(parent, width=width, height=height))
-            patient_information = Label(self.patient_frames[-1], text="Patient Information", font=header_font)
-            patient_information.place(x=width / 2, y=15, anchor=CENTER)
-            if frame_count > 1:
-                next_button = Button(self.patient_frames[-1], image=self.next_button_image,
-                                     command=self.next_patient_field)
-                prev_button = Button(self.patient_frames[-1], image=self.prev_button_image,
-                                     command=self.prev_patient_field)
-                next_button.place(x=width - 15, y=height * 0.9, anchor=E)
-                prev_button.place(x=15, y=height * 0.9, anchor=W)
-                page_text = Label(self.patient_frames[-1], text=f"{i + 1}/{frame_count}", font=header_font)
-                page_text.place(x=width / 2, y=height * 0.9, anchor=CENTER)
-        print(f"Number of frames: {frame_count}")
         patient_dict = [
-            [Label, self.label_texts[PatientDataVar.PATIENT_NAME]],
-            [Entry, self.label_texts[PatientDataVar.PATIENT_NAME]],
-            [Label, self.label_texts[PatientDataVar.MRN]],
-            [Entry, self.label_texts[PatientDataVar.MRN]],
-            [Label, self.label_texts[PatientDataVar.SESS_LOC]],
-            [Entry, self.label_texts[PatientDataVar.SESS_LOC]],
-            [Label, self.label_texts[PatientDataVar.ASSESS_NAME]],
-            [Entry, self.label_texts[PatientDataVar.ASSESS_NAME]],
-            [Label, self.label_texts[PatientDataVar.COND_NAME]],
-            [OptionMenu, self.label_texts[PatientDataVar.COND_NAME]],
-            [Label, self.label_texts[PatientDataVar.PRIM_THER]],
-            [Entry, self.label_texts[PatientDataVar.PRIM_THER]],
-            [Label, self.label_texts[PatientDataVar.CASE_MGR]],
-            [Entry, self.label_texts[PatientDataVar.CASE_MGR]],
-            [Label, self.label_texts[PatientDataVar.SESS_THER]],
-            [Entry, self.label_texts[PatientDataVar.SESS_THER]],
-            [Label, self.label_texts[PatientDataVar.DATA_REC]],
-            [Entry, self.label_texts[PatientDataVar.DATA_REC]],
-            [Label, self.label_texts[PatientDataVar.SESS_NUM]],
-            [Entry, self.label_texts[PatientDataVar.SESS_NUM]],
+            [Label, self.label_texts[PatientDataVar.PATIENT_NAME], self.patient_vars[PatientDataVar.PATIENT_NAME]],
+            [Entry, self.label_texts[PatientDataVar.PATIENT_NAME], self.patient_vars[PatientDataVar.PATIENT_NAME]],
+            [Label, self.label_texts[PatientDataVar.MRN], self.patient_vars[PatientDataVar.MRN]],
+            [Entry, self.label_texts[PatientDataVar.MRN], self.patient_vars[PatientDataVar.MRN]],
+            [Label, self.label_texts[PatientDataVar.SESS_LOC], self.patient_vars[PatientDataVar.SESS_LOC]],
+            [Entry, self.label_texts[PatientDataVar.SESS_LOC], self.patient_vars[PatientDataVar.SESS_LOC]],
+            [Label, self.label_texts[PatientDataVar.ASSESS_NAME], self.patient_vars[PatientDataVar.ASSESS_NAME]],
+            [Entry, self.label_texts[PatientDataVar.ASSESS_NAME], self.patient_vars[PatientDataVar.ASSESS_NAME]],
+            [Label, self.label_texts[PatientDataVar.COND_NAME], self.patient_vars[PatientDataVar.COND_NAME]],
+            [Combobox, self.label_texts[PatientDataVar.COND_NAME], self.patient_vars[PatientDataVar.COND_NAME]],
+            [Label, self.label_texts[PatientDataVar.PRIM_THER], self.patient_vars[PatientDataVar.PRIM_THER]],
+            [Entry, self.label_texts[PatientDataVar.PRIM_THER], self.patient_vars[PatientDataVar.PRIM_THER]],
+            [Label, self.label_texts[PatientDataVar.CASE_MGR], self.patient_vars[PatientDataVar.CASE_MGR]],
+            [Entry, self.label_texts[PatientDataVar.CASE_MGR], self.patient_vars[PatientDataVar.CASE_MGR]],
+            [Label, self.label_texts[PatientDataVar.SESS_THER], self.patient_vars[PatientDataVar.SESS_THER]],
+            [Entry, self.label_texts[PatientDataVar.SESS_THER], self.patient_vars[PatientDataVar.SESS_THER]],
+            [Label, self.label_texts[PatientDataVar.DATA_REC], self.patient_vars[PatientDataVar.DATA_REC]],
+            [Entry, self.label_texts[PatientDataVar.DATA_REC], self.patient_vars[PatientDataVar.DATA_REC]],
+            [Label, self.label_texts[PatientDataVar.SESS_NUM], self.patient_vars[PatientDataVar.SESS_NUM]],
+            [Entry, self.label_texts[PatientDataVar.SESS_NUM], self.patient_vars[PatientDataVar.SESS_NUM]],
         ]
+
         info_count = 0
         frame_select = 0
         patient_y = 30
@@ -301,13 +303,16 @@ class PatientDataFields:
                                                font=field_font)
             self.patient_labels.append(temp_label)
             temp_label.place(x=5, y=patient_y, anchor=NW)
-            if patient_dict[elem + 1][0] is OptionMenu:
-                temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], patient_dict[elem][1],
-                                                       *self.conditions)
+            if patient_dict[elem + 1][0] is Combobox:
+                temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], textvariable=patient_dict[elem][2], font=field_font)
+                temp_entry['values'] = self.conditions
+                temp_entry['state'] = 'readonly'
+                temp_entry.config(font=field_font)
                 temp_entry.place(x=15, y=patient_y + (field_offset / 2), anchor=NW, width=width*0.88)
+                self.patient_frames[frame_select].option_add('*TCombobox*Listbox.font', field_font)
             else:
                 temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], font=field_font,
-                                                       textvariable=patient_dict[elem][1])
+                                                       textvariable=patient_dict[elem][2])
                 temp_entry.place(x=15, y=patient_y + (field_offset / 2), anchor=NW, width=width*0.88)
             self.patient_entries.append(temp_entry)
             info_count += 1
@@ -535,7 +540,7 @@ class SessionManagerWindow:
         # self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root, 5, self.logo_height + 10, self.patient_field_height, self.field_width,
                                      self.patient_file, self.session_number, self.session_date,
-                                     self.session_time, ['None', 'None'],
+                                     self.session_time, ['Shine', 'On'],
                                      header_font=self.header_font, field_font=self.field_font,
                                      field_offset=self.field_offset, debug=False)
         # self.session_time, self.ovu.key_view.conditions, debug=False)
