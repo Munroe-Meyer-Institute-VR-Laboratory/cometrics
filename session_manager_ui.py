@@ -534,7 +534,7 @@ class SessionManagerWindow:
 
         self.logo_width = self.field_width
         self.logo_height = int(self.logo_width / 5.7)
-        self.patient_field_height = int((self.window_height - self.logo_height) * 0.85)
+        self.patient_field_height = int((self.window_height - self.logo_height - 10) * 0.85)
         print(self.patient_field_height)
 
         self.unmc_shield_canvas = Canvas(root, width=self.logo_width, height=self.logo_height, bg="white", bd=-2)

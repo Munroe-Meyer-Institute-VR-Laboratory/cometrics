@@ -82,11 +82,12 @@ class OutputViewPanel:
         # self.view_buttons.append(tactor_view_button)
         # self.view_buttons[3].place(x=276, y=0)
 
-        self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW])
-        self.key_view = KeystrokeDataFields(self.view_frames[OutputViews.KEY_VIEW], ksf, self.height, self.width,
+        self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW],
+                              height=self.height - self.button_size[1], width=self.width,
+                              field_font=field_font, header_font=header_font, button_size=button_size)
+        self.key_view = KeystrokeDataFields(self.view_frames[OutputViews.KEY_VIEW], ksf,
+                                            height=self.height - self.button_size[1], width=self.width,
                                             field_font=field_font, header_font=header_font, button_size=button_size)
-        self.edf_view = EmpaticaDataFields(self.view_frames[OutputViews.E4_VIEW], self, self.height, self.width,
-                                           field_font=field_font, header_font=header_font, button_size=button_size)
 
     def switch_key_frame(self):
         self.switch_frame(OutputViews.KEY_VIEW)
@@ -143,9 +144,60 @@ class OutputViewPanel:
 
 
 class ViewE4:
-    def __init__(self, root):
+    def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60):
         self.root = root
         self.session_started = False
+        self.height, self.width = height, width
+
+        self.emp_client = None
+        self.e4_client = None
+        self.e4_address = None
+        fs_offset = 10 + ((width * 0.25) * 0.5)
+        connection_offset = width * 0.15
+        start_y = 25
+        empatica_label = Label(self.root, text="E4 Connection", font=header_font)
+        empatica_label.place(x=connection_offset, y=start_y, anchor=CENTER)
+
+        self.empatica_button = Button(self.root, text="Start Server", command=self.start_e4_server, font=field_font)
+        self.empatica_button.place(x=connection_offset, y=start_y+(field_offset/2),
+                                   width=button_size[0], height=button_size[1], anchor=CENTER)
+
+        e4_heading_dict = {"#0": ["Visible E4s", 'c', 1, YES, 'c']}
+        self.e4_treeview, self.e4_filescroll = build_treeview(self.root,
+                                                              x=connection_offset,
+                                                              y=start_y + field_offset,
+                                                              height=height*0.5, width=width*0.25,
+                                                              heading_dict=e4_heading_dict, anchor=N,
+                                                              fs_offset=fs_offset)
+        self.tree_parents = []
+        self.tags = ['odd', 'even']
+        self.current_selection = "I000"
+
+        self.connect_button = Button(self.root, text="Connect",
+                                     command=self.connect_to_e4, width=12, font=field_font)
+        self.connect_button.place(x=connection_offset, y=start_y + field_offset + height * 0.5,
+                                  width=(width*0.25)*0.5, height=button_size[1], anchor=NE)
+
+        self.streaming_button = Button(self.root, text="Stream",
+                                       command=self.start_e4_streaming, width=12, font=field_font)
+        self.streaming_button.place(x=connection_offset, y=start_y + field_offset + height * 0.5,
+                                    width=(width*0.25)*0.5, height=button_size[1], anchor=NW)
+
+        self.disconnected_image = PhotoImage(file='images/disconnected.png')
+        self.connected_image = PhotoImage(file='images/connected.png')
+        self.connected_label = Label(self.root, image=self.disconnected_image)
+        self.connected_label.place(x=connection_offset - ((width*0.25)*0.5)*0.5,
+                                   y=(start_y + field_offset + height * 0.5) + button_size[1], anchor=N)
+
+        self.streaming_image = PhotoImage(file='images/streaming.png')
+        self.nostreaming_image = PhotoImage(file='images/nostreaming.png')
+        self.streaming_label = Label(self.root, image=self.nostreaming_image)
+        self.streaming_label.place(x=connection_offset + ((width*0.25)*0.5)*0.5,
+                                   y=(start_y + field_offset + height * 0.5) + button_size[1], anchor=N)
+
+        self.error_thread = None
+        self.devices_thread = None
+
         SMALL_SIZE = 8
         MEDIUM_SIZE = 10
         BIGGER_SIZE = 12
@@ -160,55 +212,60 @@ class ViewE4:
 
         fig_color = '#%02x%02x%02x' % (240, 240, 237)
 
+        fig_offset = width * 0.25
+        fig_width = width - fig_offset
+        fig_height = (height - 70) / 3
+
         self.hr_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.hr_canvas.place(x=90, y=10)
+        self.hr_canvas.place(x=fig_offset + (fig_width*0.2), y=start_y)
         self.hr_image = PhotoImage(file='images/heartrate.png')
         self.hr_canvas.create_image(0, 0, anchor=NW, image=self.hr_image)
 
-        self.hr_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
-        self.hr_label.place(x=140, y=20, anchor=NW)
+        self.hr_label = Label(self.root, text="N/A", font=field_font)
+        self.hr_label.place(x=fig_offset + (fig_width*0.2) + 50, y=start_y+10, anchor=NW)
 
         self.temp_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.temp_canvas.place(x=240, y=10)
+        self.temp_canvas.place(x=fig_offset + (fig_width*0.4), y=start_y)
         self.temp_image = PhotoImage(file='images/thermometer.png')
         self.temp_canvas.create_image(0, 0, anchor=NW, image=self.temp_image)
 
-        self.temp_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
-        self.temp_label.place(x=290, y=20, anchor=NW)
+        self.temp_label = Label(self.root, text="N/A", font=field_font)
+        self.temp_label.place(x=fig_offset + (fig_width*0.4) + 50, y=start_y+10, anchor=NW)
 
         self.wrist_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.wrist_canvas.place(x=390, y=10, anchor=NW)
+        self.wrist_canvas.place(x=fig_offset + (fig_width*0.6), y=start_y, anchor=NW)
         self.on_wrist_image = PhotoImage(file='images/onwrist.png')
         self.off_wrist_image = PhotoImage(file='images/offwrist.png')
         self.wrist_container = self.wrist_canvas.create_image(20, 20, anchor=CENTER, image=self.off_wrist_image)
         self.wrist = False
 
-        self.wrist_label = Label(self.root, text="Off", font=("TkDefaultFont", 12))
-        self.wrist_label.place(x=440, y=20, anchor=NW)
+        self.wrist_label = Label(self.root, text="Off", font=field_font)
+        self.wrist_label.place(x=fig_offset + (fig_width*0.6) + 50, y=start_y+10, anchor=NW)
 
         self.bat_image_100 = PhotoImage(file='images/battery100.png')
         self.bat_image_75 = PhotoImage(file='images/battery75.png')
         self.bat_image_50 = PhotoImage(file='images/battery50.png')
         self.bat_image_25 = PhotoImage(file='images/battery25.png')
         self.bat_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.bat_canvas.place(x=540, y=10)
+        self.bat_canvas.place(x=fig_offset + (fig_width*0.8), y=start_y)
         self.bat_container = self.bat_canvas.create_image(20, 20, anchor=CENTER, image=self.bat_image_100)
 
-        self.bat_label = Label(self.root, text="N/A", font=("TkDefaultFont", 12))
-        self.bat_label.place(x=590, y=20, anchor=NW)
+        self.bat_label = Label(self.root, text="N/A", font=field_font)
+        self.bat_label.place(x=fig_offset + (fig_width*0.8) + 50, y=start_y+10, anchor=NW)
 
-        self.fig = Figure(figsize=(6.75, 1.75), dpi=100)
+        px = 1 / plt.rcParams['figure.dpi']
+        self.fig = Figure(figsize=(fig_width*px, fig_height*px), dpi=100)
         self.fig.patch.set_facecolor(fig_color)
         self.acc_plt = self.fig.add_subplot(111)
         plt.gcf().subplots_adjust(bottom=0.15)
         self.acc_plt.set_title("Accelerometer Readings")
         self.acc_plt.legend(loc="upper left")
-        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)  # A tk.DrawingArea.
+        self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.draw()
         self.ani = animation.FuncAnimation(self.fig, self.animate, fargs=([]), interval=500)
-        self.canvas.get_tk_widget().place(x=350, y=50, anchor=N)
+        self.canvas.get_tk_widget().place(x=fig_offset + 30, y=70, anchor=NW)
 
-        self.fig1 = Figure(figsize=(6.75, 1.75), dpi=100)
+        self.fig1 = Figure(figsize=(fig_width*px, fig_height*px), dpi=100)
         self.fig1.patch.set_facecolor(fig_color)
         self.bvp_plt = self.fig1.add_subplot(111)
         plt.gcf().subplots_adjust(bottom=0.15)
@@ -217,9 +274,9 @@ class ViewE4:
         self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.root)  # A tk.DrawingArea.
         self.canvas1.draw()
         self.ani1 = animation.FuncAnimation(self.fig1, self.bvp_animate, fargs=([]), interval=500)
-        self.canvas1.get_tk_widget().place(x=350, y=225, anchor=N)
+        self.canvas1.get_tk_widget().place(x=fig_offset + 30, y=70 + fig_height, anchor=NW)
 
-        self.fig2 = Figure(figsize=(6.75, 1.75), dpi=100)
+        self.fig2 = Figure(figsize=(fig_width*px, fig_height*px), dpi=100)
         self.fig2.patch.set_facecolor(fig_color)
         self.gsr_plt = self.fig2.add_subplot(111)
         plt.gcf().subplots_adjust(bottom=0.15)
@@ -228,15 +285,123 @@ class ViewE4:
         self.canvas2 = FigureCanvasTkAgg(self.fig2, master=self.root)  # A tk.DrawingArea.
         self.canvas2.draw()
         self.ani2 = animation.FuncAnimation(self.fig2, self.gsr_animate, fargs=([]), interval=500)
-        self.canvas2.get_tk_widget().place(x=350, y=400, anchor=N)
+        self.canvas2.get_tk_widget().place(x=fig_offset + 30, y=70 + (fig_height * 2), anchor=NW)
+        #
+        # self.save_reading = False
+        # self.streaming = False
+        # self.kill = False
+        # self.e4 = None
+        # self.bat = 100
+        # self.windowed_readings = []
+        # self.update_thread = threading.Thread(target=self.update_labels_thread)
 
-        self.save_reading = False
-        self.streaming = False
-        self.kill = False
-        self.e4 = None
-        self.bat = 100
-        self.windowed_readings = []
-        self.update_thread = threading.Thread(target=self.update_labels_thread)
+    def check_e4_error(self):
+        while self.e4_client:
+            if self.e4_client.client.last_error:
+                messagebox.showerror("E4 Error", "Encountered error from E4!\n" + self.e4_client.client.last_error)
+                self.connect_to_e4()
+            time.sleep(0.5)
+
+    def disconnect_e4(self):
+        if self.emp_client:
+            self.emp_client.close()
+        if self.e4_client:
+            if self.e4_client.connected:
+                self.e4_client.close()
+
+    def connect_to_e4(self):
+        if self.emp_client:
+            try:
+                if self.e4_client:
+                    self.e4_client.disconnect()
+                    self.connect_button.config(text="Connect")
+                    self.connected_label.config(image=self.disconnected_image)
+                    self.streaming_label.config(image=self.nostreaming_image)
+                    self.e4_client = None
+                else:
+                    self.e4_client = EmpaticaE4(self.e4_address)
+                    if self.e4_client.connected:
+                        if self.error_thread is None:
+                            self.error_thread = threading.Thread(target=self.check_e4_error)
+                            self.error_thread.start()
+                        for stream in EmpaticaDataStreams.ALL_STREAMS:
+                            self.e4_client.subscribe_to_stream(stream)
+                        self.connected_label.config(image=self.connected_image)
+                        self.connect_button.config(text="Disconnect")
+            except Exception as e:
+                messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
+                print(traceback.print_exc())
+        else:
+            messagebox.showwarning("Warning", "Connect to server first!")
+
+    def start_e4_streaming(self):
+        if self.emp_client:
+            if self.e4_client:
+                if self.e4_client.connected:
+                    try:
+                        self.e4_client.start_streaming()
+                        self.ovu.e4_view.start_plot(self.e4_client)
+                        self.streaming_label.config(image=self.streaming_image)
+                    except Exception as e:
+                        messagebox.showerror("Exception Encountered",
+                                             "Encountered an error when connecting to E4:\n" + str(e))
+                        print(traceback.print_exc())
+                else:
+                    messagebox.showwarning("Warning", "Device is not connected!")
+            else:
+                messagebox.showwarning("Warning", "Connect to device first!")
+        else:
+            messagebox.showwarning("Warning", "Connect to server first!")
+
+    def start_e4_server(self):
+        if not self.emp_client:
+            try:
+                self.emp_client = EmpaticaClient()
+                self.empatica_button['text'] = "List Devices"
+            except Exception as e:
+                messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
+                print(traceback.print_exc())
+        else:
+            try:
+                self.devices_thread = threading.Thread(target=self.list_devices_thread)
+                self.devices_thread.start()
+            except Exception as e:
+                messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
+                print(traceback.print_exc())
+
+    def list_devices_thread(self):
+        self.emp_client.list_connected_devices()
+        time.sleep(1)
+        self.clear_device_list()
+        self.populate_device_list()
+
+    def clear_device_list(self):
+        for children in self.e4_treeview.get_children():
+            self.e4_treeview.delete(children)
+        self.e4_treeview_parents = []
+
+    def populate_device_list(self):
+        for i in range(0, len(self.emp_client.device_list)):
+            self.e4_treeview_parents.append(
+                self.e4_treeview.insert("", 'end', str(i),
+                                        text=str(self.emp_client.device_list[i].decode("utf-8")),
+                                        tags=(treeview_tags[i % 2])))
+
+    def get_selection(self, event):
+        self.current_selection = self.e4_treeview.identify_row(event.y)
+        if self.current_selection:
+            if self.emp_client:
+                if len(self.emp_client.device_list) != 0:
+                    self.e4_address = self.emp_client.device_list[int(self.current_selection)]
+                else:
+                    messagebox.showerror("Error", "No connected E4s!")
+            else:
+                messagebox.showwarning("Warning", "Connect to server first!")
+
+    def save_session(self, filename):
+        if self.e4_client:
+            if self.e4_client.connected:
+                self.e4_client.save_readings(filename)
 
     def stop_plot(self):
         self.streaming = False
@@ -360,8 +525,8 @@ class KeystrokeDataFields:
     def __init__(self, parent, keystroke_file, height, width,
                  field_font, header_font, button_size):
         separation_distance = 30
-        th_offset = 100
-        sh_exp_offset = 70
+        th_offset = 60
+        sh_exp_offset = 30
         fs_offset = 10 + ((width * 0.25) * 0.5)
         t_width = width * 0.25
         t_y = 30
@@ -711,30 +876,22 @@ class Popup:
 
 
 class EmpaticaDataFields:
-    def __init__(self, parent, output_view, height, width,
+    def __init__(self, frame, output_view, x, y, height, width,
                  field_font, header_font, button_size):
         self.height, self.width = height, width
         self.ovu = output_view
-        self.parent = parent
-        self.frame = Frame(parent, width=250, height=(height - 280))
-        self.frame.place(x=265, y=120)
+        self.frame = frame
 
         self.emp_client = None
         self.e4_client = None
         self.e4_address = None
 
-        empatica_label = Label(self.frame, text="Empatica E4", font=('Purisa', 12))
+        empatica_label = Label(self.frame, text="Empatica E4", font=header_font)
         empatica_label.place(x=125, y=15, anchor=CENTER)
 
         self.empatica_button = Button(self.frame, text="Start Server", command=self.start_e4_server)
         self.empatica_button.place(x=125, y=30, anchor=N)
 
-        style = Style()
-        style.configure("mystyle.Treeview", highlightthickness=0, bd=0,
-                        font=('Calibri', 10))  # Modify the font of the body
-        style.configure("mystyle.Treeview.Heading", font=('Calibri', 13, 'bold'))  # Modify the font of the headings
-        style.map('Treeview', foreground=self.fixed_map('foreground'),
-                  background=self.fixed_map('background'))
         # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
         self.treeview = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse')
         self.treeview.place(x=20, y=65, height=(height - 450), width=210)
