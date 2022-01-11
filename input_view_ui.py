@@ -31,11 +31,11 @@ class KeystrokeDataFields:
         self.dur_sticky = []
         self.sticky_start = []
         self.sticky_dur = []
-
+        # TODO: Convert fonts to parameters
+        # TODO: Convert placement to ratiometric to height and width of screen
         keystroke_label = Label(self.frame, text="Key Bindings", font=('Purisa', 12))
         keystroke_label.place(x=125, y=15, anchor=CENTER)
-
-
+        # TODO: Convert treeviews to tkinter util commands
         self.treeview = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
         self.treeview.place(x=20, y=30, height=(height / 2 - 200), width=210)
 

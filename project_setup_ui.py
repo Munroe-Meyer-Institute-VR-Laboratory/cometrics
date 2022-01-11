@@ -4,11 +4,16 @@ import pathlib
 from tkinter import *
 from tkinter import messagebox, filedialog
 import yaml
+from ttk import Combobox
+
 from ksf_utils import import_ksf
 from logger_util import *
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
     NewKeyPopup
-from ui_params import project_treeview_params as ptp, treeview_tags, ksf_distance, window_ratio
+from ui_params import project_treeview_params as ptp, treeview_tags, ksf_distance, window_ratio, large_header_font, \
+    large_field_font, medium_header_font, medium_field_font, small_header_font, small_field_font, large_treeview_font, \
+    medium_treeview_font, small_treeview_font, large_treeview_rowheight, medium_treeview_rowheight, \
+    small_treeview_rowheight, large_button_size, medium_button_size, small_button_size
 
 
 class ProjectSetupWindow:
@@ -24,12 +29,28 @@ class ProjectSetupWindow:
             config.set_screen_size(self.window_height, self.window_width)
             self.window_width = int(self.window_width * window_ratio)
             self.window_height = int(self.window_height * window_ratio)
+        if config.get_screen_size()[1] == 1920:
+            self.header_font = large_treeview_font
+            self.field_font = large_field_font
+            self.treeview_rowheight = large_treeview_rowheight
+            self.button_size = large_button_size
+        elif 1920 > config.get_screen_size()[1] > 1280:
+            self.header_font = medium_treeview_font
+            self.field_font = medium_field_font
+            self.treeview_rowheight = medium_treeview_rowheight
+            self.button_size = medium_button_size
+        else:
+            self.header_font = small_treeview_font
+            self.field_font = small_field_font
+            self.treeview_rowheight = small_treeview_rowheight
+            self.button_size = small_button_size
         # endregion
         # Create Project Setup label
-        self.project_setup_label = Label(self.main_root, text="Project Setup", font=('Purisa', 15, 'bold'))
+        self.project_setup_label = Label(self.main_root, text="Project Setup", font=self.header_font)
         self.project_setup_label.place(x=ptp[0], y=ptp[1] / 2, anchor=W)
         # Create global style
-        _ = get_treeview_style()
+        _ = get_treeview_style(font=self.field_font, heading_font=self.header_font,
+                               rowheight=self.treeview_rowheight)
         # Define heading dicts
         project_heading_dict = {"#0": ["Recent Projects", 'w', 1, YES, 'w']}
         patient_heading_dict = {"#0": ["Existing Patients", 'w', 1, YES, 'w']}
@@ -66,21 +87,28 @@ class ProjectSetupWindow:
             self.phases_var = StringVar(self.main_root)
             self.phases_var.set("Select a Phase")
             self.phases_var.trace("w", self.phase_callback)
-            self.phases_menu = OptionMenu(self.main_root, self.phases_var, *self.phases)
+            self.phases_menu = Combobox(self.main_root, textvariable=self.phases_var, font=self.field_font)
+            self.phases_menu['values'] = self.phases
+            self.phases_menu['state'] = 'readonly'
+            self.phases_menu.config(font=self.field_font)
+            self.main_root.option_add('*TCombobox*Listbox.font', self.field_font)
             self.phases_menu.place(x=ptp[0],
                                    y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
                                        self.window_height * 0.21),
                                    width=int(self.window_width * 0.2))
             self.phases_menu.config(state='disabled')
         # Create KSF label
-        self.ksf_setup_label = Label(self.main_root, text="Keystroke File Setup", font=('Purisa', 15, 'bold'))
+        self.ksf_setup_label = Label(self.main_root, text="Keystroke File Setup", font=self.header_font)
         self.ksf_setup_label.place(x=10 + self.window_width / 2, y=ptp[1] / 2, anchor=W)
-        self.ksf_path = Label(self.main_root, text="Select Condition and Phase to Load", font=('Purisa', 11, 'italic'),
+        self.ksf_path = Label(self.main_root, text="Select Condition and Phase to Load",
+                              font=(self.header_font[0], self.header_font[1], 'italic'),
                               bg='white', width=30, anchor='w')
-        self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1])
-        self.ksf_import = Button(self.main_root, text="Import", font=('Purisa', 11), width=10,
+        self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1], anchor=NW, width=int(self.window_width*0.3))
+
+        self.ksf_import = Button(self.main_root, text="Import", font=self.field_font, width=10,
                                  command=self.import_concern_ksf)
-        self.ksf_import.place(x=300 + 10 + self.window_width / 2, y=ptp[1] - 4)
+        self.ksf_import.place(x=int(self.window_width*0.3) + self.button_size[0] / 2 + self.window_width / 2, y=ptp[1],
+                              width=self.button_size[0], height=self.button_size[1], anchor=NW)
         self.ksf_import.config(state='disabled')
         # Define frequency and duration key headers
         freq_heading_dict = {"#0": ["Frequency Key", 'w', 1, YES, 'w']}
@@ -108,15 +136,20 @@ class ProjectSetupWindow:
                                                                                   key_column_dict)
                                                                                   # double_bind=self.select_duration_key)
 
-        self.continue_button = Button(self.main_root, text='Continue', width=12, command=self.continue_project)
-        self.continue_button.place(x=self.window_width*0.78,
+        self.continue_button = Button(self.main_root, text='Continue', width=12, command=self.continue_project,
+                                      font=self.field_font)
+        self.continue_button.place(x=self.window_width*0.77,
                                    y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
-                                       self.window_height * 0.21))
+                                       self.window_height * 0.21),
+                                   width=self.button_size[0], height=self.button_size[1])
         self.continue_button.config(state='disabled')
-        self.cancel_button = Button(self.main_root, text='Cancel', width=12, command=self.cancel_project)
-        self.cancel_button.place(x=self.window_width*0.78+100,
+
+        self.cancel_button = Button(self.main_root, text='Cancel', width=12, command=self.cancel_project,
+                                    font=self.field_font)
+        self.cancel_button.place(x=self.window_width*0.77+self.button_size[0]+10,
                                  y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
-                                       self.window_height * 0.21))
+                                       self.window_height * 0.21),
+                                 width=self.button_size[0], height=self.button_size[1])
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))
         center(self.main_root)
@@ -278,6 +311,7 @@ class ProjectSetupWindow:
             else:
                 self.selected_concern = self.concerns[int(selection) - 1]
                 self.phases_menu.config(state='active')
+                self.phases_menu['state'] = 'readonly'
 
     def create_new_concern(self):
         EntryPopup(self, self.main_root, "Enter New Concern", 2)

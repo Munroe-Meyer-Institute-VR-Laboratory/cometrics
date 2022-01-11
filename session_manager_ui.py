@@ -25,10 +25,13 @@ from ui_params import large_header_font, large_field_font, large_field_offset, m
 
 class SessionTimeFields:
     def __init__(self, caller, parent, x, y, height, width,
-                 header_font=('Purisa', 14), field_font=('Purisa', 11), kdf=None):
+                 header_font=('Purisa', 14), field_font=('Purisa', 11),
+                 field_offset=60, kdf=None):
+        self.width, self.height = width, height
+        self.field_offset = field_offset
         self.kdf = kdf
         self.caller = caller
-        self.frame = Frame(parent, width=width, height=height, bg='white')
+        self.frame = Frame(parent, width=width, height=height)
         self.frame.place(x=x, y=y)
 
         self.session_started = False
@@ -36,63 +39,67 @@ class SessionTimeFields:
         self.timer_running = True
         self.ui_timer_running = True
         self.update_ui = False
-
+        self.start_y = 15
         self.session_time = 0
         self.break_time = 0
-        self.session_time_label = Label(self.frame, text="Session Time:  0:00:00", bg='white',
+        session_time_label = Label(self.frame, text="Session Time", font=(header_font[0], header_font[1], 'bold'))
+        session_time_label.place(x=width/2, y=self.start_y, anchor=CENTER)
+
+        self.session_time_label = Label(self.frame, text="0:00:00",
                                         font=header_font)
-        self.session_time_label.place(x=20, y=10)
+        self.session_time_label.place(x=width/2, y=self.start_y+(field_offset / 2), anchor=CENTER)
 
-        self.break_time_label = Label(self.frame, text="Break Time:      0:00:00", bg='white',
+        break_time_label = Label(self.frame, text='Break Time', font=(header_font[0], header_font[1], 'bold'))
+        break_time_label.place(x=width/2, y=self.start_y+((field_offset / 2) * 2), anchor=CENTER)
+
+        self.break_time_label = Label(self.frame, text="0:00:00",
                                       font=header_font)
-        self.break_time_label.place(x=20, y=38)
+        self.break_time_label.place(x=width/2, y=self.start_y+((field_offset / 2) * 3), anchor=CENTER)
 
-        self.session_start_label = Label(self.frame, text="Session Started", bg='white', fg='green',
+        self.session_start_label = Label(self.frame, text="Session Started", fg='green',
                                          font=header_font)
-        self.session_paused_label = Label(self.frame, text="Session Paused", bg='white', fg='yellow',
+        self.session_paused_label = Label(self.frame, text="Session Paused", fg='yellow',
                                           font=header_font)
-        self.session_stopped_label = Label(self.frame, text="Session Stopped", bg='white', fg='red',
+        self.session_stopped_label = Label(self.frame, text="Session Stopped", fg='red',
                                            font=header_font)
-        self.session_stopped_label.place(x=20, y=66)
+        self.session_stopped_label.place(x=width/2, y=self.start_y+((field_offset / 2) * 4), anchor=CENTER)
 
         self.interval_selection = BooleanVar()
         self.interval_checkbutton = Checkbutton(self.frame, text="Reminder Beep (Seconds)",
-                                                variable=self.interval_selection, bg='white',
+                                                variable=self.interval_selection,
                                                 font=header_font, command=self.show_beep_interval)
-        self.interval_checkbutton.place(x=250, y=6)
+        self.interval_checkbutton.place(x=10, y=self.start_y+((field_offset / 2) * 6), anchor=W)
         self.interval_input_var = StringVar()
 
         interval_cmd = self.frame.register(self.validate_number)
         self.interval_input = Entry(self.frame, validate='all', validatecommand=(interval_cmd, '%P'),
-                                    font=header_font, bg='white', width=6)
+                                    font=header_font, width=6)
 
         session_cmd = self.frame.register(self.validate_number)
         self.session_dur_input = Entry(self.frame, validate='all', validatecommand=(session_cmd, '%P'),
-                                       font=header_font, bg='white', width=6)
+                                       font=header_font, width=6)
 
         self.session_dur_selection = BooleanVar()
         self.session_dur_checkbutton = Checkbutton(self.frame, text="Session Duration (Seconds)",
-                                                   variable=self.session_dur_selection, bg='white',
+                                                   variable=self.session_dur_selection,
                                                    font=header_font,
                                                    command=self.show_session_time)
-        self.session_dur_checkbutton.place(x=250, y=34)
+        self.session_dur_checkbutton.place(x=10, y=self.start_y+((field_offset / 2) * 7), anchor=W)
 
         self.session_toggle_button = Button(self.frame, text="Start Session", bg='#4abb5f',
-                                            font=field_font, width=15,
+                                            font=field_font, width=13,
                                             command=self.caller.start_session)
-        self.session_toggle_button.place(x=527, y=4)
+        self.session_toggle_button.place(x=width/2, y=self.start_y+((field_offset / 2) * 9), anchor=CENTER)
+        self.key_explanation = Label(self.frame, text="Esc Key", font=field_font,
+                                     justify=LEFT)
+        self.key_explanation.place(x=width * 0.75, y=self.start_y + ((field_offset / 2) * 9), anchor=W)
 
-        self.session_pause_button = Button(self.frame, text="Pause Session", width=15,
+        self.session_pause_button = Button(self.frame, text="Pause Session", width=13,
                                            font=field_font, command=self.caller.pause_session)
-        self.session_pause_button.place(x=527, y=36)
-
-        self.key_explanation = Label(self.frame, text="Esc Key", font=field_font, bg='white',
+        self.session_pause_button.place(x=width/2, y=self.start_y+((field_offset / 2) * 10.5), anchor=CENTER)
+        self.key_explanation = Label(self.frame, text="Left Ctrl", font=field_font,
                                      justify=LEFT)
-        self.key_explanation.place(x=675, y=8)
-
-        self.key_explanation = Label(self.frame, text="Left Control", font=field_font, bg='white',
-                                     justify=LEFT)
-        self.key_explanation.place(x=675, y=38)
+        self.key_explanation.place(x=width*0.75, y=self.start_y+((field_offset / 2) * 10.5), anchor=W)
 
         self.session_duration = None
         self.beep_th = None
@@ -122,7 +129,7 @@ class SessionTimeFields:
     def show_session_time(self):
         if self.session_dur_selection.get():
             self.session_dur_checkbutton.config(text="Session Duration")
-            self.session_dur_input.place(x=430, y=38)
+            self.session_dur_input.place(x=self.width*0.66, y=self.start_y+((self.field_offset / 2) * 7), anchor=W)
         else:
             self.session_dur_checkbutton.config(text="Session Duration (Seconds)")
             self.session_dur_input.place_forget()
@@ -130,7 +137,7 @@ class SessionTimeFields:
     def show_beep_interval(self):
         if self.interval_selection.get():
             self.interval_checkbutton.config(text="Reminder Beep")
-            self.interval_input.place(x=430, y=10)
+            self.interval_input.place(x=self.width*0.66, y=self.start_y+((self.field_offset / 2) * 6), anchor=W)
         else:
             self.interval_checkbutton.config(text="Reminder Beep (Seconds)")
             self.interval_input.place_forget()
@@ -150,8 +157,8 @@ class SessionTimeFields:
                             self.stop_session()
                 elif self.session_paused:
                     self.break_time += 1
-                self.break_time_label['text'] = "Break Time:      " + str(datetime.timedelta(seconds=self.break_time))
-                self.session_time_label['text'] = "Session Time:  " + str(datetime.timedelta(seconds=self.session_time))
+                self.break_time_label['text'] = str(datetime.timedelta(seconds=self.break_time))
+                self.session_time_label['text'] = str(datetime.timedelta(seconds=self.session_time))
 
     def start_session(self):
         self.session_started = True
@@ -522,7 +529,7 @@ class SessionManagerWindow:
 
         self.logo_width = self.field_width
         self.logo_height = int(self.logo_width / 5.7)
-        self.patient_field_height = (self.window_height - self.logo_height) * 0.85
+        self.patient_field_height = int((self.window_height - self.logo_height) * 0.85)
         print(self.patient_field_height)
 
         self.unmc_shield_canvas = Canvas(root, width=self.logo_width, height=self.logo_height, bg="white", bd=-2)
@@ -535,7 +542,9 @@ class SessionManagerWindow:
 
         self.menu = MenuBar(root, self)
         self.stf = SessionTimeFields(self, root, self.logo_width + 10, self.logo_height + 10,
-                                     self.patient_field_height, self.field_width)
+                                     self.patient_field_height, self.field_width,
+                                     header_font=self.header_font, field_font=self.field_font,
+                                     field_offset=self.field_offset)
         # self.ovu = OutputViewPanel(root, self.keystroke_file, self.window_height, self.window_width)
         # self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root, 5, self.logo_height + 10, self.patient_field_height, self.field_width,
@@ -551,10 +560,10 @@ class SessionManagerWindow:
         root.mainloop()
 
     def restart_program(self):
-        self.stf.stop_timer()
-        self.ovu.close()
-        self.edf.disconnect_e4()
-        self.listener.stop()
+        # self.stf.stop_timer()
+        # self.ovu.close()
+        # self.edf.disconnect_e4()
+        # self.listener.stop()
         self.root.quit()
         self.root.destroy()
 

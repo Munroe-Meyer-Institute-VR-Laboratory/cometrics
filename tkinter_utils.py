@@ -1,11 +1,11 @@
 import tkinter
-from tkinter import NO, YES, TOP, W, N
+from tkinter import TOP, W, N
 from tkinter.ttk import Style
 
 from ttk import Treeview
 
 
-def center(toplevel):
+def center(toplevel, y_offset=-20):
     toplevel.update_idletasks()
 
     # Tkinter way to find the screen resolution
@@ -15,7 +15,7 @@ def center(toplevel):
     size = tuple(int(_) for _ in toplevel.geometry().split('+')[0].split('x'))
     x = screen_width / 2 - size[0] / 2
     y = screen_height / 2 - size[1] / 2
-
+    y += y_offset
     toplevel.geometry("+%d+%d" % (x, y))
 
 
@@ -32,10 +32,12 @@ def get_display_size():
     return root, height, width
 
 
-def get_treeview_style(name="mystyle.Treeview", font=('Calibri', 13), heading_font=('Calibri', 13, 'bold'), h_thickness=0, bd=0):
+def get_treeview_style(name="mystyle.Treeview", font=('Calibri', 13), heading_font=('Calibri', 13, 'bold'),
+                       rowheight=25, h_thickness=0, bd=0):
     style = Style()
     style.configure(name, highlightthickness=h_thickness, bd=bd, font=font)  # Modify the font of the body
     style.configure("mystyle.Treeview.Heading", font=heading_font)  # Modify the font of the headings
+    style.configure('Treeview', rowheight=rowheight)
     style.map('Treeview', foreground=fixed_map('foreground'), background=fixed_map('background'))
     return style
 
