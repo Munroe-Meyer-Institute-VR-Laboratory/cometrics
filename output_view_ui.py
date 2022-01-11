@@ -359,8 +359,74 @@ class ViewE4:
 class KeystrokeDataFields:
     def __init__(self, parent, keystroke_file, height, width,
                  field_font, header_font, button_size):
+        separation_distance = 30
+        th_offset = 100
+        sh_exp_offset = 70
+        fs_offset = 10 + ((width * 0.25) * 0.5)
+        t_width = width * 0.25
+        t_y = 30
         self.height, self.width = height, width
         self.frame = parent
+
+        keystroke_label = Label(self.frame, text="Frequency Bindings", font=header_font)
+        keystroke_label.place(x=(width * 0.25) - 30, y=15, anchor=CENTER)
+
+        freq_heading_dict = {"#0": ["Char", 'c', 1, YES, 'c']}
+        freq_column_dict = {"1": ["Freq", 'c', 1, YES, 'c'],
+                            "2": ["Tag", 'c', 1, YES, 'c']}
+        self.freq_treeview, self.freq_filescroll = build_treeview(self.frame,
+                                                                  x=(width * 0.25) - separation_distance, y=t_y,
+                                                                  height=height - th_offset, width=t_width,
+                                                                  column_dict=freq_column_dict,
+                                                                  heading_dict=freq_heading_dict,
+                                                                  button_1_bind=self.get_selection,
+                                                                  double_bind=self.change_keybind,
+                                                                  anchor=N,
+                                                                  tag_dict=treeview_bind_tag_dict,
+                                                                  fs_offset=fs_offset)
+
+        dur_label = Label(self.frame, text="Duration Bindings", font=header_font)
+        dur_label.place(x=width * 0.5, y=15, anchor=CENTER)
+
+        dur_heading_dict = {"#0": ["Char", 'c', 1, YES, 'c']}
+        dur_column_dict = {"1": ["Dur", 'c', 1, YES, 'c'],
+                           "2": ["Total", 'c', 1, YES, 'c'],
+                           "3": ["Tag", 'c', 1, YES, 'c']}
+        self.dur_treeview, self.dur_filescroll = build_treeview(self.frame,
+                                                                x=width * 0.5, y=t_y,
+                                                                height=height - th_offset, width=t_width,
+                                                                column_dict=dur_column_dict,
+                                                                heading_dict=dur_heading_dict,
+                                                                button_1_bind=self.get_selection1,
+                                                                double_bind=self.change_keybind1,
+                                                                anchor=N,
+                                                                tag_dict=treeview_bind_tag_dict,
+                                                                fs_offset=fs_offset)
+
+        sh_label = Label(self.frame, text="Session History", font=header_font)
+        sh_label.place(x=(width * 0.75) + 30, y=15, anchor=CENTER)
+
+        sh_heading_dict = {"#0": ["Event", 'c', 1, YES, 'c']}
+        sh_column_dict = {"1": ["Time", 'c', 1, YES, 'c']}
+        self.sh_treeview, self.sh_filescroll = build_treeview(self.frame,
+                                                              x=(width * 0.75) + separation_distance, y=t_y,
+                                                              height=height - th_offset, width=t_width,
+                                                              column_dict=sh_column_dict,
+                                                              heading_dict=sh_heading_dict,
+                                                              double_bind=self.delete_event,
+                                                              anchor=N,
+                                                              tag_dict=treeview_bind_tag_dict,
+                                                              fs_offset=fs_offset)
+
+        self.key_explanation = Label(self.frame, font=field_font, text="Delete Last Event: Backspace"
+                                                                       "\nDouble Click Any Event to Delete"
+                                                                       "\nUndo Delete: +/= Button", justify=LEFT)
+        self.key_explanation.place(x=((width * 0.75) + 30) - ((width * 0.25) * 0.5),
+                                   y=height - sh_exp_offset, anchor=NW)
+
+        self.init_background_vars(keystroke_file)
+
+    def init_background_vars(self, keystroke_file):
         self.keystroke_json = None
         self.new_keystroke = False
         self.bindings = []
@@ -372,94 +438,11 @@ class KeystrokeDataFields:
         self.open_keystroke_file()
         self.freq_strings = []
         self.freq_key_strings = []
-
         self.dur_sticky = []
         self.sticky_start = []
         self.sticky_dur = []
-
-        keystroke_label = Label(self.frame, text="Frequency Bindings", font=header_font)
-        keystroke_label.place(x=(width * 0.25) - 30, y=15, anchor=CENTER)
-
-        freq_heading_dict = {"#0": ["Char", 'c', 1, YES, 'c']}
-        freq_column_dict = {"1": ["Freq", 'c', 1, YES, 'c'],
-                            "2": ["Tag", 'c', 1, YES, 'c']}
-        self.freq_treeview, self.freq_filescroll = build_treeview(self.frame,
-                                                                  x=(width * 0.25) - 30, y=30,
-                                                                  height=height - 100, width=width * 0.25,
-                                                                  column_dict=freq_column_dict,
-                                                                  heading_dict=freq_heading_dict,
-                                                                  button_1_bind=self.get_selection,
-                                                                  double_bind=self.change_keybind,
-                                                                  anchor=N,
-                                                                  tag_dict=treeview_bind_tag_dict,
-                                                                  fs_offset=10 + ((width * 0.25) * 0.5))
-
-        # self.delete_button = Button(self.frame, text="Delete Key", command=self.delete_binding, width=8)
-        # self.delete_button.place(x=20, y=height - 340, anchor=NW)
-        #
-        # self.add_button = Button(self.frame, text="Add Key", command=self.add_key_popup, width=9)
-        # self.add_button.place(x=125, y=height - 340, anchor=N)
-        #
-        # self.save_button = Button(self.frame, text="Save File", command=self.save_binding, width=8)
-        # self.save_button.place(x=230, y=height - 340, anchor=NE)
-
-        self.tree_parents = []
-        self.tags = ['odd', 'even', 'toggle']
-        self.current_selection = "I000"
-
-        dur_label = Label(self.frame, text="Duration Bindings", font=header_font)
-        dur_label.place(x=width * 0.5, y=15, anchor=CENTER)
-
-        dur_heading_dict = {"#0": ["Char", 'c', 1, YES, 'c']}
-        dur_column_dict = {"1": ["Dur", 'c', 1, YES, 'c'],
-                           "2": ["Total", 'c', 1, YES, 'c'],
-                           "3": ["Tag", 'c', 1, YES, 'c']}
-        self.dur_treeview, self.dur_filescroll = build_treeview(self.frame,
-                                                                x=width * 0.5, y=30,
-                                                                height=height - 100, width=width * 0.25,
-                                                                column_dict=dur_column_dict,
-                                                                heading_dict=dur_heading_dict,
-                                                                button_1_bind=self.get_selection1,
-                                                                double_bind=self.change_keybind1,
-                                                                anchor=N,
-                                                                tag_dict=treeview_bind_tag_dict,
-                                                                fs_offset=10 + ((width * 0.25) * 0.5))
-
-        self.tree_parents1 = []
-        self.current_selection1 = "I000"
-
-        # self.delete_button1 = Button(self.frame, text="Delete Key", command=self.delete_dur_binding, width=8)
-        # self.delete_button1.place(x=250, y=height - 340)
-        #
-        # self.add_button1 = Button(self.frame, text="Add Key", command=self.add_dur_popup, width=9)
-        # self.add_button1.place(x=355, y=height - 340, anchor=N)
-        #
-        # self.save_button1 = Button(self.frame, text="Save File", command=self.save_binding, width=8)
-        # self.save_button1.place(x=460, y=height - 340, anchor=NE)
-
-        sh_label = Label(self.frame, text="Session History", font=header_font)
-        sh_label.place(x=(width * 0.75) + 30, y=15, anchor=CENTER)
-
-        sh_heading_dict = {"#0": ["Event", 'c', 1, YES, 'c']}
-        sh_column_dict = {"1": ["Time", 'c', 1, YES, 'c']}
-        self.sh_treeview, self.sh_filescroll = build_treeview(self.frame,
-                                                              x=(width * 0.75) + 30, y=30,
-                                                              height=height - 100, width=width * 0.25,
-                                                              column_dict=sh_column_dict,
-                                                              heading_dict=sh_heading_dict,
-                                                              double_bind=self.delete_event,
-                                                              anchor=N,
-                                                              tag_dict=treeview_bind_tag_dict,
-                                                              fs_offset=10 + ((width * 0.25) * 0.5))
-
-        self.tree_parents2 = []
-        self.current_selection2 = "I000"
-
-        self.key_explanation = Label(self.frame, font=field_font, text="Delete Last Event: Backspace"
-                                                                       "\nDouble Click Any Event to Delete"
-                                                                       "\nUndo Delete: +/= Button", justify=LEFT)
-        self.key_explanation.place(x=((width * 0.75) + 30) - ((width * 0.25) * 0.5), y=height - 70, anchor=NW)
-
+        self.sh_treeview_parents, self.freq_treeview_parents, self.dur_treeview_parents = [], [], []
+        self.sh_c_selection, self.freq_c_selection, self.dur_c_selection = "I000", "I000", "I000"
         # self.populate_bindings()
         # self.populate_bindings1()
         # self.populate_bindings2()
