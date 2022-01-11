@@ -160,7 +160,7 @@ class ViewVideo:
         self.play_image = PhotoImage(file='images/video-start.png')
         self.pause_image = PhotoImage(file='images/video-pause.png')
         self.play_button = Button(self.root, image=self.play_image)
-        self.play_button.place(x=5, y=self.video_height+40, width=40, height=40, anchor=NW)
+        self.play_button.place(x=5, y=self.video_height+40, anchor=NW)
         self.frame_var = IntVar(self.root)
         self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
         self.video_slider.config(length=self.video_width)
