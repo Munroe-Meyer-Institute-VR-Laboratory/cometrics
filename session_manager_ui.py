@@ -570,8 +570,6 @@ class SessionManagerWindow:
                                      header_font=self.header_font,
                                      field_font=self.field_font,
                                      field_offset=self.field_offset, debug=False)
-        # self.session_time, self.ovu.key_view.conditions, debug=False)
-        # self.edf = EmpaticaDataFields(root, self.ovu, self.window_height, self.window_width)
 
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         root.state('zoomed')
