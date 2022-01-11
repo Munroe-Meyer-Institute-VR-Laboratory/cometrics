@@ -160,13 +160,21 @@ class ViewVideo:
         self.play_image = PhotoImage(file='images/video-start.png')
         self.pause_image = PhotoImage(file='images/video-pause.png')
         self.play_button = Button(self.root, image=self.play_image)
-        self.play_button.place(x=5, y=self.video_height+40, anchor=NW)
+        self.play_button.place(x=5, y=self.video_height+40, width=40, height=40, anchor=NW)
         self.frame_var = IntVar(self.root)
         self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
         self.video_slider.config(length=self.video_width)
         self.video_slider.place(x=5, y=self.video_height, anchor=NW)
-        # self.event_treeview, self.event_fs = build_treeview(self.root,
-        #                                                     x=)
+
+        event_header_dict = {"#0": ["Event Time", 'w', 1, YES, 'w']}
+        event_column_dict = {"1": ["Event Tag", 'w', 1, YES, 'w'],
+                             "2": ["Event Frame", 'w', 1, YES, 'w']}
+        self.event_treeview, self.event_fs = build_treeview(self.root,
+                                                            x=20, y=self.video_height+90,
+                                                            height=120,
+                                                            width=width - 25,
+                                                            heading_dict=event_header_dict,
+                                                            column_dict=event_column_dict)
 
     def load_video(self):
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))

@@ -1,26 +1,27 @@
+import datetime
+import json
+import math
 import os
 import pathlib
+import threading
 import time
+import winsound
 from os import walk
 from tkinter import *
 from tkinter import messagebox
-from ttk import Combobox
-import json
-import datetime
+
 from PIL import Image, ImageTk
-import threading
 from pynput import keyboard
-import winsound
+from ttk import Combobox
+
 # Custom library imports
 from logger_util import *
-from output_view_ui import OutputViewPanel
 from menu_bar import MenuBar
-import math
-
+from output_view_ui import OutputViewPanel
 from tkinter_utils import get_treeview_style
 from ui_params import large_header_font, large_field_font, large_field_offset, medium_header_font, medium_field_font, \
-    medium_field_offset, small_header_font, small_field_font, small_field_offset, large_button_size, medium_button_size, \
-    small_button_size, small_tab_size, medium_tab_size, large_tab_size
+    medium_field_offset, small_header_font, small_field_font, small_field_offset, small_tab_size, medium_tab_size, \
+    large_tab_size
 
 
 class SessionTimeFields:
