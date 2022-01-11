@@ -14,7 +14,6 @@ import winsound
 # Custom library imports
 from logger_util import *
 from output_view_ui import OutputViewPanel
-from input_view_ui import EmpaticaDataFields
 from menu_bar import MenuBar
 import math
 

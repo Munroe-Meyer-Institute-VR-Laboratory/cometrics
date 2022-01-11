@@ -1,4 +1,5 @@
 import json
+import pathlib
 import pickle
 import threading
 import time
@@ -16,6 +17,7 @@ from matplotlib.figure import Figure
 from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient
 import traceback
 from gif_player import ImageLabel
+import tkvideo
 
 # Custom library imports
 from tkinter_utils import build_treeview
@@ -88,6 +90,9 @@ class OutputViewPanel:
         self.key_view = KeystrokeDataFields(self.view_frames[OutputViews.KEY_VIEW], ksf,
                                             height=self.height - self.button_size[1], width=self.width,
                                             field_font=field_font, header_font=header_font, button_size=button_size)
+        self.video_view = ViewVideo(self.view_frames[OutputViews.VIDEO_VIEW],
+                                    height=self.height - self.button_size[1], width=self.width,
+                                    field_font=field_font, header_font=header_font, button_size=button_size)
 
     def switch_key_frame(self):
         self.switch_frame(OutputViews.KEY_VIEW)
@@ -141,6 +146,42 @@ class OutputViewPanel:
                 with open(filename, 'wb') as f:
                     pickle.dump(self.e4_view.windowed_readings, f)
                 print(str(e))
+
+
+class ViewVideo:
+    def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60):
+        self.root = root
+        self.video_label = Label(self.root, bg='white')
+        self.video_height, self.video_width = height-200, width-10
+        self.video_label.place(x=width/2, y=5, width=width-10, height=height-200, anchor=N)
+        self.load_video_button = Button(self.root, text="Load Video", font=field_font, command=self.load_video)
+        self.load_video_button.place(x=width/2, y=5+(self.video_height/2), height=button_size[1], width=button_size[0],
+                                     anchor=CENTER)
+        self.play_image = PhotoImage(file='images/video-start.png')
+        self.pause_image = PhotoImage(file='images/video-pause.png')
+        self.play_button = Button(self.root, image=self.play_image)
+        self.play_button.place(x=5, y=self.video_height+40, anchor=NW)
+        self.frame_var = IntVar(self.root)
+        self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
+        self.video_slider.config(length=self.video_width)
+        self.video_slider.place(x=5, y=self.video_height, anchor=NW)
+        # self.event_treeview, self.event_fs = build_treeview(self.root,
+        #                                                     x=)
+
+    def load_video(self):
+        video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
+        if video_file:
+            if pathlib.Path(video_file).suffix == ".mp4":
+                self.load_video_button.place_forget()
+                self.video_file = video_file
+                self.player = tkvideo.tkvideo(video_file, self.video_label, loop=False,
+                                              size=(self.video_width, self.video_height),
+                                              keep_ratio=True,
+                                              play_button=self.play_button,
+                                              pause_image=self.pause_image,
+                                              play_image=self.play_image,
+                                              slider=self.video_slider,
+                                              slider_var=self.frame_var)
 
 
 class ViewE4:

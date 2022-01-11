@@ -11,4 +11,6 @@ phases:
 - Treatment
 recent-projects:
 - C:\Users\wsarc\Desktop\ExpDir\Haircut Simulator
-window-size: []
+window-size:
+- 720
+- 1280
