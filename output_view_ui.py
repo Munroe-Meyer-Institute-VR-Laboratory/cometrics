@@ -16,7 +16,10 @@ from matplotlib.figure import Figure
 from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient
 import traceback
 from gif_player import ImageLabel
+
 # Custom library imports
+from tkinter_utils import build_treeview
+from ui_params import treeview_bind_tag_dict
 
 
 class OutputViews:
@@ -42,7 +45,7 @@ class OutputViewPanel:
         clean_view.place(x=0, y=0)
 
         key_frame = Frame(parent, width=width, height=height)
-        key_frame.place(x=x, y=y+self.button_size[1])
+        key_frame.place(x=x, y=y + self.button_size[1])
         self.view_frames.append(key_frame)
 
         e4_frame = Frame(parent, width=width, height=height)
@@ -64,13 +67,13 @@ class OutputViewPanel:
         self.view_buttons[OutputViews.KEY_VIEW].config(relief=SUNKEN)
 
         e4_output_button = Button(self.frame, text="E4 Streams", command=self.switch_e4_frame, width=12,
-                            font=field_font)
+                                  font=field_font)
         self.view_buttons.append(e4_output_button)
         self.view_buttons[OutputViews.E4_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
                                                      width=button_size[0], height=button_size[1])
 
         video_button = Button(self.frame, text="Video View", command=self.switch_video_frame, width=12,
-                            font=field_font)
+                              font=field_font)
         self.view_buttons.append(video_button)
         self.view_buttons[OutputViews.VIDEO_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
                                                         width=button_size[0], height=button_size[1])
@@ -80,7 +83,10 @@ class OutputViewPanel:
         # self.view_buttons[3].place(x=276, y=0)
 
         self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW])
-        self.key_view = KeystrokeDataFields(self.view_frames[OutputViews.KEY_VIEW], ksf, self.height, self.width)
+        self.key_view = KeystrokeDataFields(self.view_frames[OutputViews.KEY_VIEW], ksf, self.height, self.width,
+                                            field_font=field_font, header_font=header_font, button_size=button_size)
+        self.edf_view = EmpaticaDataFields(self.view_frames[OutputViews.E4_VIEW], self, self.height, self.width,
+                                           field_font=field_font, header_font=header_font, button_size=button_size)
 
     def switch_key_frame(self):
         self.switch_frame(OutputViews.KEY_VIEW)
@@ -104,7 +110,7 @@ class OutputViewPanel:
         self.view_frames[self.current_button].place_forget()
         self.current_button = view
         self.view_buttons[view].config(relief=SUNKEN)
-        self.view_frames[view].place(x=self.x, y=self.y+self.button_size[1])
+        self.view_frames[view].place(x=self.x, y=self.y + self.button_size[1])
 
     def close(self):
         self.e4_view.stop_plot()
@@ -290,7 +296,7 @@ class ViewE4:
                         if self.save_reading:
                             self.save_reading = False
                             self.windowed_readings.append(
-                                (self.e4.acc_3d[-(32*3):],
+                                (self.e4.acc_3d[-(32 * 3):],
                                  self.e4.acc_x[-32:], self.e4.acc_y[-32:], self.e4.acc_z[-32:],
                                  self.e4.acc_timestamps[-32:],
                                  self.e4.bvp[-64:], self.e4.bvp_timestamps[-64:],
@@ -351,7 +357,8 @@ class ViewE4:
 
 
 class KeystrokeDataFields:
-    def __init__(self, parent, keystroke_file, height, width):
+    def __init__(self, parent, keystroke_file, height, width,
+                 field_font, header_font, button_size):
         self.height, self.width = height, width
         self.frame = parent
         self.keystroke_json = None
@@ -370,115 +377,92 @@ class KeystrokeDataFields:
         self.sticky_start = []
         self.sticky_dur = []
 
-        keystroke_label = Label(self.frame, text="Frequency Bindings", font=('Purisa', 10))
-        keystroke_label.place(x=125, y=15, anchor=CENTER)
+        keystroke_label = Label(self.frame, text="Frequency Bindings", font=header_font)
+        keystroke_label.place(x=(width * 0.25) - 30, y=15, anchor=CENTER)
 
-        # style.layout("mystyle.Treeview", [('mystyle.Treeview.treearea', {'sticky': 'nswe'})])  # Remove the borders
-        self.treeview = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
-        self.treeview.place(x=20, y=30, height=(self.height - 370), width=210)
+        freq_heading_dict = {"#0": ["Char", 'c', 1, YES, 'c']}
+        freq_column_dict = {"1": ["Freq", 'c', 1, YES, 'c'],
+                            "2": ["Tag", 'c', 1, YES, 'c']}
+        self.freq_treeview, self.freq_filescroll = build_treeview(self.frame,
+                                                                  x=(width * 0.25) - 30, y=30,
+                                                                  height=height - 100, width=width * 0.25,
+                                                                  column_dict=freq_column_dict,
+                                                                  heading_dict=freq_heading_dict,
+                                                                  button_1_bind=self.get_selection,
+                                                                  double_bind=self.change_keybind,
+                                                                  anchor=N,
+                                                                  tag_dict=treeview_bind_tag_dict,
+                                                                  fs_offset=10 + ((width * 0.25) * 0.5))
 
-        self.treeview["columns"] = ["1", "2", "3"]
-        self.treeview.heading("1", text="Char", anchor='c')
-        self.treeview.column("1", width=40, stretch=NO, anchor='c')
-        self.treeview.heading("2", text="Freq")
-        self.treeview.column("2", width=40, stretch=NO, anchor='c')
-        self.treeview.heading("3", text="Tag")
-        self.treeview.column("3", width=65, stretch=YES, anchor='c')
+        # self.delete_button = Button(self.frame, text="Delete Key", command=self.delete_binding, width=8)
+        # self.delete_button.place(x=20, y=height - 340, anchor=NW)
+        #
+        # self.add_button = Button(self.frame, text="Add Key", command=self.add_key_popup, width=9)
+        # self.add_button.place(x=125, y=height - 340, anchor=N)
+        #
+        # self.save_button = Button(self.frame, text="Save File", command=self.save_binding, width=8)
+        # self.save_button.place(x=230, y=height - 340, anchor=NE)
 
-        self.treeview.tag_configure('odd', background='#E8E8E8')
-        self.treeview.tag_configure('even', background='#DFDFDF')
-        self.treeview.tag_configure('toggle', background='red')
-
-        self.treeview.bind("<Button-1>", self.get_selection)
-        self.treeview.bind("<Double-Button-1>", self.change_keybind)
-
-        self.delete_button = Button(self.frame, text="Delete Key", command=self.delete_binding, width=8)
-        self.delete_button.place(x=20, y=height - 340, anchor=NW)
-
-        self.add_button = Button(self.frame, text="Add Key", command=self.add_key_popup, width=9)
-        self.add_button.place(x=125, y=height - 340, anchor=N)
-
-        self.save_button = Button(self.frame, text="Save File", command=self.save_binding, width=8)
-        self.save_button.place(x=230, y=height - 340, anchor=NE)
-
-        self.file_scroll = Scrollbar(self.frame, orient="vertical", command=self.treeview.yview)
-        self.file_scroll.place(x=2, y=30, height=(height - 370))
-
-        self.treeview.configure(yscrollcommand=self.file_scroll.set)
         self.tree_parents = []
         self.tags = ['odd', 'even', 'toggle']
         self.current_selection = "I000"
 
-        dur_label = Label(self.frame, text="Duration Bindings", font=('Purisa', 10))
-        dur_label.place(x=355, y=15, anchor=CENTER)
+        dur_label = Label(self.frame, text="Duration Bindings", font=header_font)
+        dur_label.place(x=width * 0.5, y=15, anchor=CENTER)
 
-        self.treeview1 = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
-        self.treeview1.place(x=250, y=30, height=(height - 370), width=210)
+        dur_heading_dict = {"#0": ["Char", 'c', 1, YES, 'c']}
+        dur_column_dict = {"1": ["Dur", 'c', 1, YES, 'c'],
+                           "2": ["Total", 'c', 1, YES, 'c'],
+                           "3": ["Tag", 'c', 1, YES, 'c']}
+        self.dur_treeview, self.dur_filescroll = build_treeview(self.frame,
+                                                                x=width * 0.5, y=30,
+                                                                height=height - 100, width=width * 0.25,
+                                                                column_dict=dur_column_dict,
+                                                                heading_dict=dur_heading_dict,
+                                                                button_1_bind=self.get_selection1,
+                                                                double_bind=self.change_keybind1,
+                                                                anchor=N,
+                                                                tag_dict=treeview_bind_tag_dict,
+                                                                fs_offset=10 + ((width * 0.25) * 0.5))
 
-        self.treeview1["columns"] = ["1", "2", "3", "4"]
-        self.treeview1.heading("1", text="Char", anchor='c')
-        self.treeview1.column("1", width=40, stretch=NO, anchor='c')
-        self.treeview1.heading("2", text="Dur")
-        self.treeview1.column("2", width=40, stretch=NO, anchor='c')
-        self.treeview1.heading("3", text="Total")
-        self.treeview1.column("3", width=45, stretch=NO, anchor='c')
-        self.treeview1.heading("4", text="Tag")
-        self.treeview1.column("4", width=65, stretch=YES, anchor='c')
-
-        self.treeview1.tag_configure('odd', background='#E8E8E8')
-        self.treeview1.tag_configure('even', background='#DFDFDF')
-        self.treeview1.tag_configure('toggle', background='red')
-
-        self.treeview1.bind("<Button-1>", self.get_selection1)
-        self.treeview1.bind("<Double-Button-1>", self.change_keybind1)
-
-        self.file_scroll1 = Scrollbar(self.frame, orient="vertical", command=self.treeview1.yview)
-        self.file_scroll1.place(x=232, y=30, height=(height - 370))
-
-        self.treeview1.configure(yscrollcommand=self.file_scroll1.set)
         self.tree_parents1 = []
         self.current_selection1 = "I000"
 
-        self.delete_button1 = Button(self.frame, text="Delete Key", command=self.delete_dur_binding, width=8)
-        self.delete_button1.place(x=250, y=height - 340)
+        # self.delete_button1 = Button(self.frame, text="Delete Key", command=self.delete_dur_binding, width=8)
+        # self.delete_button1.place(x=250, y=height - 340)
+        #
+        # self.add_button1 = Button(self.frame, text="Add Key", command=self.add_dur_popup, width=9)
+        # self.add_button1.place(x=355, y=height - 340, anchor=N)
+        #
+        # self.save_button1 = Button(self.frame, text="Save File", command=self.save_binding, width=8)
+        # self.save_button1.place(x=460, y=height - 340, anchor=NE)
 
-        self.add_button1 = Button(self.frame, text="Add Key", command=self.add_dur_popup, width=9)
-        self.add_button1.place(x=355, y=height - 340, anchor=N)
+        sh_label = Label(self.frame, text="Session History", font=header_font)
+        sh_label.place(x=(width * 0.75) + 30, y=15, anchor=CENTER)
 
-        self.save_button1 = Button(self.frame, text="Save File", command=self.save_binding, width=8)
-        self.save_button1.place(x=460, y=height - 340, anchor=NE)
+        sh_heading_dict = {"#0": ["Event", 'c', 1, YES, 'c']}
+        sh_column_dict = {"1": ["Time", 'c', 1, YES, 'c']}
+        self.sh_treeview, self.sh_filescroll = build_treeview(self.frame,
+                                                              x=(width * 0.75) + 30, y=30,
+                                                              height=height - 100, width=width * 0.25,
+                                                              column_dict=sh_column_dict,
+                                                              heading_dict=sh_heading_dict,
+                                                              double_bind=self.delete_event,
+                                                              anchor=N,
+                                                              tag_dict=treeview_bind_tag_dict,
+                                                              fs_offset=10 + ((width * 0.25) * 0.5))
 
-        self.file_scroll2 = Scrollbar(self.frame, orient="vertical", command=self.treeview1.yview)
-        self.file_scroll2.place(x=462, y=30, height=(height - 370))
-
-        dur_label = Label(self.frame, text="Session History", font=('Purisa', 10))
-        dur_label.place(x=585, y=15, anchor=CENTER)
-
-        self.treeview2 = Treeview(self.frame, style="mystyle.Treeview", height=18, selectmode='browse', show="headings")
-        self.treeview2.place(x=480, y=30, height=(height - 370), width=210)
-
-        self.treeview2["columns"] = ["1", "2"]
-        self.treeview2.heading("1", text="Event", anchor='c')
-        self.treeview2.column("1", width=104, stretch=NO, anchor='c')
-        self.treeview2.heading("2", text="Time")
-        self.treeview2.column("2", width=104, stretch=NO, anchor='c')
-
-        self.treeview2.tag_configure('odd', background='#E8E8E8')
-        self.treeview2.tag_configure('even', background='#DFDFDF')
-        self.treeview2.tag_configure('toggle', background='red')
-
-        self.treeview2.configure(yscrollcommand=self.file_scroll2.set)
-        self.treeview2.bind("<Double-Button-1>", self.delete_event)
         self.tree_parents2 = []
         self.current_selection2 = "I000"
 
-        self.key_explanation = Label(self.frame, font=('Purisa', 10), text="Delete Last Event: Backspace\nDouble Click "
-                                                                           "Any Event to Delete", justify=LEFT)
-        self.key_explanation.place(x=480, y=height - 340)
+        self.key_explanation = Label(self.frame, font=field_font, text="Delete Last Event: Backspace"
+                                                                       "\nDouble Click Any Event to Delete"
+                                                                       "\nUndo Delete: +/= Button", justify=LEFT)
+        self.key_explanation.place(x=((width * 0.75) + 30) - ((width * 0.25) * 0.5), y=height - 70, anchor=NW)
 
-        self.populate_bindings()
-        self.populate_bindings1()
-        self.populate_bindings2()
+        # self.populate_bindings()
+        # self.populate_bindings1()
+        # self.populate_bindings2()
 
     def add_session_event(self, events):
         for event in events:
@@ -744,7 +728,8 @@ class Popup:
 
 
 class EmpaticaDataFields:
-    def __init__(self, parent, output_view, height, width):
+    def __init__(self, parent, output_view, height, width,
+                 field_font, header_font, button_size):
         self.height, self.width = height, width
         self.ovu = output_view
         self.parent = parent

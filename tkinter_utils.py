@@ -1,8 +1,10 @@
 import tkinter
-from tkinter import TOP, W, N
+from tkinter import TOP, W, N, NW
 from tkinter.ttk import Style
 
 from ttk import Treeview
+
+from ui_params import treeview_default_tag_dict
 
 
 def center(toplevel, y_offset=-20):
@@ -43,9 +45,10 @@ def get_treeview_style(name="mystyle.Treeview", font=('Calibri', 13), heading_fo
 
 
 def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, selectmode='browse', t_height=18,
-                   filescroll=True, button_1_bind=None, double_bind=None, style="mystyle.Treeview"):
+                   filescroll=True, button_1_bind=None, double_bind=None, style="mystyle.Treeview", anchor=NW,
+                   tag_dict=treeview_default_tag_dict, fs_offset=18):
     treeview = Treeview(root, style=style, height=t_height, selectmode=selectmode)
-    treeview.place(x=x, y=y, height=height, width=width)
+    treeview.place(x=x, y=y, height=height, width=width, anchor=anchor)
     # Define header
     heading = heading_dict["#0"]
     treeview.heading("#0", text=heading[0], anchor=heading[1])
@@ -56,16 +59,15 @@ def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, se
         for col in column_dict:
             treeview.heading(col, text=column_dict[col][0], anchor=column_dict[col][1])
             treeview.column(col, width=column_dict[col][2], stretch=column_dict[col][3], anchor=column_dict[col][4])
-    treeview.tag_configure('odd', background='#E8E8E8')
-    treeview.tag_configure('even', background='#DFDFDF')
-    treeview.tag_configure('header', background='#C4C4C4')
+    for tag in tag_dict:
+        treeview.tag_configure(tag, background=tag_dict[tag])
     if button_1_bind:
         treeview.bind("<Button-1>", button_1_bind)
     if double_bind:
         treeview.bind("<Double-Button-1>", double_bind)
     if filescroll:
         file_scroll = tkinter.Scrollbar(root, orient="vertical", command=treeview.yview)
-        file_scroll.place(x=(x-18), y=y, height=height)
+        file_scroll.place(x=(x-fs_offset), y=y, height=height, anchor=anchor)
         treeview.configure(yscrollcommand=file_scroll.set)
     else:
         file_scroll = None

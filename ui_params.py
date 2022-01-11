@@ -27,3 +27,14 @@ small_field_font = ('Purisa', 10)
 small_field_offset = 50
 small_button_size = (80, 25)
 small_tab_size = (90, 25)
+
+treeview_default_tag_dict = {
+    'odd': '#E8E8E8',
+    'even': '#DFDFDF',
+    'header': '#C4C4C4'
+}
+treeview_bind_tag_dict = {
+    'odd': '#E8E8E8',
+    'even': '#DFDFDF',
+    'toggle': 'red'
+}

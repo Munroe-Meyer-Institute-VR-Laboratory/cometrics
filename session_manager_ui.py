@@ -567,7 +567,8 @@ class SessionManagerWindow:
         self.pdf = PatientDataFields(root, 5, self.logo_height + 10, self.patient_field_height, self.field_width,
                                      self.patient_file, self.session_number, self.session_date,
                                      self.session_time, ['Shine', 'On'],
-                                     header_font=self.header_font, field_font=self.field_font,
+                                     header_font=self.header_font,
+                                     field_font=self.field_font,
                                      field_offset=self.field_offset, debug=False)
         # self.session_time, self.ovu.key_view.conditions, debug=False)
         # self.edf = EmpaticaDataFields(root, self.ovu, self.window_height, self.window_width)
