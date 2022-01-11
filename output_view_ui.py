@@ -17,7 +17,6 @@ from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClien
 import traceback
 from gif_player import ImageLabel
 # Custom library imports
-from ui_params import view_button_place
 
 
 class OutputViews:
@@ -27,24 +26,29 @@ class OutputViews:
 
 
 class OutputViewPanel:
-    def __init__(self, parent, ksf, height, width):
+    def __init__(self, parent, x, y, height, width, button_size, ksf,
+                 field_font, header_font):
         self.height, self.width = height, width
+        self.x, self.y, self.button_size = x, y, button_size
         self.current_button = 0
         self.view_buttons = []
         self.view_frames = []
 
-        self.frame = Frame(parent, width=700, height=(height - 255))
-        self.frame.place(x=525, y=95)
+        self.frame = Frame(parent, width=width, height=height)
+        self.frame.place(x=x, y=y)
 
-        key_frame = Frame(parent, width=700, height=(height - 280))
-        key_frame.place(x=525, y=120)
+        clean_view = Frame(self.frame, width=width,
+                           height=button_size[1], bg='white')
+        clean_view.place(x=0, y=0)
+
+        key_frame = Frame(parent, width=width, height=height)
+        key_frame.place(x=x, y=y+self.button_size[1])
         self.view_frames.append(key_frame)
 
-        e4_frame = Frame(parent, width=700, height=(height - 280))
-        # e4_frame.place(x=780, y=120)
+        e4_frame = Frame(parent, width=width, height=height)
         self.view_frames.append(e4_frame)
 
-        video_frame = Frame(parent, width=700, height=(height - 280))
+        video_frame = Frame(parent, width=width, height=height)
         self.view_frames.append(video_frame)
 
         # tactor_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
@@ -52,25 +56,28 @@ class OutputViewPanel:
         # test_label.place(x=200, y=200)
         # self.view_frames.append(tactor_frame)
 
-        key_button = Button(self.frame, text="Key Bindings", command=self.switch_key_frame, width=12)
+        key_button = Button(self.frame, text="Key Bindings", command=self.switch_key_frame, width=12,
+                            font=field_font)
         self.view_buttons.append(key_button)
-        self.view_buttons[OutputViews.KEY_VIEW].place(x=(len(self.view_buttons) - 1) * view_button_place, y=0)
+        self.view_buttons[OutputViews.KEY_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                      width=button_size[0], height=button_size[1])
         self.view_buttons[OutputViews.KEY_VIEW].config(relief=SUNKEN)
 
-        e4_output_button = Button(self.frame, text="E4 Streams", command=self.switch_e4_frame, width=12)
+        e4_output_button = Button(self.frame, text="E4 Streams", command=self.switch_e4_frame, width=12,
+                            font=field_font)
         self.view_buttons.append(e4_output_button)
-        self.view_buttons[OutputViews.E4_VIEW].place(x=(len(self.view_buttons) - 1) * view_button_place, y=0)
+        self.view_buttons[OutputViews.E4_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                     width=button_size[0], height=button_size[1])
 
-        video_button = Button(self.frame, text="Video View", command=self.switch_video_frame, width=12)
+        video_button = Button(self.frame, text="Video View", command=self.switch_video_frame, width=12,
+                            font=field_font)
         self.view_buttons.append(video_button)
-        self.view_buttons[OutputViews.VIDEO_VIEW].place(x=(len(self.view_buttons) - 1) * view_button_place, y=0)
+        self.view_buttons[OutputViews.VIDEO_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                        width=button_size[0], height=button_size[1])
 
         # tactor_view_button = Button(self.frame, text="Tactor View", command=self.switch_tactor_frame, width=12)
         # self.view_buttons.append(tactor_view_button)
         # self.view_buttons[3].place(x=276, y=0)
-
-        clean_view = Frame(self.frame, width=(700-(92*len(self.view_buttons))+2), height=25, bg='white')
-        clean_view.place(x=(92*len(self.view_buttons))+2, y=0)
 
         self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW])
         self.key_view = KeystrokeDataFields(self.view_frames[OutputViews.KEY_VIEW], ksf, self.height, self.width)
@@ -97,7 +104,7 @@ class OutputViewPanel:
         self.view_frames[self.current_button].place_forget()
         self.current_button = view
         self.view_buttons[view].config(relief=SUNKEN)
-        self.view_frames[view].place(x=525, y=120)
+        self.view_frames[view].place(x=self.x, y=self.y+self.button_size[1])
 
     def close(self):
         self.e4_view.stop_plot()

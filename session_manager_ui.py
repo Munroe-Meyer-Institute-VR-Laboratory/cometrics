@@ -20,7 +20,8 @@ import math
 
 from tkinter_utils import get_treeview_style
 from ui_params import large_header_font, large_field_font, large_field_offset, medium_header_font, medium_field_font, \
-    medium_field_offset, small_header_font, small_field_font, small_field_offset
+    medium_field_offset, small_header_font, small_field_font, small_field_offset, large_button_size, medium_button_size, \
+    small_button_size, small_tab_size, medium_tab_size, large_tab_size
 
 
 class SessionTimeFields:
@@ -486,14 +487,17 @@ class SessionManagerWindow:
             self.header_font = large_header_font
             self.field_font = large_field_font
             self.field_offset = large_field_offset
+            self.button_size = large_tab_size
         elif 1920 > self.window_width > 1280:
             self.header_font = medium_header_font
             self.field_font = medium_field_font
             self.field_offset = medium_field_offset
+            self.button_size = medium_tab_size
         else:
             self.header_font = small_header_font
             self.field_font = small_field_font
             self.field_offset = small_field_offset
+            self.button_size = small_tab_size
         print(self.header_font, self.field_font, self.field_offset)
         self.patient_file = project_setup.patient_data_file
         self.keystroke_file = project_setup.ksf_file
@@ -526,6 +530,7 @@ class SessionManagerWindow:
         root.title("cometrics v0.8.0")
 
         self.field_width = int(self.window_width * 0.2)
+        self.output_width = int(self.window_width * 0.58)
 
         self.logo_width = self.field_width
         self.logo_height = int(self.logo_width / 5.7)
@@ -541,11 +546,23 @@ class SessionManagerWindow:
         _ = get_treeview_style()
 
         self.menu = MenuBar(root, self)
-        self.stf = SessionTimeFields(self, root, self.logo_width + 10, self.logo_height + 10,
-                                     self.patient_field_height, self.field_width,
-                                     header_font=self.header_font, field_font=self.field_font,
+        self.stf = SessionTimeFields(self, root,
+                                     x=self.logo_width + 10,
+                                     y=self.logo_height + 10,
+                                     height=self.patient_field_height,
+                                     width=self.field_width,
+                                     header_font=self.header_font,
+                                     field_font=self.field_font,
                                      field_offset=self.field_offset)
-        # self.ovu = OutputViewPanel(root, self.keystroke_file, self.window_height, self.window_width)
+        self.ovu = OutputViewPanel(root,
+                                   x=(self.logo_width*2)+20,
+                                   y=(self.logo_height + 10)-self.button_size[1],
+                                   height=self.patient_field_height,
+                                   width=self.output_width,
+                                   button_size=self.button_size,
+                                   ksf=self.keystroke_file,
+                                   field_font=self.field_font,
+                                   header_font=self.header_font)
         # self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root, 5, self.logo_height + 10, self.patient_field_height, self.field_width,
                                      self.patient_file, self.session_number, self.session_date,
