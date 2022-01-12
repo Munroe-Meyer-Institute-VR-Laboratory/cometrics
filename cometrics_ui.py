@@ -6,8 +6,8 @@ from logger_util import *
 from project_setup_ui import ProjectSetupWindow
 
 
-def main(config_file):
-    project_setup = ProjectSetupWindow(config_file)
+def main(config_file, first_time_user):
+    project_setup = ProjectSetupWindow(config_file, first_time_user)
     session_manager_ui.SessionManagerWindow(config_file, project_setup)
     return True
 
@@ -17,6 +17,7 @@ if __name__ == "__main__":
     sys.stderr = sys.stdout
     print(datetime.datetime.now().strftime("%c"))
     config = ConfigUtils()
-    ret = main(config)
+    first_time = config.get_first_time()
+    ret = main(config, first_time)
     while not ret:
-        ret = main(config)
+        ret = main(config, False)

@@ -17,7 +17,7 @@ from ui_params import project_treeview_params as ptp, treeview_tags, ksf_distanc
 
 
 class ProjectSetupWindow:
-    def __init__(self, config):
+    def __init__(self, config, first_time_user):
         self.config = config
         # region Window setup
         if len(config.get_screen_size()) == 2:
@@ -159,6 +159,9 @@ class ProjectSetupWindow:
         self.main_root.resizable(width=False, height=False)
         self.main_root.protocol("WM_DELETE_WINDOW", self.on_closing)
         # self.main_root.overrideredirect(1)
+        if first_time_user:
+            # Display link to user guide
+            pass
         self.main_root.mainloop()
 
     # region External Data Entry

@@ -26,6 +26,13 @@ class MenuBar(Frame):
         edit_menu.add_command(label="Calculate Session Accuracy", command=self.get_session_acc)
         menu.add_cascade(label="Analyze", menu=edit_menu)
 
+        help_menu = Menu(menu)
+        help_menu.add_command(label="Open documentation", command=self.open_docs)
+        menu.add_cascade(label="Help", menu=help_menu)
+
+    def open_docs(self):
+        pass
+
     def restart_program(self):
         """Restarts the current program.
         Note: this function does not return. Any cleanup action (like

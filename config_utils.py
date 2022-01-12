@@ -7,6 +7,10 @@ class ConfigUtils:
         with open(self.config_file, 'r') as file:
             self.config = yaml.safe_load(file)
 
+    def save_config(self):
+        with open(self.config_file, 'w') as file:
+            yaml.dump(self.config, file)
+
     def get_recent_projects(self):
         if self.config:
             return self.config['recent-projects']
@@ -14,8 +18,7 @@ class ConfigUtils:
     def set_recent_projects(self, projects):
         if self.config:
             self.config['recent-projects'] = projects
-            with open(self.config_file, 'w') as file:
-                yaml.dump(self.config, file)
+            self.save_config()
 
     def get_phases(self):
         if self.config:
@@ -24,8 +27,7 @@ class ConfigUtils:
     def set_screen_size(self, height, width):
         if self.config:
             self.config['window-size'] = [height, width]
-            with open(self.config_file, 'w') as file:
-                yaml.dump(self.config, file)
+            self.save_config()
 
     def get_screen_size(self):
         if self.config:
@@ -42,3 +44,13 @@ class ConfigUtils:
     def get_patient_concerns(self):
         if self.config:
             return self.config['patient-concerns']
+
+    def get_first_time(self):
+        if self.config:
+            if self.config['first-time']:
+                self.config['first-time'] = False
+                self.save_config()
+                return True
+            else:
+                return False
+
