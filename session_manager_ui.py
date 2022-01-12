@@ -486,7 +486,32 @@ def beep_thread():
 
 class SessionManagerWindow:
     def __init__(self, config, project_setup):
+        # region Project File Setup
+        # Get the project files
         self.config = config
+        self.patient_file = project_setup.patient_data_file
+        self.keystroke_file = project_setup.ksf_file
+        self.session_dir = path.join(project_setup.phase_dir, config.get_data_folders()[1])
+        self.prim_dir = path.join(self.session_dir, "Primary")
+        if not os.path.exists(self.prim_dir):
+            os.mkdir(self.prim_dir)
+        self.reli_dir = path.join(self.session_dir, "Reliability")
+        if not os.path.exists(self.reli_dir):
+            os.mkdir(self.reli_dir)
+        # Log this for debugging
+        print(self.patient_file, self.keystroke_file, self.session_dir, self.prim_dir, self.reli_dir)
+        # Generate session date and time
+        # TODO: Should this be updated dynamically or updated when the session starts?
+        self.session_date = datetime.datetime.today().strftime("%B %d, %Y")
+        self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+        # Get the number of primary and reliability sessions collected so far
+        self.prim_session_number = 1
+        self.reli_session_number = 1
+        self.get_prim_session(self.prim_dir)
+        self.get_reli_session(self.reli_dir)
+        # endregion
+
+        # region User Interface Setup
         self.window_height, self.window_width = config.get_screen_size()[0], config.get_screen_size()[1]
         if self.window_width == 1920:
             self.header_font = large_header_font
@@ -504,32 +529,7 @@ class SessionManagerWindow:
             self.field_offset = small_field_offset
             self.button_size = small_tab_size
         print(self.header_font, self.field_font, self.field_offset)
-        self.patient_file = project_setup.patient_data_file
-        self.keystroke_file = project_setup.ksf_file
-        self.global_commands = {
-            "Toggle Session": keyboard.Key.esc,
-            "Pause Session": keyboard.Key.ctrl_l,
-            "Delete Last Event": keyboard.Key.backspace
-        }
-        self.tag_history = []
-        self.listener = keyboard.Listener(
-            on_press=self.on_press,
-            on_release=self.on_release)
-        self.listener.start()
-        self.session_started = False
-        self.session_paused = False
-        parts = pathlib.Path(self.keystroke_file).parts
-        self.session_files = []
-        self.session_file = None
-        self.session_dir = path.join(*parts[0:-2], 'sessions')
-        print(self.session_dir)
 
-        self.close_program = False
-        self.session_number = 1
-        self.session_date = datetime.datetime.today().strftime("%B %d, %Y")
-        self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
-
-        self.get_session_file(self.session_dir)
         root = self.root = Tk()
         root.config(bg="white", bd=-2)
         root.title("cometrics v0.8.0")
@@ -540,7 +540,6 @@ class SessionManagerWindow:
         self.logo_width = self.field_width
         self.logo_height = int(self.logo_width / 5.7)
         self.patient_field_height = int((self.window_height - self.logo_height - 10) * 0.85)
-        print(self.patient_field_height)
 
         self.unmc_shield_canvas = Canvas(root, width=self.logo_width, height=self.logo_height, bg="white", bd=-2)
         self.unmc_shield_canvas.place(x=2, y=2)
@@ -570,14 +569,31 @@ class SessionManagerWindow:
                                    header_font=self.header_font)
         # self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root, 5, self.logo_height + 10, self.patient_field_height, self.field_width,
-                                     self.patient_file, self.session_number, self.session_date,
+                                     self.patient_file, self.prim_session_number, self.session_date,
                                      self.session_time, ['Shine', 'On'],
                                      header_font=self.header_font,
                                      field_font=self.field_font,
                                      field_offset=self.field_offset, debug=False)
+        # endregion
 
+        # Setup key listener and variables
+        self.global_commands = {
+            "Toggle Session": keyboard.Key.esc,
+            "Pause Session": keyboard.Key.ctrl_l,
+            "Delete Last Event": keyboard.Key.backspace
+        }
+        self.tag_history = []
+        self.listener = keyboard.Listener(
+            on_press=self.on_press,
+            on_release=self.on_release)
+        self.listener.start()
+        self.session_started = False
+        self.session_paused = False
+        # Configure window close override
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        # Start the window in fullscreen
         root.state('zoomed')
+        # Start the UI loop
         root.mainloop()
 
     def restart_program(self):
@@ -595,19 +611,23 @@ class SessionManagerWindow:
         self.root.destroy()
         sys.exit(0)
 
-    def get_session_file(self, directory):
-        # TODO: Refactor this as well
-        if path.isdir(self.session_dir):
+    def get_reli_session(self, directory):
+        if path.isdir(directory):
             _, _, files = next(walk(directory))
             for file in files:
-                if len(pathlib.Path(file).stem.split('_')) == 3:
-                    continue
                 if pathlib.Path(file).suffix == ".json":
-                    self.session_number += 1
-            self.session_file = path.join(directory, 'session_' + str(self.session_number) + '.json')
+                    self.reli_session_number += 1
         else:
-            os.mkdir(directory)
-            self.session_file = path.join(directory, 'session_1.json')
+            messagebox.showerror("Error", "Reliability session folder could not be found!")
+
+    def get_prim_session(self, directory):
+        if path.isdir(directory):
+            _, _, files = next(walk(directory))
+            for file in files:
+                if pathlib.Path(file).suffix == ".json":
+                    self.prim_session_number += 1
+        else:
+            messagebox.showerror("Error", "Primary session folder could not be found!")
 
     def on_press(self, key):
         try:
