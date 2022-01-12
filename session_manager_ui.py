@@ -576,19 +576,18 @@ class SessionManagerWindow:
                                      field_offset=self.field_offset, debug=False)
         # endregion
 
-        # Setup key listener and variables
+        # Setup key listener
         self.global_commands = {
             "Toggle Session": keyboard.Key.esc,
             "Pause Session": keyboard.Key.ctrl_l,
-            "Delete Last Event": keyboard.Key.backspace
+            "Delete Last Event": keyboard.Key.backspace,
+            "Undo Last Delete": keyboard.Key.ctrl_r
         }
         self.tag_history = []
         self.listener = keyboard.Listener(
             on_press=self.on_press,
             on_release=self.on_release)
         self.listener.start()
-        self.session_started = False
-        self.session_paused = False
         # Configure window close override
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
         # Start the window in fullscreen
@@ -631,7 +630,10 @@ class SessionManagerWindow:
 
     def on_press(self, key):
         try:
-            self.handle_key_press(key.char)
+            # Enforce lower case for all inputs that are characters
+            key_char = key.char
+            key_char = str(key_char).lower()
+            self.handle_key_press(key_char)
         except AttributeError:
             self.handle_global_press(key)
 
@@ -639,35 +641,36 @@ class SessionManagerWindow:
         pass
 
     def handle_global_press(self, key_char):
-        for key in self.global_commands:
-            if self.global_commands[key] == key_char:
-                if key == "Toggle Session":
-                    if self.session_started:
-                        self.stop_session()
-                    else:
-                        response = self.pdf.check_session_fields()
-                        if response is False:
-                            self.start_session()
+        if self.stf.session_started:
+            for key in self.global_commands:
+                if self.global_commands[key] == key_char:
+                    if key == "Toggle Session":
+                        if self.session_started:
+                            self.stop_session()
                         else:
-                            messagebox.showwarning("Warning", response)
-                elif key == "Pause Session":
-                    self.pause_session()
-                elif key == "Delete Last Event":
-                    self.ovu.key_view.delete_last_event()
+                            response = self.pdf.check_session_fields()
+                            if response is False:
+                                self.start_session()
+                            else:
+                                messagebox.showwarning("Warning", response)
+                    elif key == "Pause Session":
+                        self.pause_session()
+                    elif key == "Delete Last Event":
+                        self.ovu.key_view.delete_last_event()
+                    elif key == "Undo Last Delete":
+                        self.ovu.key_view.undo_last_delete()
 
     def handle_key_press(self, key):
         try:
-            if self.session_started:
-                events = self.ovu.key_view.check_key(key, self.stf.session_time)
-                for event in events:
-                    if event[0] and event[1]:
-                        self.tag_history.append(event)
+            if self.stf.session_started:
+                self.ovu.check_event(key, self.stf.session_time)
         except TypeError as e:
             print(str(e))
 
     def save_session(self):
         # TODO: Redo the saving procedure
         session_fields = self.pdf.get_session_fields()
+        session_data, e4_data = self.ovu.get_session_data()
         x = {
             "Session Date": self.session_date,
             "Session Start Time": self.session_time,
@@ -676,6 +679,8 @@ class SessionManagerWindow:
             "Keystroke File": self.keystroke_file
         }
         session_fields.update(x)
+        session_fields["Event History"] = session_data
+        session_fields["E4 Data"] = e4_data
         output_session_file = path.join(self.session_dir,
                                         self.config.get_data_folders()[1],
                                         session_fields["Primary Data"],
@@ -683,7 +688,8 @@ class SessionManagerWindow:
                                         f"{session_fields['Assessment Name'][:2]}"
                                         f"{session_fields['Condition Name'][:2]}"
                                         f"{session_fields['Session Date']}.json")
-        self.ovu.save_session(output_session_file, session_fields)
+        with open(output_session_file, 'w') as f:
+            json.dump(session_fields, f)
 
     def start_session(self):
         response = self.pdf.check_session_fields()

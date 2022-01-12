@@ -89,6 +89,7 @@ class OutputViewPanel:
         self.video_view = ViewVideo(self.view_frames[OutputViews.VIDEO_VIEW],
                                     height=self.height - self.button_size[1], width=self.width,
                                     field_font=field_font, header_font=header_font, button_size=button_size)
+        self.event_history = []
 
     def switch_key_frame(self):
         self.switch_frame(OutputViews.KEY_VIEW)
@@ -126,7 +127,27 @@ class OutputViewPanel:
 
     def check_event(self, key_char, start_time):
         # TODO: Use this to synchronize events across the output view
-        pass
+        # Make sure it is not None
+        if key_char:
+            current_frame = None
+            # Get the current frame of the video if it's playing
+            if self.video_view.video_loaded:
+                current_frame = self.video_view.player.current_frame
+            # Add the frame and key to the latest E4 window reading if streaming
+            if self.e4_view.windowed_readings:
+                if current_frame:
+                    self.e4_view.windowed_readings[-1][-1].append(current_frame)
+                self.e4_view.windowed_readings[-1][-2].append(key_char)
+            # Get the appropriate key event
+            key_events = self.key_view.check_key(key_char, start_time)
+            # Add to session history
+            self.key_view.add_session_event(key_events)
+
+    def get_session_data(self):
+        if self.e4_view.windowed_readings:
+            return self.key_view.event_history, self.e4_view.windowed_readings
+        else:
+            return self.key_view.event_history, None
 
     def save_session(self, filename, keystrokes):
         if self.e4_view.windowed_readings:
@@ -152,6 +173,7 @@ class OutputViewPanel:
 class ViewVideo:
     def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60):
         self.root = root
+        self.video_loaded = False
         self.video_label = Label(self.root, bg='white')
         self.video_height, self.video_width = height - 200, width - 10
         self.video_label.place(x=width / 2, y=5, width=width - 10, height=height - 200, anchor=N)
@@ -180,18 +202,24 @@ class ViewVideo:
 
     def load_video(self):
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
-        if video_file:
-            if pathlib.Path(video_file).suffix == ".mp4":
-                self.load_video_button.place_forget()
-                self.video_file = video_file
-                self.player = tkvideo.tkvideo(video_file, self.video_label, loop=False,
-                                              size=(self.video_width, self.video_height),
-                                              keep_ratio=True,
-                                              play_button=self.play_button,
-                                              pause_image=self.pause_image,
-                                              play_image=self.play_image,
-                                              slider=self.video_slider,
-                                              slider_var=self.frame_var)
+        try:
+            if video_file:
+                if pathlib.Path(video_file).suffix == ".mp4":
+                    self.load_video_button.place_forget()
+                    self.video_file = video_file
+                    self.player = tkvideo.tkvideo(video_file, self.video_label, loop=False,
+                                                  size=(self.video_width, self.video_height),
+                                                  keep_ratio=True,
+                                                  play_button=self.play_button,
+                                                  pause_image=self.pause_image,
+                                                  play_image=self.play_image,
+                                                  slider=self.video_slider,
+                                                  slider_var=self.frame_var)
+                    self.video_loaded = True
+        except Exception as e:
+            messagebox.showerror("Error", f"Error loading video:\n{str(e)}")
+            print(str(e))
+
 
 
 class ViewE4:
@@ -516,6 +544,9 @@ class ViewE4:
                                  self.e4.bvp[-64:], self.e4.bvp_timestamps[-64:],
                                  self.e4.gsr[-4:], self.e4.gsr_timestamps[-4:],
                                  self.e4.tmp[-4:], self.e4.tmp_timestamps[-4:],
+                                 # Key tag
+                                 [],
+                                 # Frame index
                                  [])
                             )
                         else:
@@ -626,14 +657,13 @@ class KeystrokeDataFields:
                                                               height=height - th_offset, width=t_width,
                                                               column_dict=sh_column_dict,
                                                               heading_dict=sh_heading_dict,
-                                                              double_bind=self.delete_event,
+                                                              # double_bind=self.delete_event,
                                                               anchor=N,
                                                               tag_dict=treeview_bind_tag_dict,
                                                               fs_offset=fs_offset)
 
         self.key_explanation = Label(self.frame, font=field_font, text="Delete Last Event: Backspace"
-                                                                       "\nDouble Click Any Event to Delete"
-                                                                       "\nUndo Delete: +/= Button", justify=LEFT)
+                                                                       "\nUndo Last Delete: Right Ctrl", justify=LEFT)
         self.key_explanation.place(x=((width * 0.75) + 30) - ((width * 0.25) * 0.5),
                                    y=height - (th_offset / 2), anchor=NW)
 
@@ -674,18 +704,15 @@ class KeystrokeDataFields:
                                                                     tags=(treeview_tags[len(self.event_history) % 2])))
         self.sh_treeview.see(self.sh_treeview_parents[-1])
 
-    def delete_event(self, event):
-        self.current_selection2 = self.sh_treeview.identify_row(event.y)
-        if self.current_selection2:
-            index = self.sh_treeview_parents.index(str(self.current_selection2))
-            self.sh_treeview.delete(self.sh_treeview_parents[index])
-            self.sh_treeview_parents.pop(index)
-            self.event_history.pop(index)
+    def undo_last_delete(self):
+        if self.deleted_event:
+            self.add_session_event(self.deleted_event)
 
     def delete_last_event(self):
         if self.event_history:
             self.sh_treeview.delete(self.sh_treeview_parents[len(self.event_history) - 1])
             self.sh_treeview_parents.pop(len(self.event_history) - 1)
+            self.deleted_event = self.event_history[-1]
             self.event_history.pop(len(self.event_history) - 1)
 
     def delete_dur_binding(self):
