@@ -74,6 +74,11 @@ def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, se
     return treeview, file_scroll
 
 
+def clear_treeview(widget: Treeview):
+    for children in widget.get_children():
+        widget.delete(children)
+
+
 def select_focus(widget: Treeview, selection):
     selection = str(selection)
     widget.selection_set(selection)

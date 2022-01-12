@@ -3,25 +3,22 @@ import pathlib
 import pickle
 import threading
 import time
+import traceback
 from tkinter import *
 from tkinter import filedialog, messagebox
-from tkinter.ttk import Treeview, Style
+from tkinter.ttk import Style
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image, ImageTk
+import tkvideo
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg)
 # Implement the default Matplotlib key bindings.
 from matplotlib.figure import Figure
 from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient
-import traceback
-from gif_player import ImageLabel
-import tkvideo
-
 # Custom library imports
-from tkinter_utils import build_treeview
-from ui_params import treeview_bind_tag_dict
+from tkinter_utils import build_treeview, clear_treeview
+from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags
 
 
 class OutputViews:
@@ -152,15 +149,16 @@ class ViewVideo:
     def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60):
         self.root = root
         self.video_label = Label(self.root, bg='white')
-        self.video_height, self.video_width = height-200, width-10
-        self.video_label.place(x=width/2, y=5, width=width-10, height=height-200, anchor=N)
+        self.video_height, self.video_width = height - 200, width - 10
+        self.video_label.place(x=width / 2, y=5, width=width - 10, height=height - 200, anchor=N)
         self.load_video_button = Button(self.root, text="Load Video", font=field_font, command=self.load_video)
-        self.load_video_button.place(x=width/2, y=5+(self.video_height/2), height=button_size[1], width=button_size[0],
+        self.load_video_button.place(x=width / 2, y=5 + (self.video_height / 2), height=button_size[1],
+                                     width=button_size[0],
                                      anchor=CENTER)
         self.play_image = PhotoImage(file='images/video-start.png')
         self.pause_image = PhotoImage(file='images/video-pause.png')
         self.play_button = Button(self.root, image=self.play_image)
-        self.play_button.place(x=5, y=self.video_height+40, anchor=NW)
+        self.play_button.place(x=5, y=self.video_height + 40, anchor=NW)
         self.frame_var = IntVar(self.root)
         self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
         self.video_slider.config(length=self.video_width)
@@ -170,7 +168,7 @@ class ViewVideo:
         event_column_dict = {"1": ["Event Tag", 'w', 1, YES, 'w'],
                              "2": ["Event Frame", 'w', 1, YES, 'w']}
         self.event_treeview, self.event_fs = build_treeview(self.root,
-                                                            x=20, y=self.video_height+90,
+                                                            x=20, y=self.video_height + 90,
                                                             height=120,
                                                             width=width - 25,
                                                             heading_dict=event_header_dict,
@@ -208,14 +206,14 @@ class ViewE4:
         empatica_label.place(x=connection_offset, y=start_y, anchor=CENTER)
 
         self.empatica_button = Button(self.root, text="Start Server", command=self.start_e4_server, font=field_font)
-        self.empatica_button.place(x=connection_offset, y=start_y+(field_offset/2),
+        self.empatica_button.place(x=connection_offset, y=start_y + (field_offset / 2),
                                    width=button_size[0], height=button_size[1], anchor=CENTER)
 
         e4_heading_dict = {"#0": ["Visible E4s", 'c', 1, YES, 'c']}
         self.e4_treeview, self.e4_filescroll = build_treeview(self.root,
                                                               x=connection_offset,
                                                               y=start_y + field_offset,
-                                                              height=height*0.5, width=width*0.25,
+                                                              height=height * 0.5, width=width * 0.25,
                                                               heading_dict=e4_heading_dict, anchor=N,
                                                               fs_offset=fs_offset)
         self.tree_parents = []
@@ -225,23 +223,23 @@ class ViewE4:
         self.connect_button = Button(self.root, text="Connect",
                                      command=self.connect_to_e4, width=12, font=field_font)
         self.connect_button.place(x=connection_offset, y=start_y + field_offset + height * 0.5,
-                                  width=(width*0.25)*0.5, height=button_size[1], anchor=NE)
+                                  width=(width * 0.25) * 0.5, height=button_size[1], anchor=NE)
 
         self.streaming_button = Button(self.root, text="Stream",
                                        command=self.start_e4_streaming, width=12, font=field_font)
         self.streaming_button.place(x=connection_offset, y=start_y + field_offset + height * 0.5,
-                                    width=(width*0.25)*0.5, height=button_size[1], anchor=NW)
+                                    width=(width * 0.25) * 0.5, height=button_size[1], anchor=NW)
 
         self.disconnected_image = PhotoImage(file='images/disconnected.png')
         self.connected_image = PhotoImage(file='images/connected.png')
         self.connected_label = Label(self.root, image=self.disconnected_image)
-        self.connected_label.place(x=connection_offset - ((width*0.25)*0.5)*0.5,
+        self.connected_label.place(x=connection_offset - ((width * 0.25) * 0.5) * 0.5,
                                    y=(start_y + field_offset + height * 0.5) + button_size[1], anchor=N)
 
         self.streaming_image = PhotoImage(file='images/streaming.png')
         self.nostreaming_image = PhotoImage(file='images/nostreaming.png')
         self.streaming_label = Label(self.root, image=self.nostreaming_image)
-        self.streaming_label.place(x=connection_offset + ((width*0.25)*0.5)*0.5,
+        self.streaming_label.place(x=connection_offset + ((width * 0.25) * 0.5) * 0.5,
                                    y=(start_y + field_offset + height * 0.5) + button_size[1], anchor=N)
 
         self.error_thread = None
@@ -266,44 +264,44 @@ class ViewE4:
         fig_height = (height - 70) / 3
 
         self.hr_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.hr_canvas.place(x=fig_offset + (fig_width*0.2), y=start_y)
+        self.hr_canvas.place(x=fig_offset + (fig_width * 0.2), y=start_y)
         self.hr_image = PhotoImage(file='images/heartrate.png')
         self.hr_canvas.create_image(0, 0, anchor=NW, image=self.hr_image)
 
         self.hr_label = Label(self.root, text="N/A", font=field_font)
-        self.hr_label.place(x=fig_offset + (fig_width*0.2) + 50, y=start_y+10, anchor=NW)
+        self.hr_label.place(x=fig_offset + (fig_width * 0.2) + 50, y=start_y + 10, anchor=NW)
 
         self.temp_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.temp_canvas.place(x=fig_offset + (fig_width*0.4), y=start_y)
+        self.temp_canvas.place(x=fig_offset + (fig_width * 0.4), y=start_y)
         self.temp_image = PhotoImage(file='images/thermometer.png')
         self.temp_canvas.create_image(0, 0, anchor=NW, image=self.temp_image)
 
         self.temp_label = Label(self.root, text="N/A", font=field_font)
-        self.temp_label.place(x=fig_offset + (fig_width*0.4) + 50, y=start_y+10, anchor=NW)
+        self.temp_label.place(x=fig_offset + (fig_width * 0.4) + 50, y=start_y + 10, anchor=NW)
 
         self.wrist_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.wrist_canvas.place(x=fig_offset + (fig_width*0.6), y=start_y, anchor=NW)
+        self.wrist_canvas.place(x=fig_offset + (fig_width * 0.6), y=start_y, anchor=NW)
         self.on_wrist_image = PhotoImage(file='images/onwrist.png')
         self.off_wrist_image = PhotoImage(file='images/offwrist.png')
         self.wrist_container = self.wrist_canvas.create_image(20, 20, anchor=CENTER, image=self.off_wrist_image)
         self.wrist = False
 
         self.wrist_label = Label(self.root, text="Off", font=field_font)
-        self.wrist_label.place(x=fig_offset + (fig_width*0.6) + 50, y=start_y+10, anchor=NW)
+        self.wrist_label.place(x=fig_offset + (fig_width * 0.6) + 50, y=start_y + 10, anchor=NW)
 
         self.bat_image_100 = PhotoImage(file='images/battery100.png')
         self.bat_image_75 = PhotoImage(file='images/battery75.png')
         self.bat_image_50 = PhotoImage(file='images/battery50.png')
         self.bat_image_25 = PhotoImage(file='images/battery25.png')
         self.bat_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
-        self.bat_canvas.place(x=fig_offset + (fig_width*0.8), y=start_y)
+        self.bat_canvas.place(x=fig_offset + (fig_width * 0.8), y=start_y)
         self.bat_container = self.bat_canvas.create_image(20, 20, anchor=CENTER, image=self.bat_image_100)
 
         self.bat_label = Label(self.root, text="N/A", font=field_font)
-        self.bat_label.place(x=fig_offset + (fig_width*0.8) + 50, y=start_y+10, anchor=NW)
+        self.bat_label.place(x=fig_offset + (fig_width * 0.8) + 50, y=start_y + 10, anchor=NW)
 
         px = 1 / plt.rcParams['figure.dpi']
-        self.fig = Figure(figsize=(fig_width*px, fig_height*px), dpi=100)
+        self.fig = Figure(figsize=(fig_width * px, fig_height * px), dpi=100)
         self.fig.patch.set_facecolor(fig_color)
         self.acc_plt = self.fig.add_subplot(111)
         plt.gcf().subplots_adjust(bottom=0.15)
@@ -314,7 +312,7 @@ class ViewE4:
         self.ani = animation.FuncAnimation(self.fig, self.animate, fargs=([]), interval=500)
         self.canvas.get_tk_widget().place(x=fig_offset + 30, y=70, anchor=NW)
 
-        self.fig1 = Figure(figsize=(fig_width*px, fig_height*px), dpi=100)
+        self.fig1 = Figure(figsize=(fig_width * px, fig_height * px), dpi=100)
         self.fig1.patch.set_facecolor(fig_color)
         self.bvp_plt = self.fig1.add_subplot(111)
         plt.gcf().subplots_adjust(bottom=0.15)
@@ -325,7 +323,7 @@ class ViewE4:
         self.ani1 = animation.FuncAnimation(self.fig1, self.bvp_animate, fargs=([]), interval=500)
         self.canvas1.get_tk_widget().place(x=fig_offset + 30, y=70 + fig_height, anchor=NW)
 
-        self.fig2 = Figure(figsize=(fig_width*px, fig_height*px), dpi=100)
+        self.fig2 = Figure(figsize=(fig_width * px, fig_height * px), dpi=100)
         self.fig2.patch.set_facecolor(fig_color)
         self.gsr_plt = self.fig2.add_subplot(111)
         plt.gcf().subplots_adjust(bottom=0.15)
@@ -389,7 +387,7 @@ class ViewE4:
                 if self.e4_client.connected:
                     try:
                         self.e4_client.start_streaming()
-                        self.ovu.e4_view.start_plot(self.e4_client)
+                        self.start_plot(self.e4_client)
                         self.streaming_label.config(image=self.streaming_image)
                     except Exception as e:
                         messagebox.showerror("Exception Encountered",
@@ -574,17 +572,19 @@ class KeystrokeDataFields:
     def __init__(self, parent, keystroke_file, height, width,
                  field_font, header_font, button_size):
         separation_distance = 30
-        th_offset = 60
-        sh_exp_offset = 30
         fs_offset = 10 + ((width * 0.25) * 0.5)
         t_width = width * 0.25
-        t_y = 30
+
+        start_y = 25
+        t_y = start_y + 15
+        th_offset = t_y * 2
+        sh_exp_offset = th_offset
+
         self.height, self.width = height, width
         self.frame = parent
 
         keystroke_label = Label(self.frame, text="Frequency Bindings", font=header_font)
-        keystroke_label.place(x=(width * 0.25) - 30, y=15, anchor=CENTER)
-
+        keystroke_label.place(x=(width * 0.25) - 30, y=start_y, anchor=CENTER)
         freq_heading_dict = {"#0": ["Char", 'c', 1, YES, 'c']}
         freq_column_dict = {"1": ["Freq", 'c', 1, YES, 'c'],
                             "2": ["Tag", 'c', 1, YES, 'c']}
@@ -593,15 +593,14 @@ class KeystrokeDataFields:
                                                                   height=height - th_offset, width=t_width,
                                                                   column_dict=freq_column_dict,
                                                                   heading_dict=freq_heading_dict,
-                                                                  button_1_bind=self.get_selection,
-                                                                  double_bind=self.change_keybind,
+                                                                  button_1_bind=self.get_freq_selection,
+                                                                  double_bind=self.change_freq_keybind,
                                                                   anchor=N,
                                                                   tag_dict=treeview_bind_tag_dict,
                                                                   fs_offset=fs_offset)
 
         dur_label = Label(self.frame, text="Duration Bindings", font=header_font)
-        dur_label.place(x=width * 0.5, y=15, anchor=CENTER)
-
+        dur_label.place(x=width * 0.5, y=start_y, anchor=CENTER)
         dur_heading_dict = {"#0": ["Char", 'c', 1, YES, 'c']}
         dur_column_dict = {"1": ["Dur", 'c', 1, YES, 'c'],
                            "2": ["Total", 'c', 1, YES, 'c'],
@@ -611,15 +610,14 @@ class KeystrokeDataFields:
                                                                 height=height - th_offset, width=t_width,
                                                                 column_dict=dur_column_dict,
                                                                 heading_dict=dur_heading_dict,
-                                                                button_1_bind=self.get_selection1,
-                                                                double_bind=self.change_keybind1,
+                                                                button_1_bind=self.get_dur_selection,
+                                                                double_bind=self.change_dur_keybind,
                                                                 anchor=N,
                                                                 tag_dict=treeview_bind_tag_dict,
                                                                 fs_offset=fs_offset)
 
         sh_label = Label(self.frame, text="Session History", font=header_font)
-        sh_label.place(x=(width * 0.75) + 30, y=15, anchor=CENTER)
-
+        sh_label.place(x=(width * 0.75) + 30, y=start_y, anchor=CENTER)
         sh_heading_dict = {"#0": ["Event", 'c', 1, YES, 'c']}
         sh_column_dict = {"1": ["Time", 'c', 1, YES, 'c']}
         self.sh_treeview, self.sh_filescroll = build_treeview(self.frame,
@@ -636,11 +634,12 @@ class KeystrokeDataFields:
                                                                        "\nDouble Click Any Event to Delete"
                                                                        "\nUndo Delete: +/= Button", justify=LEFT)
         self.key_explanation.place(x=((width * 0.75) + 30) - ((width * 0.25) * 0.5),
-                                   y=height - sh_exp_offset, anchor=NW)
+                                   y=height - (th_offset / 2), anchor=NW)
 
         self.init_background_vars(keystroke_file)
 
     def init_background_vars(self, keystroke_file):
+        # Setup variables used
         self.keystroke_json = None
         self.new_keystroke = False
         self.bindings = []
@@ -649,7 +648,6 @@ class KeystrokeDataFields:
         self.bindings_freq = []
         self.key_file = keystroke_file
         self.conditions = []
-        self.open_keystroke_file()
         self.freq_strings = []
         self.freq_key_strings = []
         self.dur_sticky = []
@@ -657,9 +655,11 @@ class KeystrokeDataFields:
         self.sticky_dur = []
         self.sh_treeview_parents, self.freq_treeview_parents, self.dur_treeview_parents = [], [], []
         self.sh_c_selection, self.freq_c_selection, self.dur_c_selection = "I000", "I000", "I000"
-        # self.populate_bindings()
-        # self.populate_bindings1()
-        # self.populate_bindings2()
+        # Access files and populate on screen
+        self.open_keystroke_file()
+        self.populate_freq_bindings()
+        self.populate_dur_bindings()
+        self.populate_sh_bindings()
 
     def add_session_event(self, events):
         for event in events:
@@ -668,30 +668,30 @@ class KeystrokeDataFields:
             else:
                 start_time = event[1]
             self.event_history.append(event)
-            self.tree_parents2.append(self.treeview2.insert("", 'end', str(len(self.event_history)),
-                                                            values=(self.event_history[-1][0], start_time),
-                                                            tags=(self.tags[len(self.event_history) % 2])))
-        self.treeview2.see(self.tree_parents2[-1])
+            self.sh_treeview_parents.append(self.sh_treeview.insert("", 'end', str(len(self.event_history)),
+                                                                    values=(self.event_history[-1][0], start_time),
+                                                                    tags=(treeview_tags[len(self.event_history) % 2])))
+        self.sh_treeview.see(self.sh_treeview_parents[-1])
 
     def delete_event(self, event):
-        self.current_selection2 = self.treeview2.identify_row(event.y)
+        self.current_selection2 = self.sh_treeview.identify_row(event.y)
         if self.current_selection2:
-            index = self.tree_parents2.index(str(self.current_selection2))
-            self.treeview2.delete(self.tree_parents2[index])
-            self.tree_parents2.pop(index)
+            index = self.sh_treeview_parents.index(str(self.current_selection2))
+            self.sh_treeview.delete(self.sh_treeview_parents[index])
+            self.sh_treeview_parents.pop(index)
             self.event_history.pop(index)
 
     def delete_last_event(self):
         if self.event_history:
-            self.treeview2.delete(self.tree_parents2[len(self.event_history) - 1])
-            self.tree_parents2.pop(len(self.event_history) - 1)
+            self.sh_treeview.delete(self.sh_treeview_parents[len(self.event_history) - 1])
+            self.sh_treeview_parents.pop(len(self.event_history) - 1)
             self.event_history.pop(len(self.event_history) - 1)
 
     def delete_dur_binding(self):
         if self.current_selection1:
             self.dur_bindings.pop(int(self.current_selection1))
-            self.clear_listbox1()
-            self.populate_bindings1()
+            clear_treeview(self.dur_treeview)
+            self.populate_dur_bindings()
 
     def add_dur_popup(self):
         NewKeyPopup(self, self.frame, True)
@@ -701,20 +701,20 @@ class KeystrokeDataFields:
         for i in range(0, len(self.bindings)):
             if self.bindings[i][1] == key_char:
                 self.bindings_freq[i] += 1
-                self.treeview.set(str(i), column="2", value=self.bindings_freq[i])
+                self.freq_treeview.set(str(i), column="2", value=self.bindings_freq[i])
                 return_bindings.append((self.bindings[i][0], start_time))
         for i in range(0, len(self.dur_bindings)):
             if self.dur_bindings[i][1] == key_char:
                 if self.dur_sticky[i]:
-                    self.treeview1.item(str(i), tags=self.tags[i % 2])
+                    self.dur_treeview.item(str(i), tags=treeview_bind_tags[i % 2])
                     self.dur_sticky[i] = False
                     duration = [self.sticky_start[i], start_time]
                     return_bindings.append((self.dur_bindings[i][0], duration))
                     self.sticky_dur[i] += start_time - self.sticky_start[i]
                     self.sticky_start[i] = 0
-                    self.treeview1.set(str(i), column="3", value=self.sticky_dur[i])
+                    self.dur_treeview.set(str(i), column="3", value=self.sticky_dur[i])
                 else:
-                    self.treeview1.item(str(i), tags=self.tags[2])
+                    self.dur_treeview.item(str(i), tags=treeview_bind_tags[2])
                     self.dur_sticky[i] = True
                     self.sticky_start[i] = start_time
         if return_bindings:
@@ -724,14 +724,14 @@ class KeystrokeDataFields:
     def add_key_popup(self):
         NewKeyPopup(self, self.frame, False)
 
-    def get_selection2(self, event):
-        self.current_selection2 = self.treeview2.identify_row(event.y)
+    def get_sh_selection(self, event):
+        self.current_selection2 = self.sh_treeview.identify_row(event.y)
 
-    def get_selection1(self, event):
-        self.current_selection1 = self.treeview1.identify_row(event.y)
+    def get_dur_selection(self, event):
+        self.current_selection1 = self.dur_treeview.identify_row(event.y)
 
-    def get_selection(self, event):
-        self.current_selection = self.treeview.identify_row(event.y)
+    def get_freq_selection(self, event):
+        self.current_selection = self.freq_treeview.identify_row(event.y)
 
     def import_binding(self):
         pass
@@ -745,66 +745,40 @@ class KeystrokeDataFields:
         with open(self.key_file, 'w') as f:
             json.dump(x, f)
 
-    def delete_binding(self):
+    def delete_freq_binding(self):
         if self.current_selection:
             self.bindings.pop(int(self.current_selection))
-            self.clear_listbox()
-            self.populate_bindings()
+            clear_treeview(self.freq_treeview)
+            self.populate_freq_bindings()
 
-    def fixed_map(self, option):
-        # https://stackoverflow.com/a/62011081
-        # Fix for setting text colour for Tkinter 8.6.9
-        # From: https://core.tcl.tk/tk/info/509cafafae
-        #
-        # Returns the style map for 'option' with any styles starting with
-        # ('!disabled', '!selected', ...) filtered out.
-
-        # style.map() returns an empty list for missing options, so this
-        # should be future-safe.
-        style = Style()
-        return [elm for elm in style.map('Treeview', query_opt=option) if
-                elm[:2] != ('!disabled', '!selected')]
-
-    def change_keybind1(self, event):
-        selection = self.treeview1.identify_row(event.y)
+    def change_dur_keybind(self, event):
+        selection = self.dur_treeview.identify_row(event.y)
         if selection:
             Popup(self, self.frame, int(selection), True)
 
-    def change_keybind(self, event):
-        selection = self.treeview.identify_row(event.y)
+    def change_freq_keybind(self, event):
+        selection = self.freq_treeview.identify_row(event.y)
         if selection:
             Popup(self, self.frame, int(selection), False)
 
-    def update_durbind(self, tag, key):
+    def update_dur_keybind(self, tag, key):
         self.dur_bindings[key] = (self.dur_bindings[key][0], tag)
-        self.treeview1.set(str(key), column="1", value=tag)
+        self.dur_treeview.set(str(key), column="1", value=tag)
 
-    def update_keybind(self, tag, key):
+    def update_freq_keybind(self, tag, key):
         self.bindings[key] = (self.bindings[key][0], tag)
-        self.treeview.set(str(key), column="1", value=tag)
+        self.freq_treeview.set(str(key), column="1", value=tag)
 
-    def add_keybind(self, tag, key):
+    def add_freq_keybind(self, tag, key):
         self.bindings.append((tag, key))
         self.bindings_freq.append(0)
-        self.clear_listbox()
-        self.populate_bindings()
+        clear_treeview(self.freq_treeview)
+        self.populate_freq_bindings()
 
-    def add_durbind(self, tag, key):
+    def add_dur_keybind(self, tag, key):
         self.dur_bindings.append((tag, key))
-        self.clear_listbox1()
-        self.populate_bindings1()
-
-    def clear_listbox2(self):
-        for children in self.treeview2.get_children():
-            self.treeview2.delete(children)
-
-    def clear_listbox1(self):
-        for children in self.treeview1.get_children():
-            self.treeview1.delete(children)
-
-    def clear_listbox(self):
-        for children in self.treeview.get_children():
-            self.treeview.delete(children)
+        clear_treeview(self.dur_treeview)
+        self.populate_dur_bindings()
 
     def open_keystroke_file(self):
         with open(self.key_file) as f:
@@ -824,31 +798,31 @@ class KeystrokeDataFields:
                     for binding in self.keystroke_json[key]:
                         self.conditions.append(binding)
 
-    def populate_bindings(self):
+    def populate_freq_bindings(self):
         for i in range(0, len(self.bindings)):
             bind = self.bindings[i]
-            self.tree_parents.append(self.treeview.insert("", 'end', str(i),
-                                                          values=(bind[1], self.bindings_freq[i], bind[0]),
-                                                          tags=(self.tags[i % 2])))
+            self.freq_treeview_parents.append(self.freq_treeview.insert("", 'end', text=str(bind[1]),
+                                                                        values=(self.bindings_freq[i], bind[0]),
+                                                                        tags=(treeview_bind_tags[i % 2])))
 
-    def populate_bindings1(self):
+    def populate_dur_bindings(self):
         for i in range(0, len(self.dur_bindings)):
             bind = self.dur_bindings[i]
             self.dur_sticky.append(False)
             self.sticky_start.append(0)
             self.sticky_dur.append(0)
-            self.tree_parents1.append(self.treeview1.insert("", 'end', str(i),
-                                                            values=(bind[1], 0, 0, bind[0]),
-                                                            tags=(self.tags[i % 2])))
+            self.dur_treeview_parents.append(self.dur_treeview.insert("", 'end', text=str(bind[1]),
+                                                                      values=(0, 0, bind[0]),
+                                                                      tags=(treeview_bind_tags[i % 2])))
 
-    def populate_bindings2(self):
+    def populate_sh_bindings(self):
         if self.event_history:
             for i in range(0, len(self.event_history)):
                 print(str(i))
                 bind = self.event_history[i]
-                self.tree_parents2.append(self.treeview2.insert("", 'end', str(i),
-                                                                values=(bind[0], bind[1]),
-                                                                tags=(self.tags[i % 2])))
+                self.sh_treeview_parents.append(self.sh_treeview.insert("", 'end', text=str(bind[0]),
+                                                                        values=(bind[1]),
+                                                                        tags=(treeview_bind_tags[i % 2])))
 
 
 class NewKeyPopup:
@@ -922,6 +896,7 @@ class Popup:
             else:
                 self.caller.update_durbind(self.entry.get(), self.tag)
             self.popup_root.destroy()
+
 
 class ViewTactor:
     pass

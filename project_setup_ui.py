@@ -397,9 +397,9 @@ class ProjectSetupWindow:
         if self.frequency_keys:
             for i in range(0, len(self.frequency_keys)):
                 self.frequency_treeview_parents.append(
-                    self.frequency_key_treeview.insert("", 'end', str(i), text=str(self.frequency_keys[i][1]),
-                                                       values=str(self.frequency_keys[i][0]),
-                                                       tags=(treeview_tags[(i) % 2])))
+                    self.frequency_key_treeview.insert("", 'end', text=str(self.frequency_keys[i][1]),
+                                                       values=(str(self.frequency_keys[i][0]),),
+                                                       tags=(treeview_tags[i % 2])))
 
     def clear_frequency_treeview(self):
         for parent in self.frequency_treeview_parents:
@@ -418,9 +418,9 @@ class ProjectSetupWindow:
         if self.duration_keys:
             for i in range(0, len(self.duration_keys)):
                 self.duration_treeview_parents.append(
-                    self.duration_key_treeview.insert("", 'end', str(i), text=str(self.duration_keys[i][1]),
-                                                      values=(self.duration_keys[i][0]),
-                                                      tags=(treeview_tags[(i) % 2])))
+                    self.duration_key_treeview.insert("", 'end', text=str(self.duration_keys[i][1]),
+                                                      values=(str(self.duration_keys[i][0]),),
+                                                      tags=(treeview_tags[i % 2])))
 
     def select_frequency_key(self, event):
         selection = self.frequency_key_treeview.identify_row(event.y)
