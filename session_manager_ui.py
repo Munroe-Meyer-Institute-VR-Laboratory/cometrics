@@ -44,18 +44,18 @@ class SessionTimeFields:
         self.session_time = 0
         self.break_time = 0
         session_time_label = Label(self.frame, text="Session Time", font=(header_font[0], header_font[1], 'bold'))
-        session_time_label.place(x=width/2, y=self.start_y, anchor=CENTER)
+        session_time_label.place(x=width / 2, y=self.start_y, anchor=CENTER)
 
         self.session_time_label = Label(self.frame, text="0:00:00",
                                         font=header_font)
-        self.session_time_label.place(x=width/2, y=self.start_y+(field_offset / 2), anchor=CENTER)
+        self.session_time_label.place(x=width / 2, y=self.start_y + (field_offset / 2), anchor=CENTER)
 
         break_time_label = Label(self.frame, text='Break Time', font=(header_font[0], header_font[1], 'bold'))
-        break_time_label.place(x=width/2, y=self.start_y+((field_offset / 2) * 2), anchor=CENTER)
+        break_time_label.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 2), anchor=CENTER)
 
         self.break_time_label = Label(self.frame, text="0:00:00",
                                       font=header_font)
-        self.break_time_label.place(x=width/2, y=self.start_y+((field_offset / 2) * 3), anchor=CENTER)
+        self.break_time_label.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 3), anchor=CENTER)
 
         self.session_start_label = Label(self.frame, text="Session Started", fg='green',
                                          font=header_font)
@@ -63,13 +63,13 @@ class SessionTimeFields:
                                           font=header_font)
         self.session_stopped_label = Label(self.frame, text="Session Stopped", fg='red',
                                            font=header_font)
-        self.session_stopped_label.place(x=width/2, y=self.start_y+((field_offset / 2) * 4), anchor=CENTER)
+        self.session_stopped_label.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 4), anchor=CENTER)
 
         self.interval_selection = BooleanVar()
         self.interval_checkbutton = Checkbutton(self.frame, text="Reminder Beep (Seconds)",
                                                 variable=self.interval_selection,
                                                 font=header_font, command=self.show_beep_interval)
-        self.interval_checkbutton.place(x=10, y=self.start_y+((field_offset / 2) * 6), anchor=W)
+        self.interval_checkbutton.place(x=10, y=self.start_y + ((field_offset / 2) * 6), anchor=W)
         self.interval_input_var = StringVar()
 
         interval_cmd = self.frame.register(self.validate_number)
@@ -85,22 +85,22 @@ class SessionTimeFields:
                                                    variable=self.session_dur_selection,
                                                    font=header_font,
                                                    command=self.show_session_time)
-        self.session_dur_checkbutton.place(x=10, y=self.start_y+((field_offset / 2) * 7), anchor=W)
+        self.session_dur_checkbutton.place(x=10, y=self.start_y + ((field_offset / 2) * 7), anchor=W)
 
         self.session_toggle_button = Button(self.frame, text="Start Session", bg='#4abb5f',
                                             font=field_font, width=13,
                                             command=self.caller.start_session)
-        self.session_toggle_button.place(x=width/2, y=self.start_y+((field_offset / 2) * 9), anchor=CENTER)
+        self.session_toggle_button.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 9), anchor=CENTER)
         self.key_explanation = Label(self.frame, text="Esc Key", font=field_font,
                                      justify=LEFT)
         self.key_explanation.place(x=width * 0.75, y=self.start_y + ((field_offset / 2) * 9), anchor=W)
 
         self.session_pause_button = Button(self.frame, text="Pause Session", width=13,
                                            font=field_font, command=self.caller.pause_session)
-        self.session_pause_button.place(x=width/2, y=self.start_y+((field_offset / 2) * 10.5), anchor=CENTER)
+        self.session_pause_button.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 10.5), anchor=CENTER)
         self.key_explanation = Label(self.frame, text="Left Ctrl", font=field_font,
                                      justify=LEFT)
-        self.key_explanation.place(x=width*0.75, y=self.start_y+((field_offset / 2) * 10.5), anchor=W)
+        self.key_explanation.place(x=width * 0.75, y=self.start_y + ((field_offset / 2) * 10.5), anchor=W)
 
         self.session_duration = None
         self.beep_th = None
@@ -130,7 +130,7 @@ class SessionTimeFields:
     def show_session_time(self):
         if self.session_dur_selection.get():
             self.session_dur_checkbutton.config(text="Session Duration")
-            self.session_dur_input.place(x=self.width*0.66, y=self.start_y+((self.field_offset / 2) * 7), anchor=W)
+            self.session_dur_input.place(x=self.width * 0.66, y=self.start_y + ((self.field_offset / 2) * 7), anchor=W)
         else:
             self.session_dur_checkbutton.config(text="Session Duration (Seconds)")
             self.session_dur_input.place_forget()
@@ -138,7 +138,7 @@ class SessionTimeFields:
     def show_beep_interval(self):
         if self.interval_selection.get():
             self.interval_checkbutton.config(text="Reminder Beep")
-            self.interval_input.place(x=self.width*0.66, y=self.start_y+((self.field_offset / 2) * 6), anchor=W)
+            self.interval_input.place(x=self.width * 0.66, y=self.start_y + ((self.field_offset / 2) * 6), anchor=W)
         else:
             self.interval_checkbutton.config(text="Reminder Beep (Seconds)")
             self.interval_input.place_forget()
@@ -312,16 +312,17 @@ class PatientDataFields:
             self.patient_labels.append(temp_label)
             temp_label.place(x=5, y=patient_y, anchor=NW)
             if patient_dict[elem + 1][0] is Combobox:
-                temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], textvariable=patient_dict[elem][2], font=field_font)
+                temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select],
+                                                       textvariable=patient_dict[elem][2], font=field_font)
                 temp_entry['values'] = self.conditions
                 temp_entry['state'] = 'readonly'
                 temp_entry.config(font=field_font)
-                temp_entry.place(x=15, y=patient_y + (field_offset / 2), anchor=NW, width=width*0.88)
+                temp_entry.place(x=15, y=patient_y + (field_offset / 2), anchor=NW, width=width * 0.88)
                 self.patient_frames[frame_select].option_add('*TCombobox*Listbox.font', field_font)
             else:
                 temp_entry = patient_dict[elem + 1][0](self.patient_frames[frame_select], font=field_font,
                                                        textvariable=patient_dict[elem][2])
-                temp_entry.place(x=15, y=patient_y + (field_offset / 2), anchor=NW, width=width*0.88)
+                temp_entry.place(x=15, y=patient_y + (field_offset / 2), anchor=NW, width=width * 0.88)
             self.patient_entries.append(temp_entry)
             info_count += 1
             if not info_count % field_count and frame_count != 1:
@@ -442,13 +443,16 @@ class PatientDataFields:
             entry.config(state='disabled')
 
     def get_session_fields(self):
-        return ([self.patient_vars[PatientDataVar.SESS_LOC].get(), self.patient_vars[PatientDataVar.ASSESS_NAME].get(),
-                 self.patient_vars[PatientDataVar.COND_NAME].get(), self.patient_vars[PatientDataVar.PRIM_THER].get(),
-                 self.patient_vars[PatientDataVar.CASE_MGR].get(), self.patient_vars[PatientDataVar.SESS_THER].get(),
-                 self.patient_vars[PatientDataVar.DATA_REC].get(), self.patient_vars[PatientDataVar.PRIM_DATA].get(),
-                 self.patient_vars[PatientDataVar.SESS_NUM].get()],
-                ["Session Location", "Assessment Name", "Condition Name", "Primary Therapist", "Case Manager",
-                 "Session Therapist", "Data Recorder", "Primary Data", "Session Number"])
+        return {"Session Location": self.patient_vars[PatientDataVar.SESS_LOC].get(),
+                "Assessment Name": self.patient_vars[PatientDataVar.ASSESS_NAME].get(),
+                "Condition Name": self.patient_vars[PatientDataVar.COND_NAME].get(),
+                "Primary Therapist": self.patient_vars[PatientDataVar.PRIM_THER].get(),
+                "Case Manager": self.patient_vars[PatientDataVar.CASE_MGR].get(),
+                "Session Therapist": self.patient_vars[PatientDataVar.SESS_THER].get(),
+                "Data Recorder": self.patient_vars[PatientDataVar.DATA_REC].get(),
+                "Primary Data": self.patient_vars[PatientDataVar.PRIM_DATA].get(),
+                "Session Number": self.patient_vars[PatientDataVar.SESS_NUM].get()
+                }
 
 
 class PatientContainer:
@@ -482,6 +486,7 @@ def beep_thread():
 
 class SessionManagerWindow:
     def __init__(self, config, project_setup):
+        self.config = config
         self.window_height, self.window_width = config.get_screen_size()[0], config.get_screen_size()[1]
         if self.window_width == 1920:
             self.header_font = large_header_font
@@ -555,8 +560,8 @@ class SessionManagerWindow:
                                      field_font=self.field_font,
                                      field_offset=self.field_offset)
         self.ovu = OutputViewPanel(root,
-                                   x=(self.logo_width*2)+20,
-                                   y=(self.logo_height + 10)-self.button_size[1],
+                                   x=(self.logo_width * 2) + 20,
+                                   y=(self.logo_height + 10) - self.button_size[1],
                                    height=self.patient_field_height,
                                    width=self.output_width,
                                    button_size=self.button_size,
@@ -642,19 +647,7 @@ class SessionManagerWindow:
 
     def save_session(self):
         # TODO: Redo the saving procedure
-        self.pdf.save_patient_fields()
-        dict_vals, dict_fields = self.pdf.get_session_fields()
-        event_history = self.ovu.key_view.event_history
-        if dict_vals[-1] != self.session_number:
-            if dict_vals[-2] == "Reliability":
-                self.session_file = path.join(pathlib.Path(self.session_file).parent, "session_" +
-                                              str(dict_vals[-1]) + "_" + str(dict_vals[-2]) + ".json")
-            else:
-                self.session_file = path.join(pathlib.Path(self.session_file).parent, "session_" +
-                                              str(dict_vals[-1]) + ".json")
-        elif dict_vals[-2] == "Reliability":
-            self.session_file = path.join(pathlib.Path(self.session_file).parent, "session_" +
-                                          str(dict_vals[-1]) + "_" + str(dict_vals[-2]) + ".json")
+        session_fields = self.pdf.get_session_fields()
         x = {
             "Session Date": self.session_date,
             "Session Start Time": self.session_time,
@@ -662,14 +655,15 @@ class SessionManagerWindow:
             "Pause Time": self.stf.break_time,
             "Keystroke File": self.keystroke_file
         }
-        for val, field in zip(dict_vals, dict_fields):
-            x[field] = val
-        for i in range(0, len(event_history)):
-            x[str(i)] = [event_history[i][0], event_history[i][1]]
-        with open(self.session_file, 'w') as f:
-            json.dump(x, f)
-        self.ovu.save_session(path.join(self.session_dir, "session_" + str(self.session_number) + ".e4"),
-                              self.tag_history)
+        session_fields.update(x)
+        output_session_file = path.join(self.session_dir,
+                                        self.config.get_data_folders()[1],
+                                        session_fields["Primary Data"],
+                                        f"{session_fields['Session Number']}"
+                                        f"{session_fields['Assessment Name'][:2]}"
+                                        f"{session_fields['Condition Name'][:2]}"
+                                        f"{session_fields['Session Date']}.json")
+        self.ovu.save_session(output_session_file, session_fields)
 
     def start_session(self):
         response = self.pdf.check_session_fields()
