@@ -1,5 +1,5 @@
 import tkinter
-from tkinter import TOP, W, N, NW
+from tkinter import TOP, W, N, NW, CENTER
 from tkinter.ttk import Style
 
 from ttk import Treeview
@@ -62,7 +62,7 @@ def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, se
     for tag in tag_dict:
         treeview.tag_configure(tag, background=tag_dict[tag])
     if button_1_bind:
-        treeview.bind("<Button-1>", button_1_bind)
+        treeview.bind("<ButtonRelease-1>", button_1_bind)
     if double_bind:
         treeview.bind("<Double-Button-1>", double_bind)
     if filescroll:

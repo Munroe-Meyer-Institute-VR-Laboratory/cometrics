@@ -11,8 +11,7 @@ import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
 import tkvideo
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg)
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 # Implement the default Matplotlib key bindings.
 from matplotlib.figure import Figure
 from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient
@@ -117,12 +116,17 @@ class OutputViewPanel:
 
     def close(self):
         self.e4_view.stop_plot()
+        self.e4_view.disconnect_e4()
 
     def start_session(self):
         self.e4_view.session_started = True
 
     def stop_session(self):
         self.e4_view.session_started = False
+
+    def check_event(self, key_char, start_time):
+        # TODO: Use this to synchronize events across the output view
+        pass
 
     def save_session(self, filename, keystrokes):
         if self.e4_view.windowed_readings:
@@ -215,7 +219,9 @@ class ViewE4:
                                                               y=start_y + field_offset,
                                                               height=height * 0.5, width=width * 0.25,
                                                               heading_dict=e4_heading_dict, anchor=N,
-                                                              fs_offset=fs_offset)
+                                                              fs_offset=fs_offset,
+                                                              button_1_bind=self.get_selection)
+
         self.tree_parents = []
         self.tags = ['odd', 'even']
         self.current_selection = "I000"
@@ -419,27 +425,23 @@ class ViewE4:
     def list_devices_thread(self):
         self.emp_client.list_connected_devices()
         time.sleep(1)
-        self.clear_device_list()
-        self.populate_device_list()
-
-    def clear_device_list(self):
-        for children in self.e4_treeview.get_children():
-            self.e4_treeview.delete(children)
+        clear_treeview(self.e4_treeview)
         self.e4_treeview_parents = []
+        self.populate_device_list()
 
     def populate_device_list(self):
         for i in range(0, len(self.emp_client.device_list)):
             self.e4_treeview_parents.append(
                 self.e4_treeview.insert("", 'end', str(i),
-                                        text=str(self.emp_client.device_list[i].decode("utf-8")),
+                                        text=str(self.emp_client.device_list[i].decode("utf-8"),),
                                         tags=(treeview_tags[i % 2])))
 
     def get_selection(self, event):
-        self.current_selection = self.e4_treeview.identify_row(event.y)
-        if self.current_selection:
+        selection = self.e4_treeview.identify_row(event.y)
+        if selection:
             if self.emp_client:
                 if len(self.emp_client.device_list) != 0:
-                    self.e4_address = self.emp_client.device_list[int(self.current_selection)]
+                    self.e4_address = self.emp_client.device_list[int(selection)]
                 else:
                     messagebox.showerror("Error", "No connected E4s!")
             else:
@@ -578,7 +580,6 @@ class KeystrokeDataFields:
         start_y = 25
         t_y = start_y + 15
         th_offset = t_y * 2
-        sh_exp_offset = th_offset
 
         self.height, self.width = height, width
         self.frame = parent
@@ -593,8 +594,8 @@ class KeystrokeDataFields:
                                                                   height=height - th_offset, width=t_width,
                                                                   column_dict=freq_column_dict,
                                                                   heading_dict=freq_heading_dict,
-                                                                  button_1_bind=self.get_freq_selection,
-                                                                  double_bind=self.change_freq_keybind,
+                                                                  # button_1_bind=self.get_freq_selection,
+                                                                  # double_bind=self.change_freq_keybind,
                                                                   anchor=N,
                                                                   tag_dict=treeview_bind_tag_dict,
                                                                   fs_offset=fs_offset)
@@ -610,8 +611,8 @@ class KeystrokeDataFields:
                                                                 height=height - th_offset, width=t_width,
                                                                 column_dict=dur_column_dict,
                                                                 heading_dict=dur_heading_dict,
-                                                                button_1_bind=self.get_dur_selection,
-                                                                double_bind=self.change_dur_keybind,
+                                                                # button_1_bind=self.get_dur_selection,
+                                                                # double_bind=self.change_dur_keybind,
                                                                 anchor=N,
                                                                 tag_dict=treeview_bind_tag_dict,
                                                                 fs_offset=fs_offset)
@@ -821,7 +822,7 @@ class KeystrokeDataFields:
                 print(str(i))
                 bind = self.event_history[i]
                 self.sh_treeview_parents.append(self.sh_treeview.insert("", 'end', text=str(bind[0]),
-                                                                        values=(bind[1]),
+                                                                        values=(bind[1],),
                                                                         tags=(treeview_bind_tags[i % 2])))
 
 

@@ -1,16 +1,6 @@
 import json
-import threading
-import time
-import traceback
 from tkinter import *
-from tkinter import messagebox
-from tkinter.ttk import Treeview, Style
-
-# Custom library imports
-from pyempatica.empaticae4 import EmpaticaClient, EmpaticaE4, EmpaticaDataStreams
-
-from tkinter_utils import build_treeview, get_treeview_style
-from ui_params import treeview_tags
+from tkinter.ttk import Treeview
 
 
 class KeystrokeDataFields:

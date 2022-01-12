@@ -576,23 +576,22 @@ class SessionManagerWindow:
         root.mainloop()
 
     def restart_program(self):
-        # self.stf.stop_timer()
-        # self.ovu.close()
-        # self.edf.disconnect_e4()
-        # self.listener.stop()
+        self.stf.stop_timer()
+        self.ovu.close()
+        self.listener.stop()
         self.root.quit()
         self.root.destroy()
 
     def on_closing(self):
-        # self.stf.stop_timer()
-        # self.ovu.close()
-        # self.edf.disconnect_e4()
-        # self.listener.stop()
-        # self.root.quit()
-        # self.root.destroy()
+        self.stf.stop_timer()
+        self.ovu.close()
+        self.listener.stop()
+        self.root.quit()
+        self.root.destroy()
         sys.exit(0)
 
     def get_session_file(self, directory):
+        # TODO: Refactor this as well
         if path.isdir(self.session_dir):
             _, _, files = next(walk(directory))
             for file in files:
@@ -642,6 +641,7 @@ class SessionManagerWindow:
             print(str(e))
 
     def save_session(self):
+        # TODO: Redo the saving procedure
         self.pdf.save_patient_fields()
         dict_vals, dict_fields = self.pdf.get_session_fields()
         event_history = self.ovu.key_view.event_history
