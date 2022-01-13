@@ -151,8 +151,8 @@ class SessionTimeFields:
                     self.session_time += 1
                     for i in range(0, len(self.kdf.dur_sticky)):
                         if self.kdf.dur_sticky[i]:
-                            self.kdf.treeview1.set(str(i), column="2",
-                                                   value=self.session_time - self.kdf.sticky_start[i])
+                            self.kdf.dur_treeview.set(str(i), column="1",
+                                                      value=self.session_time - self.kdf.sticky_start[i])
                     if self.session_duration:
                         if self.session_time >= self.session_duration:
                             self.stop_session()
@@ -172,7 +172,7 @@ class SessionTimeFields:
             self.interval_thread = threading.Thread(target=self.beep_interval_thread)
             self.interval_thread.start()
         self.session_stopped_label.place_forget()
-        self.session_start_label.place(x=20, y=66)
+        self.session_start_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4), anchor=CENTER)
 
     def stop_session(self, caller_save=True):
         self.session_toggle_button['text'] = "Restart Session"
@@ -183,7 +183,8 @@ class SessionTimeFields:
             self.session_paused_label.place_forget()
         elif self.session_started:
             self.session_start_label.place_forget()
-        self.session_stopped_label.place(x=20, y=66)
+        self.session_stopped_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
+                                         anchor=CENTER)
         self.session_started = False
         if caller_save:
             self.caller.stop_session()
@@ -192,10 +193,12 @@ class SessionTimeFields:
         if not self.session_paused:
             if self.session_started:
                 self.session_start_label.place_forget()
-            self.session_paused_label.place(x=20, y=66)
+            self.session_paused_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
+                                            anchor=CENTER)
             self.session_paused = True
         else:
-            self.session_start_label.place(x=20, y=66)
+            self.session_start_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
+                                           anchor=CENTER)
             self.session_paused_label.place_forget()
             self.session_paused = False
 
@@ -567,7 +570,7 @@ class SessionManagerWindow:
                                    ksf=self.keystroke_file,
                                    field_font=self.field_font,
                                    header_font=self.header_font)
-        # self.stf.kdf = self.ovu.key_view
+        self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root,
                                      x=5,
                                      y=self.logo_height + 10,
@@ -639,10 +642,12 @@ class SessionManagerWindow:
         # Only process key input if the main window has focus, otherwise ignore
         if self.root.focus_get():
             try:
-                # Enforce lower case for all inputs that are characters
-                key_char = key.char
-                key_char = str(key_char).lower()
-                self.handle_key_press(key_char)
+                # Only process key input if session has started
+                if self.stf.session_started:
+                    # Enforce lower case for all inputs that are characters
+                    key_char = key.char
+                    key_char = str(key_char).lower()
+                    self.handle_key_press(key_char)
             except AttributeError:
                 self.handle_global_press(key)
 

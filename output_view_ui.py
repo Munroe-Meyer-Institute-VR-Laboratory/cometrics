@@ -706,7 +706,8 @@ class KeystrokeDataFields:
                 start_time = event[1]
             self.event_history.append(event)
             self.sh_treeview_parents.append(self.sh_treeview.insert("", 'end', str(len(self.event_history)),
-                                                                    values=(self.event_history[-1][0], start_time),
+                                                                    text=str(self.event_history[-1][0]),
+                                                                    values=(start_time,),
                                                                     tags=(treeview_tags[len(self.event_history) % 2])))
         self.sh_treeview.see(self.sh_treeview_parents[-1])
 
@@ -735,7 +736,7 @@ class KeystrokeDataFields:
         for i in range(0, len(self.bindings)):
             if self.bindings[i][1] == key_char:
                 self.bindings_freq[i] += 1
-                self.freq_treeview.set(str(i), column="2", value=self.bindings_freq[i])
+                self.freq_treeview.set(str(i), column="1", value=self.bindings_freq[i])
                 return_bindings.append((self.bindings[i][0], start_time))
         for i in range(0, len(self.dur_bindings)):
             if self.dur_bindings[i][1] == key_char:
@@ -746,13 +747,12 @@ class KeystrokeDataFields:
                     return_bindings.append((self.dur_bindings[i][0], duration))
                     self.sticky_dur[i] += start_time - self.sticky_start[i]
                     self.sticky_start[i] = 0
-                    self.dur_treeview.set(str(i), column="3", value=self.sticky_dur[i])
+                    self.dur_treeview.set(str(i), column="2", value=self.sticky_dur[i])
                 else:
                     self.dur_treeview.item(str(i), tags=treeview_bind_tags[2])
                     self.dur_sticky[i] = True
                     self.sticky_start[i] = start_time
         if return_bindings:
-            self.add_session_event(return_bindings)
             return return_bindings
 
     def add_key_popup(self):
@@ -835,7 +835,7 @@ class KeystrokeDataFields:
     def populate_freq_bindings(self):
         for i in range(0, len(self.bindings)):
             bind = self.bindings[i]
-            self.freq_treeview_parents.append(self.freq_treeview.insert("", 'end', text=str(bind[1]),
+            self.freq_treeview_parents.append(self.freq_treeview.insert("", 'end', str(i), text=str(bind[1]),
                                                                         values=(self.bindings_freq[i], bind[0]),
                                                                         tags=(treeview_bind_tags[i % 2])))
 
@@ -845,7 +845,7 @@ class KeystrokeDataFields:
             self.dur_sticky.append(False)
             self.sticky_start.append(0)
             self.sticky_dur.append(0)
-            self.dur_treeview_parents.append(self.dur_treeview.insert("", 'end', text=str(bind[1]),
+            self.dur_treeview_parents.append(self.dur_treeview.insert("", 'end', str(i), text=str(bind[1]),
                                                                       values=(0, 0, bind[0]),
                                                                       tags=(treeview_bind_tags[i % 2])))
 
@@ -854,7 +854,7 @@ class KeystrokeDataFields:
             for i in range(0, len(self.event_history)):
                 print(str(i))
                 bind = self.event_history[i]
-                self.sh_treeview_parents.append(self.sh_treeview.insert("", 'end', text=str(bind[0]),
+                self.sh_treeview_parents.append(self.sh_treeview.insert("", 'end', str(i), text=str(bind[0]),
                                                                         values=(bind[1],),
                                                                         tags=(treeview_bind_tags[i % 2])))
 
