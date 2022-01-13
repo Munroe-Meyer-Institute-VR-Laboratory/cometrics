@@ -3,6 +3,7 @@ import os
 import pathlib
 from tkinter import *
 from tkinter import messagebox, filedialog
+
 import yaml
 from ttk import Combobox
 
@@ -10,8 +11,8 @@ from ksf_utils import import_ksf
 from logger_util import *
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
     NewKeyPopup
-from ui_params import project_treeview_params as ptp, treeview_tags, ksf_distance, window_ratio, large_header_font, \
-    large_field_font, medium_header_font, medium_field_font, small_header_font, small_field_font, large_treeview_font, \
+from ui_params import project_treeview_params as ptp, treeview_tags, window_ratio, large_field_font, medium_field_font, \
+    small_field_font, large_treeview_font, \
     medium_treeview_font, small_treeview_font, large_treeview_rowheight, medium_treeview_rowheight, \
     small_treeview_rowheight, large_button_size, medium_button_size, small_button_size, ui_title
 

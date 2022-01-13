@@ -580,7 +580,7 @@ class SessionManagerWindow:
                                      conditions=project_setup.conditions,
                                      header_font=self.header_font,
                                      field_font=self.field_font,
-                                     field_offset=self.field_offset, debug=False)
+                                     field_offset=self.field_offset, debug=True)
         # endregion
 
         # Setup key listener
@@ -636,13 +636,15 @@ class SessionManagerWindow:
             messagebox.showerror("Error", "Primary session folder could not be found!")
 
     def on_press(self, key):
-        try:
-            # Enforce lower case for all inputs that are characters
-            key_char = key.char
-            key_char = str(key_char).lower()
-            self.handle_key_press(key_char)
-        except AttributeError:
-            self.handle_global_press(key)
+        # Only process key input if the main window has focus, otherwise ignore
+        if self.root.focus_get():
+            try:
+                # Enforce lower case for all inputs that are characters
+                key_char = key.char
+                key_char = str(key_char).lower()
+                self.handle_key_press(key_char)
+            except AttributeError:
+                self.handle_global_press(key)
 
     def on_release(self, key):
         pass
