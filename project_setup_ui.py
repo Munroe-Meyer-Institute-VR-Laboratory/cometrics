@@ -335,9 +335,10 @@ class ProjectSetupWindow:
 
     # region Phase UI Controls
     def phase_callback(self, *args):
-        phase_dir = os.path.join(self.patient_dir, self.selected_concern + " " + self.phases_var.get())
-        if not os.path.exists(phase_dir):
-            os.mkdir(phase_dir)
+        self.phase_dir = os.path.join(self.patient_dir, self.selected_concern + " " + self.phases_var.get())
+        if not os.path.exists(self.phase_dir):
+            os.mkdir(self.phase_dir)
+        self.create_data_dirs()
         self.ksf_dir = os.path.join(self.patient_dir, self.selected_concern + " " + self.phases_var.get(),
                                     self.config.get_data_folders()[2])
         if os.path.exists(self.ksf_dir):
@@ -354,11 +355,14 @@ class ProjectSetupWindow:
                 self.clear_duration_treeview()
                 self.clear_frequency_treeview()
         else:
-            os.mkdir(self.ksf_dir)
-            self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
-            self.ksf_import.config(state='active')
-            self.clear_duration_treeview()
-            self.clear_frequency_treeview()
+            messagebox.showerror("Error", "Something went wrong creating your patient data folder!")
+
+    def create_data_dirs(self):
+        for folder in self.config.get_data_folders():
+            data_folder = os.path.join(self.phase_dir, folder)
+            if not os.path.exists(data_folder):
+                os.mkdir(data_folder)
+
     # endregion
 
     # region KSF UI Controls
