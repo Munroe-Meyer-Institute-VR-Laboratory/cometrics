@@ -21,7 +21,7 @@ from output_view_ui import OutputViewPanel
 from tkinter_utils import get_treeview_style
 from ui_params import large_header_font, large_field_font, large_field_offset, medium_header_font, medium_field_font, \
     medium_field_offset, small_header_font, small_field_font, small_field_offset, small_tab_size, medium_tab_size, \
-    large_tab_size
+    large_tab_size, ui_title
 
 
 class SessionTimeFields:
@@ -532,7 +532,7 @@ class SessionManagerWindow:
 
         root = self.root = Tk()
         root.config(bg="white", bd=-2)
-        root.title("cometrics v0.8.0")
+        root.title(ui_title)
 
         self.field_width = int(self.window_width * 0.2)
         self.output_width = int(self.window_width * 0.58)
@@ -541,11 +541,11 @@ class SessionManagerWindow:
         self.logo_height = int(self.logo_width / 5.7)
         self.patient_field_height = int((self.window_height - self.logo_height - 10) * 0.85)
 
-        self.unmc_shield_canvas = Canvas(root, width=self.logo_width, height=self.logo_height, bg="white", bd=-2)
-        self.unmc_shield_canvas.place(x=2, y=2)
-        self.unmc_shield_img = ImageTk.PhotoImage(
+        self.logo_canvas = Canvas(root, width=self.logo_width, height=self.logo_height, bg="white", bd=-2)
+        self.logo_canvas.place(x=2, y=2)
+        self.logo_img = ImageTk.PhotoImage(
             Image.open('images/cometrics_logo.png').resize((self.logo_width, self.logo_height), Image.ANTIALIAS))
-        self.unmc_shield_canvas.create_image(0, 0, anchor=NW, image=self.unmc_shield_img)
+        self.logo_canvas.create_image(0, 0, anchor=NW, image=self.logo_img)
 
         _ = get_treeview_style()
 
@@ -568,9 +568,16 @@ class SessionManagerWindow:
                                    field_font=self.field_font,
                                    header_font=self.header_font)
         # self.stf.kdf = self.ovu.key_view
-        self.pdf = PatientDataFields(root, 5, self.logo_height + 10, self.patient_field_height, self.field_width,
-                                     self.patient_file, self.prim_session_number, self.session_date,
-                                     self.session_time, ['Shine', 'On'],
+        self.pdf = PatientDataFields(root,
+                                     x=5,
+                                     y=self.logo_height + 10,
+                                     height=self.patient_field_height,
+                                     width=self.field_width,
+                                     patient_file=self.patient_file,
+                                     session_number=self.prim_session_number,
+                                     session_date=self.session_date,
+                                     session_time=self.session_time,
+                                     conditions=project_setup.conditions,
                                      header_font=self.header_font,
                                      field_font=self.field_font,
                                      field_offset=self.field_offset, debug=False)

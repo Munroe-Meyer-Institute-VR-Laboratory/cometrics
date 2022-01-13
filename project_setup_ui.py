@@ -13,7 +13,7 @@ from tkinter_utils import center, get_display_size, get_treeview_style, build_tr
 from ui_params import project_treeview_params as ptp, treeview_tags, ksf_distance, window_ratio, large_header_font, \
     large_field_font, medium_header_font, medium_field_font, small_header_font, small_field_font, large_treeview_font, \
     medium_treeview_font, small_treeview_font, large_treeview_rowheight, medium_treeview_rowheight, \
-    small_treeview_rowheight, large_button_size, medium_button_size, small_button_size
+    small_treeview_rowheight, large_button_size, medium_button_size, small_button_size, ui_title
 
 
 class ProjectSetupWindow:
@@ -100,7 +100,7 @@ class ProjectSetupWindow:
         # Create KSF label
         self.ksf_setup_label = Label(self.main_root, text="Keystroke File Setup", font=self.header_font)
         self.ksf_setup_label.place(x=10 + self.window_width / 2, y=ptp[1] / 2, anchor=W)
-        self.ksf_path = Label(self.main_root, text="Select Condition and Phase to Load",
+        self.ksf_path = Label(self.main_root, text="Select Concern and Phase to Load",
                               font=(self.header_font[0], self.header_font[1], 'italic'),
                               bg='white', width=30, anchor='w')
         self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1], anchor=NW, width=int(self.window_width*0.3))
@@ -153,7 +153,7 @@ class ProjectSetupWindow:
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))
         center(self.main_root)
-        self.main_root.title("cometrics v0.8.0")
+        self.main_root.title(ui_title)
         self.icon = PhotoImage(file=r'images/cometrics_icon.png')
         self.main_root.iconphoto(True, self.icon)
         self.main_root.resizable(width=False, height=False)
@@ -380,6 +380,7 @@ class ProjectSetupWindow:
             self._ksf = json.load(f)
         self.frequency_keys = self._ksf["Frequency"]
         self.duration_keys = self._ksf["Duration"]
+        self.conditions = self._ksf["Conditions"]
         self.populate_frequency_treeview()
         self.populate_duration_treeview()
         self.continue_button.config(state='active')
@@ -391,6 +392,7 @@ class ProjectSetupWindow:
             self.ksf_path['text'] = pathlib.Path(self.ksf_file).stem
             self.frequency_keys = self._ksf["Frequency"]
             self.duration_keys = self._ksf["Duration"]
+            self.conditions = self._ksf["Conditions"]
             self.populate_frequency_treeview()
             self.populate_duration_treeview()
             self.continue_button.config(state='active')

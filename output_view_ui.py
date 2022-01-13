@@ -14,7 +14,7 @@ import tkvideo
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 # Implement the default Matplotlib key bindings.
 from matplotlib.figure import Figure
-from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient
+from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient, EmpaticaServerConnectError
 # Custom library imports
 from tkinter_utils import build_treeview, clear_treeview
 from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags
@@ -396,19 +396,25 @@ class ViewE4:
                 if self.e4_client:
                     self.e4_client.disconnect()
                     self.connect_button.config(text="Connect")
+                    self.empatica_button.config(text="Start Server")
                     self.connected_label.config(image=self.disconnected_image)
                     self.streaming_label.config(image=self.nostreaming_image)
                     self.e4_client = None
+                    self.emp_client = None
                 else:
-                    self.e4_client = EmpaticaE4(self.e4_address)
-                    if self.e4_client.connected:
-                        if self.error_thread is None:
-                            self.error_thread = threading.Thread(target=self.check_e4_error)
-                            self.error_thread.start()
-                        for stream in EmpaticaDataStreams.ALL_STREAMS:
-                            self.e4_client.subscribe_to_stream(stream)
-                        self.connected_label.config(image=self.connected_image)
-                        self.connect_button.config(text="Disconnect")
+                    try:
+                        self.e4_client = EmpaticaE4(self.e4_address)
+                        if self.e4_client.connected:
+                            if self.error_thread is None:
+                                self.error_thread = threading.Thread(target=self.check_e4_error)
+                                self.error_thread.start()
+                            for stream in EmpaticaDataStreams.ALL_STREAMS:
+                                self.e4_client.subscribe_to_stream(stream)
+                            self.connected_label.config(image=self.connected_image)
+                            self.connect_button.config(text="Disconnect")
+                    except EmpaticaServerConnectError as e:
+                        messagebox.showerror("Error", "Could not connect to the Empatica E4!")
+                        print(str(e))
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
                 print(traceback.print_exc())
