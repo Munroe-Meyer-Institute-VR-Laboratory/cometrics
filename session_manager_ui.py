@@ -235,7 +235,7 @@ class PatientDataFields:
         self.patient_frames = []
         self.next_button_image = PhotoImage(file='images/go_next.png')
         self.prev_button_image = PhotoImage(file='images/go_previous.png')
-        print(f"Number of fields: {field_count}")
+        print(f"INFO: Number of fields: {field_count}")
         for i in range(0, frame_count):
             self.patient_frames.append(Frame(parent, width=width, height=height))
             patient_information = Label(self.patient_frames[-1], text="Patient Information", font=header_font)
@@ -249,7 +249,7 @@ class PatientDataFields:
                 prev_button.place(x=15, y=height * 0.9, anchor=W)
                 page_text = Label(self.patient_frames[-1], text=f"{i + 1}/{frame_count}", font=header_font)
                 page_text.place(x=width / 2, y=height * 0.9, anchor=CENTER)
-        print(f"Number of frames: {frame_count}")
+        print(f"INFO: Number of frames: {frame_count}")
         self.patient_vars = [
             StringVar(self.patient_frames[math.ceil(1 / field_count) - 1]),
             StringVar(self.patient_frames[math.ceil(2 / field_count) - 1]),
@@ -502,7 +502,7 @@ class SessionManagerWindow:
         if not os.path.exists(self.reli_dir):
             os.mkdir(self.reli_dir)
         # Log this for debugging
-        print(self.patient_file, self.keystroke_file, self.session_dir, self.prim_dir, self.reli_dir)
+        print("INFO:", self.patient_file, self.keystroke_file, self.session_dir, self.prim_dir, self.reli_dir)
         # Generate session date and time
         # TODO: Should this be updated dynamically or updated when the session starts?
         self.session_date = datetime.datetime.today().strftime("%B %d, %Y")
@@ -531,7 +531,7 @@ class SessionManagerWindow:
             self.field_font = small_field_font
             self.field_offset = small_field_offset
             self.button_size = small_tab_size
-        print(self.header_font, self.field_font, self.field_offset)
+        print("INFO:", self.header_font, self.field_font, self.field_offset)
 
         root = self.root = Tk()
         root.config(bg="white", bd=-2)
@@ -628,6 +628,7 @@ class SessionManagerWindow:
                     self.reli_session_number += 1
         else:
             messagebox.showerror("Error", "Reliability session folder could not be found!")
+            print("ERROR: Reliability session folder could not be found")
 
     def get_prim_session(self, directory):
         if path.isdir(directory):
@@ -637,19 +638,20 @@ class SessionManagerWindow:
                     self.prim_session_number += 1
         else:
             messagebox.showerror("Error", "Primary session folder could not be found!")
+            print("ERROR: Primary session folder could not be found")
 
     def on_press(self, key):
-        # Only process key input if the main window has focus, otherwise ignore
-        if self.root.focus_get():
-            try:
+        try:
+            key_char = key.char
+            # Only process key input if the main window has focus, otherwise ignore
+            if self.root.focus_get():
                 # Only process key input if session has started
                 if self.stf.session_started:
                     # Enforce lower case for all inputs that are characters
-                    key_char = key.char
                     key_char = str(key_char).lower()
                     self.handle_key_press(key_char)
-            except AttributeError:
-                self.handle_global_press(key)
+        except AttributeError:
+            self.handle_global_press(key)
 
     def on_release(self, key):
         pass
@@ -667,6 +669,7 @@ class SessionManagerWindow:
                                 self.start_session()
                             else:
                                 messagebox.showwarning("Warning", response)
+                                print("WARNING:", response)
                     elif key == "Pause Session":
                         self.pause_session()
                     elif key == "Delete Last Event":
@@ -679,7 +682,7 @@ class SessionManagerWindow:
             if self.stf.session_started:
                 self.ovu.check_event(key, self.stf.session_time)
         except TypeError as e:
-            print(str(e))
+            print(f"ERROR: Exception encountered when handling key press:\n{str(e)}")
 
     def save_session(self):
         # TODO: Redo the saving procedure
@@ -716,6 +719,7 @@ class SessionManagerWindow:
             self.stf.start_session()
         else:
             messagebox.showwarning("Warning", response)
+            print("WARNING:", response)
 
     def stop_session(self):
         self.session_started = False

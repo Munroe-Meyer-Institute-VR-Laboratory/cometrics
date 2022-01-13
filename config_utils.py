@@ -33,10 +33,6 @@ class ConfigUtils:
         if self.config:
             return self.config['window-size']
 
-    def get_default_dirs(self):
-        if self.config:
-            return self.config['default-dirs']
-
     def get_data_folders(self):
         if self.config:
             return self.config['data-folders']

@@ -2,6 +2,12 @@ import sys
 from os import listdir, mkdir, path
 
 
+class CreateLogger:
+    def __init__(self):
+        sys.stdout = Log()
+        sys.stderr = sys.stdout
+
+
 class Log(object):
     def __init__(self):
         if not path.isdir('./logs'):

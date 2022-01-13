@@ -2,9 +2,6 @@ data-folders:
 - Graph
 - Raw Data
 - KSF
-default-dirs:
-- Functional Assessment
-- Treatment
 first-time: false
 patient-concerns: concerns.yml
 phases:

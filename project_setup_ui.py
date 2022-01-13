@@ -167,7 +167,6 @@ class ProjectSetupWindow:
 
     # region External Data Entry
     def popup_return(self, data, caller):
-        print(data, caller)
         if not data:
             messagebox.showwarning("Warning", "No project name entered! Please try again.")
             return
@@ -218,7 +217,7 @@ class ProjectSetupWindow:
 
     def create_new_project(self):
         self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
-        print(self.top_dir)
+        print("INFO:", self.top_dir)
         if not self.top_dir:
             messagebox.showwarning("Warning", "No root filepath chosen! Please try again.")
             return
@@ -368,7 +367,6 @@ class ProjectSetupWindow:
 
     # region KSF UI Controls
     def key_popup_return(self, tag, key, caller):
-        print(tag, key, caller)
         if not tag or not key:
             messagebox.showwarning("Warning", "Invalid key entered! Please try again.")
         if caller == 1:

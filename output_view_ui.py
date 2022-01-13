@@ -139,7 +139,7 @@ class OutputViewPanel:
                     self.e4_view.windowed_readings[-1][-1].append(current_frame)
                 self.e4_view.windowed_readings[-1][-2].append(key_char)
             # Get the appropriate key event
-            key_events = self.key_view.check_key(key_char, start_time)
+            key_events = self.key_view.check_key(key_char, start_time, current_frame)
             # Add to session history
             self.key_view.add_session_event(key_events)
 
@@ -160,14 +160,13 @@ class OutputViewPanel:
                         else:
                             self.e4_view.windowed_readings[int(keystroke[1]) - 1][-1].append(keystroke[0])
                     except Exception as e:
-                        print(str(e))
-                        print(traceback.print_exc())
+                        print(f"ERROR: Exception encountered:\n{str(e)}\n" + traceback.print_exc())
                 with open(filename, 'wb') as f:
                     pickle.dump(self.e4_view.windowed_readings, f)
             except TypeError as e:
                 with open(filename, 'wb') as f:
                     pickle.dump(self.e4_view.windowed_readings, f)
-                print(str(e))
+                print(f"ERROR: Exception encountered:\n{str(e)}\n" + traceback.print_exc())
 
 
 class ViewVideo:
@@ -218,8 +217,7 @@ class ViewVideo:
                     self.video_loaded = True
         except Exception as e:
             messagebox.showerror("Error", f"Error loading video:\n{str(e)}")
-            print(str(e))
-
+            print(f"ERROR: Error loading video:\n{str(e)}\n" + traceback.print_exc())
 
 
 class ViewE4:
@@ -380,6 +378,7 @@ class ViewE4:
         while self.e4_client:
             if self.e4_client.client.last_error:
                 messagebox.showerror("E4 Error", "Encountered error from E4!\n" + self.e4_client.client.last_error)
+                print("ERROR: Encountered error from E4!\n" + self.e4_client.client.last_error )
                 self.connect_to_e4()
             time.sleep(0.5)
 
@@ -414,12 +413,13 @@ class ViewE4:
                             self.connect_button.config(text="Disconnect")
                     except EmpaticaServerConnectError as e:
                         messagebox.showerror("Error", "Could not connect to the Empatica E4!")
-                        print(str(e))
+                        print("ERROR: Could not connect to the Empatica E4\n" + str(e))
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
-                print(traceback.print_exc())
+                print("ERROR: Encountered an error when connecting to E4:\n" + traceback.print_exc())
         else:
             messagebox.showwarning("Warning", "Connect to server first!")
+            print("WARNING: Connect to server first")
 
     def start_e4_streaming(self):
         if self.emp_client:
@@ -432,13 +432,16 @@ class ViewE4:
                     except Exception as e:
                         messagebox.showerror("Exception Encountered",
                                              "Encountered an error when connecting to E4:\n" + str(e))
-                        print(traceback.print_exc())
+                        print("ERROR: Encountered error when connecting to E4:\n" + traceback.print_exc())
                 else:
                     messagebox.showwarning("Warning", "Device is not connected!")
+                    print("WARNING: Device is not connected")
             else:
                 messagebox.showwarning("Warning", "Connect to device first!")
+                print("WARNING: Connect to device first")
         else:
             messagebox.showwarning("Warning", "Connect to server first!")
+            print("WARNING: Connect to server first")
 
     def start_e4_server(self):
         if not self.emp_client:
@@ -447,14 +450,14 @@ class ViewE4:
                 self.empatica_button['text'] = "List Devices"
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
-                print(traceback.print_exc())
+                print("ERROR: Encountered an error when connecting to E4:\n" + traceback.print_exc())
         else:
             try:
                 self.devices_thread = threading.Thread(target=self.list_devices_thread)
                 self.devices_thread.start()
             except Exception as e:
                 messagebox.showerror("Exception Encountered", "Encountered an error when connecting to E4:\n" + str(e))
-                print(traceback.print_exc())
+                print("ERROR: Encountered an error when connecting to E4:\n" + traceback.print_exc())
 
     def list_devices_thread(self):
         self.emp_client.list_connected_devices()
@@ -478,8 +481,10 @@ class ViewE4:
                     self.e4_address = self.emp_client.device_list[int(selection)]
                 else:
                     messagebox.showerror("Error", "No connected E4s!")
+                    print("ERROR: No connected E4s")
             else:
                 messagebox.showwarning("Warning", "Connect to server first!")
+                print("WARNING: Connect to server first")
 
     def save_session(self, filename):
         if self.e4_client:
@@ -731,20 +736,20 @@ class KeystrokeDataFields:
     def add_dur_popup(self):
         NewKeyPopup(self, self.frame, True)
 
-    def check_key(self, key_char, start_time):
+    def check_key(self, key_char, start_time, current_frame):
         return_bindings = []
         for i in range(0, len(self.bindings)):
             if self.bindings[i][1] == key_char:
                 self.bindings_freq[i] += 1
                 self.freq_treeview.set(str(i), column="1", value=self.bindings_freq[i])
-                return_bindings.append((self.bindings[i][0], start_time))
+                return_bindings.append((self.bindings[i][0], start_time, current_frame))
         for i in range(0, len(self.dur_bindings)):
             if self.dur_bindings[i][1] == key_char:
                 if self.dur_sticky[i]:
                     self.dur_treeview.item(str(i), tags=treeview_bind_tags[i % 2])
                     self.dur_sticky[i] = False
                     duration = [self.sticky_start[i], start_time]
-                    return_bindings.append((self.dur_bindings[i][0], duration))
+                    return_bindings.append((self.dur_bindings[i][0], duration, current_frame))
                     self.sticky_dur[i] += start_time - self.sticky_start[i]
                     self.sticky_start[i] = 0
                     self.dur_treeview.set(str(i), column="2", value=self.sticky_dur[i])
@@ -852,7 +857,6 @@ class KeystrokeDataFields:
     def populate_sh_bindings(self):
         if self.event_history:
             for i in range(0, len(self.event_history)):
-                print(str(i))
                 bind = self.event_history[i]
                 self.sh_treeview_parents.append(self.sh_treeview.insert("", 'end', str(i), text=str(bind[0]),
                                                                         values=(bind[1],),
