@@ -2,6 +2,12 @@ import sys
 from os import listdir, mkdir, path
 
 
+class LogLevel:
+    ERROR = "ERROR"
+    WARNING = "WARNING"
+    INFO = "INFO"
+
+
 class CreateLogger:
     def __init__(self):
         sys.stdout = Log()
@@ -24,3 +30,21 @@ class Log(object):
 
     def flush(self):
         pass
+
+
+def parse_log(log_file):
+    parsed_logs = [[] for i in range(4)]
+    with open(log_file, 'r') as f:
+        for line in f.readlines():
+            parts = line.split(':')
+            for i in range(0, len(parts)):
+                parts[i] = parts[i].strip()
+            if parts[0] == LogLevel.ERROR:
+                parsed_logs[0].append(":".join(parts[1:]))
+            elif parts[0] == LogLevel.WARNING:
+                parsed_logs[1].append(":".join(parts[1:]))
+            elif parts[0] == LogLevel.INFO:
+                parsed_logs[2].append(":".join(parts[1:]))
+            else:
+                parsed_logs[3].append(line)
+    return parsed_logs

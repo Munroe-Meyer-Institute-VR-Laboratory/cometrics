@@ -650,6 +650,8 @@ class SessionManagerWindow:
                     # Enforce lower case for all inputs that are characters
                     key_char = str(key_char).lower()
                     self.handle_key_press(key_char)
+            else:
+                print("INFO: Typing outside window")
         except AttributeError:
             self.handle_global_press(key)
 
@@ -713,6 +715,7 @@ class SessionManagerWindow:
         if response is False:
             self.session_started = True
             self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+            self.pdf.save_patient_fields()
             self.pdf.lock_session_fields()
             self.stf.lock_session_fields()
             self.ovu.start_session()
