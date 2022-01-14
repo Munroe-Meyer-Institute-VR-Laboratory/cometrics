@@ -175,11 +175,13 @@ class SessionTimeFields:
         self.session_stopped_label.place_forget()
         self.session_start_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4), anchor=CENTER)
 
-    def stop_session(self, caller_save=True):
+    def stop_session(self):
         self.session_toggle_button['text'] = "Restart Session"
         self.session_toggle_button['bg'] = self.session_pause_button['bg']
         self.session_toggle_button['command'] = self.caller.menu.restart_program
         self.timer_running = False
+        if self.video_playing:
+            self.video_playing = self.caller.ovu.video_view.toggle_video()
         if self.session_paused:
             self.session_paused_label.place_forget()
         elif self.session_started:
@@ -187,19 +189,17 @@ class SessionTimeFields:
         self.session_stopped_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
                                          anchor=CENTER)
         self.session_started = False
-        if caller_save:
-            self.caller.stop_session()
 
     def pause_session(self):
         if self.session_started:
             if not self.session_paused:
-                self.caller.ovu.video_view.toggle_video()
+                self.video_playing = self.caller.ovu.video_view.toggle_video()
                 self.session_start_label.place_forget()
                 self.session_paused_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
                                                 anchor=CENTER)
                 self.session_paused = True
             else:
-                self.caller.ovu.video_view.toggle_video()
+                self.video_playing = self.caller.ovu.video_view.toggle_video()
                 self.session_start_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
                                                anchor=CENTER)
                 self.session_paused_label.place_forget()
@@ -371,9 +371,9 @@ class PatientDataFields:
         else:
             patient_y += field_offset / 2
         # Session start time field
-        start_label = Label(self.patient_frames[frame_select], text="Session Start Time: " + session_time,
+        self.start_label = Label(self.patient_frames[frame_select], text="Session Start Time: " + session_time,
                             anchor=NW, font=field_font)
-        start_label.place(x=5, y=patient_y, anchor=NW)
+        self.start_label.place(x=5, y=patient_y, anchor=NW)
 
         self.patient_vars[PatientDataVar.PATIENT_NAME].set(self.patient.name)
         if self.patient.medical_record_number:
@@ -508,7 +508,6 @@ class SessionManagerWindow:
         # Log this for debugging
         print("INFO:", self.patient_file, self.keystroke_file, self.session_dir, self.prim_dir, self.reli_dir)
         # Generate session date and time
-        # TODO: Should this be updated dynamically or updated when the session starts?
         now = datetime.datetime.today()
         self.session_date = now.strftime("%B %d, %Y")
         self.session_file_date = now.strftime("%B")[:3] + now.strftime("%d") + now.strftime("%Y")
@@ -668,7 +667,7 @@ class SessionManagerWindow:
         for key in self.global_commands:
             if self.global_commands[key] == key_char:
                 if key == "Toggle Session":
-                    if self.session_started:
+                    if self.stf.session_started:
                         self.stop_session()
                     else:
                         response = self.pdf.check_session_fields()
@@ -718,8 +717,8 @@ class SessionManagerWindow:
     def start_session(self):
         response = self.pdf.check_session_fields()
         if response is False:
-            self.session_started = True
             self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+            self.pdf.start_label['text'] = "Session Start Time: " + self.session_time
             self.pdf.save_patient_fields()
             self.pdf.lock_session_fields()
             self.stf.lock_session_fields()
@@ -730,19 +729,11 @@ class SessionManagerWindow:
             print("WARNING:", response)
 
     def stop_session(self):
-        self.session_started = False
-        # If being stopped by key press, otherwise don't go into an infinite loop
-        if self.stf.session_started:
-            self.stf.stop_session(False)
+        self.stf.stop_session()
         self.ovu.stop_session()
         self.save_session()
         self.listener.stop()
 
     def pause_session(self):
-        if self.session_started:
-            if not self.session_paused:
-                self.session_paused = True
-                self.stf.pause_session()
-            else:
-                self.session_paused = False
-                self.stf.pause_session()
+        if self.stf.session_started:
+            self.stf.pause_session()

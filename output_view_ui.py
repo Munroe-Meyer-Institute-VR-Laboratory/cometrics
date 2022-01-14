@@ -389,7 +389,7 @@ class ViewE4:
         while self.e4_client:
             if self.e4_client.client.last_error:
                 messagebox.showerror("E4 Error", "Encountered error from E4!\n" + self.e4_client.client.last_error)
-                print("ERROR: Encountered error from E4!\n" + self.e4_client.client.last_error )
+                print("ERROR: Encountered error from E4!\n" + self.e4_client.client.last_error)
                 self.connect_to_e4()
             time.sleep(0.5)
 
@@ -399,6 +399,7 @@ class ViewE4:
         if self.e4_client:
             if self.e4_client.connected:
                 self.e4_client.close()
+                self.e4_client = None
 
     def connect_to_e4(self):
         if self.emp_client:
@@ -556,71 +557,75 @@ class ViewE4:
         if self.streaming:
             if self.e4:
                 if self.e4.connected:
-                    if self.session_started:
-                        if self.save_reading:
-                            self.save_reading = False
-                            self.windowed_readings.append(
-                                (self.e4.acc_3d[-(32 * 3):],
-                                 self.e4.acc_x[-32:], self.e4.acc_y[-32:], self.e4.acc_z[-32:],
-                                 self.e4.acc_timestamps[-32:],
-                                 self.e4.bvp[-64:], self.e4.bvp_timestamps[-64:],
-                                 self.e4.gsr[-4:], self.e4.gsr_timestamps[-4:],
-                                 self.e4.tmp[-4:], self.e4.tmp_timestamps[-4:],
-                                 # Key tag
-                                 [],
-                                 # Frame index
-                                 [])
-                            )
-                        else:
-                            self.save_reading = True
-                    # Limit x and y lists to 20 items
-                    x_ys = self.e4.acc_x[-100:]
-                    y_ys = self.e4.acc_y[-100:]
-                    z_ys = self.e4.acc_z[-100:]
-                    xs = np.arange(0, len(self.e4.acc_x))
-                    xs = xs[-100:]
+                    if self.root.winfo_viewable():
+                        if self.session_started:
+                            if self.save_reading:
+                                self.save_reading = False
+                                self.windowed_readings.append(
+                                    (self.e4.acc_3d[-(32 * 3):],
+                                     self.e4.acc_x[-32:], self.e4.acc_y[-32:], self.e4.acc_z[-32:],
+                                     self.e4.acc_timestamps[-32:],
+                                     self.e4.bvp[-64:], self.e4.bvp_timestamps[-64:],
+                                     self.e4.gsr[-4:], self.e4.gsr_timestamps[-4:],
+                                     self.e4.tmp[-4:], self.e4.tmp_timestamps[-4:],
+                                     # Key tag
+                                     [],
+                                     # Frame index
+                                     [])
+                                )
+                            else:
+                                self.save_reading = True
+                        # Limit x and y lists to 20 items
+                        x_ys = self.e4.acc_x[-100:]
+                        y_ys = self.e4.acc_y[-100:]
+                        z_ys = self.e4.acc_z[-100:]
+                        xs = np.arange(0, len(self.e4.acc_x))
+                        xs = xs[-100:]
 
-                    # Draw x and y lists
-                    self.acc_plt.clear()
-                    self.acc_plt.plot(xs, x_ys, label="x-axis")
-                    self.acc_plt.plot(xs, y_ys, label="y-axis")
-                    self.acc_plt.plot(xs, z_ys, label="z-axis")
+                        # Draw x and y lists
+                        self.acc_plt.clear()
+                        self.acc_plt.plot(xs, x_ys, label="x-axis")
+                        self.acc_plt.plot(xs, y_ys, label="y-axis")
+                        self.acc_plt.plot(xs, z_ys, label="z-axis")
 
-                    # Format plot
-                    plt.gcf().subplots_adjust(bottom=0.15)
-                    self.acc_plt.set_title("Accelerometer Readings")
-                    self.acc_plt.legend(loc="upper left")
+                        # Format plot
+                        plt.gcf().subplots_adjust(bottom=0.15)
+                        self.acc_plt.set_title("Accelerometer Readings")
+                        self.acc_plt.legend(loc="upper left")
 
     def bvp_animate(self, e4):
         if self.streaming:
             if self.e4:
                 if self.e4.connected:
-                    xs = np.arange(0, len(self.e4.bvp))
-                    xs = xs[-100:]
-                    x_ys = self.e4.bvp[-100:]
+                    print(self.root.winfo_viewable())
+                    if self.root.winfo_viewable():
+                        xs = np.arange(0, len(self.e4.bvp))
+                        xs = xs[-100:]
+                        x_ys = self.e4.bvp[-100:]
 
-                    self.bvp_plt.clear()
-                    self.bvp_plt.plot(xs, x_ys, label="bvp")
+                        self.bvp_plt.clear()
+                        self.bvp_plt.plot(xs, x_ys, label="bvp")
 
-                    # Format plot
-                    plt.gcf().subplots_adjust(bottom=0.15)
-                    self.bvp_plt.set_title("BVP Readings")
-                    self.bvp_plt.legend(loc="upper left")
+                        # Format plot
+                        plt.gcf().subplots_adjust(bottom=0.15)
+                        self.bvp_plt.set_title("BVP Readings")
+                        self.bvp_plt.legend(loc="upper left")
 
     def gsr_animate(self, e4):
         if self.streaming:
             if self.e4:
                 if self.e4.connected:
-                    xs = np.arange(0, len(self.e4.gsr))
-                    xs = xs[-100:]
-                    x_ys = self.e4.gsr[-100:]
+                    if self.root.winfo_viewable():
+                        xs = np.arange(0, len(self.e4.gsr))
+                        xs = xs[-100:]
+                        x_ys = self.e4.gsr[-100:]
 
-                    self.gsr_plt.clear()
-                    self.gsr_plt.plot(xs, x_ys, label="gsr")
-                    # Format plot
-                    plt.gcf().subplots_adjust(bottom=0.15)
-                    self.gsr_plt.set_title("GSR Readings")
-                    self.gsr_plt.legend(loc="upper left")
+                        self.gsr_plt.clear()
+                        self.gsr_plt.plot(xs, x_ys, label="gsr")
+                        # Format plot
+                        plt.gcf().subplots_adjust(bottom=0.15)
+                        self.gsr_plt.set_title("GSR Readings")
+                        self.gsr_plt.legend(loc="upper left")
 
 
 class KeystrokeDataFields:
