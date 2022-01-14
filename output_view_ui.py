@@ -219,6 +219,16 @@ class ViewVideo:
             messagebox.showerror("Error", f"Error loading video:\n{str(e)}")
             print(f"ERROR: Error loading video:\n{str(e)}\n" + traceback.print_exc())
 
+    def toggle_video(self):
+        try:
+            if self.video_file:
+                if self.player:
+                    self.player.toggle_video()
+                    return self.player.playing
+            return False
+        except Exception as e:
+            print(f"ERROR: Error starting video:\n{str(e)}\n{traceback.print_exc()}")
+
 
 class ViewE4:
     def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60):
@@ -294,6 +304,7 @@ class ViewE4:
         fig_offset = width * 0.25
         fig_width = width - fig_offset
         fig_height = (height - 70) / 3
+        ani_update = 1000
 
         self.hr_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
         self.hr_canvas.place(x=fig_offset + (fig_width * 0.2), y=start_y)
@@ -341,7 +352,7 @@ class ViewE4:
         self.acc_plt.legend(loc="upper left")
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
         self.canvas.draw()
-        self.ani = animation.FuncAnimation(self.fig, self.animate, fargs=([]), interval=500)
+        self.ani = animation.FuncAnimation(self.fig, self.animate, fargs=([]), interval=ani_update)
         self.canvas.get_tk_widget().place(x=fig_offset + 30, y=70, anchor=NW)
 
         self.fig1 = Figure(figsize=(fig_width * px, fig_height * px), dpi=100)
@@ -352,7 +363,7 @@ class ViewE4:
         self.bvp_plt.legend(loc="upper left")
         self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.root)  # A tk.DrawingArea.
         self.canvas1.draw()
-        self.ani1 = animation.FuncAnimation(self.fig1, self.bvp_animate, fargs=([]), interval=500)
+        self.ani1 = animation.FuncAnimation(self.fig1, self.bvp_animate, fargs=([]), interval=ani_update)
         self.canvas1.get_tk_widget().place(x=fig_offset + 30, y=70 + fig_height, anchor=NW)
 
         self.fig2 = Figure(figsize=(fig_width * px, fig_height * px), dpi=100)
@@ -363,7 +374,7 @@ class ViewE4:
         self.gsr_plt.legend(loc="upper left")
         self.canvas2 = FigureCanvasTkAgg(self.fig2, master=self.root)  # A tk.DrawingArea.
         self.canvas2.draw()
-        self.ani2 = animation.FuncAnimation(self.fig2, self.gsr_animate, fargs=([]), interval=500)
+        self.ani2 = animation.FuncAnimation(self.fig2, self.gsr_animate, fargs=([]), interval=ani_update)
         self.canvas2.get_tk_widget().place(x=fig_offset + 30, y=70 + (fig_height * 2), anchor=NW)
 
         self.save_reading = False

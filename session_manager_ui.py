@@ -171,6 +171,7 @@ class SessionTimeFields:
         if self.interval_selection.get():
             self.interval_thread = threading.Thread(target=self.beep_interval_thread)
             self.interval_thread.start()
+        self.video_playing = self.caller.ovu.video_view.toggle_video()
         self.session_stopped_label.place_forget()
         self.session_start_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4), anchor=CENTER)
 
@@ -190,17 +191,19 @@ class SessionTimeFields:
             self.caller.stop_session()
 
     def pause_session(self):
-        if not self.session_paused:
-            if self.session_started:
+        if self.session_started:
+            if not self.session_paused:
+                self.caller.ovu.video_view.toggle_video()
                 self.session_start_label.place_forget()
-            self.session_paused_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
-                                            anchor=CENTER)
-            self.session_paused = True
-        else:
-            self.session_start_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
-                                           anchor=CENTER)
-            self.session_paused_label.place_forget()
-            self.session_paused = False
+                self.session_paused_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
+                                                anchor=CENTER)
+                self.session_paused = True
+            else:
+                self.caller.ovu.video_view.toggle_video()
+                self.session_start_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
+                                               anchor=CENTER)
+                self.session_paused_label.place_forget()
+                self.session_paused = False
 
     def stop_timer(self):
         self.timer_running = False
@@ -494,18 +497,21 @@ class SessionManagerWindow:
         self.config = config
         self.patient_file = project_setup.patient_data_file
         self.keystroke_file = project_setup.ksf_file
-        self.session_dir = path.join(project_setup.phase_dir, config.get_data_folders()[1])
-        self.prim_dir = path.join(self.session_dir, "Primary")
+        self.session_dir = project_setup.phase_dir
+        self.data_dir = path.join(self.session_dir, config.get_data_folders()[1])
+        self.prim_dir = path.join(self.data_dir, "Primary")
         if not os.path.exists(self.prim_dir):
             os.mkdir(self.prim_dir)
-        self.reli_dir = path.join(self.session_dir, "Reliability")
+        self.reli_dir = path.join(self.data_dir, "Reliability")
         if not os.path.exists(self.reli_dir):
             os.mkdir(self.reli_dir)
         # Log this for debugging
         print("INFO:", self.patient_file, self.keystroke_file, self.session_dir, self.prim_dir, self.reli_dir)
         # Generate session date and time
         # TODO: Should this be updated dynamically or updated when the session starts?
-        self.session_date = datetime.datetime.today().strftime("%B %d, %Y")
+        now = datetime.datetime.today()
+        self.session_date = now.strftime("%B %d, %Y")
+        self.session_file_date = now.strftime("%B")[:3] + now.strftime("%d") + now.strftime("%Y")
         self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
         # Get the number of primary and reliability sessions collected so far
         self.prim_session_number = 1
@@ -659,25 +665,24 @@ class SessionManagerWindow:
         pass
 
     def handle_global_press(self, key_char):
-        if self.stf.session_started:
-            for key in self.global_commands:
-                if self.global_commands[key] == key_char:
-                    if key == "Toggle Session":
-                        if self.session_started:
-                            self.stop_session()
+        for key in self.global_commands:
+            if self.global_commands[key] == key_char:
+                if key == "Toggle Session":
+                    if self.session_started:
+                        self.stop_session()
+                    else:
+                        response = self.pdf.check_session_fields()
+                        if response is False:
+                            self.start_session()
                         else:
-                            response = self.pdf.check_session_fields()
-                            if response is False:
-                                self.start_session()
-                            else:
-                                messagebox.showwarning("Warning", response)
-                                print("WARNING:", response)
-                    elif key == "Pause Session":
-                        self.pause_session()
-                    elif key == "Delete Last Event":
-                        self.ovu.key_view.delete_last_event()
-                    elif key == "Undo Last Delete":
-                        self.ovu.key_view.undo_last_delete()
+                            messagebox.showwarning("Warning", response)
+                            print("WARNING:", response)
+                elif key == "Pause Session":
+                    self.pause_session()
+                elif key == "Delete Last Event":
+                    self.ovu.key_view.delete_last_event()
+                elif key == "Undo Last Delete":
+                    self.ovu.key_view.undo_last_delete()
 
     def handle_key_press(self, key):
         try:
@@ -694,8 +699,7 @@ class SessionManagerWindow:
             "Session Date": self.session_date,
             "Session Start Time": self.session_time,
             "Session Time": self.stf.session_time,
-            "Pause Time": self.stf.break_time,
-            "Keystroke File": self.keystroke_file
+            "Pause Time": self.stf.break_time
         }
         session_fields.update(x)
         session_fields["Event History"] = session_data
@@ -706,9 +710,10 @@ class SessionManagerWindow:
                                         f"{session_fields['Session Number']}"
                                         f"{session_fields['Assessment Name'][:2]}"
                                         f"{session_fields['Condition Name'][:2]}"
-                                        f"{session_fields['Session Date']}.json")
+                                        f"{self.session_file_date}.json")
         with open(output_session_file, 'w') as f:
             json.dump(session_fields, f)
+        print(f"INFO: Saved session file to: {output_session_file}")
 
     def start_session(self):
         response = self.pdf.check_session_fields()
