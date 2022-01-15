@@ -224,12 +224,13 @@ class PatientDataVar:
 
 
 class PatientDataFields:
-    def __init__(self, parent, x, y, height, width, patient_file, session_number,
+    def __init__(self, parent, x, y, height, width, patient_file, prim_session_number, reli_session_number,
                  session_date, session_time, conditions, field_offset=50,
                  header_font=('Purisa', 14), field_font=('Purisa', 12), debug=False):
         self.x, self.y = x, y
         self.conditions = conditions
         self.patient = PatientContainer(patient_file)
+        self.prim_session_num, self.reli_session_num = prim_session_number, reli_session_number
 
         field_count = int(height / field_offset)
         if field_count < 13:
@@ -263,7 +264,7 @@ class PatientDataFields:
             StringVar(self.patient_frames[math.ceil(7 / field_count) - 1]),
             StringVar(self.patient_frames[math.ceil(8 / field_count) - 1]),
             StringVar(self.patient_frames[math.ceil(9 / field_count) - 1]),
-            StringVar(self.patient_frames[math.ceil(10 / field_count) - 1], value=session_number),
+            StringVar(self.patient_frames[math.ceil(10 / field_count) - 1], value=prim_session_number),
             StringVar(self.patient_frames[math.ceil(11 / field_count) - 1], value="Primary")
         ]
         self.label_texts = [
@@ -283,7 +284,7 @@ class PatientDataFields:
             self.patient_vars[PatientDataVar.PATIENT_NAME].set(self.patient.name)
         if self.patient.medical_record_number:
             self.patient_vars[PatientDataVar.MRN].set(self.patient.medical_record_number)
-        self.session_number = session_number
+        self.session_number = prim_session_number
         self.patient_entries, self.patient_labels = [], []
 
         patient_dict = [
@@ -378,7 +379,7 @@ class PatientDataFields:
         self.patient_vars[PatientDataVar.PATIENT_NAME].set(self.patient.name)
         if self.patient.medical_record_number:
             self.patient_vars[PatientDataVar.MRN].set(self.patient.medical_record_number)
-        self.patient_vars[PatientDataVar.SESS_NUM].set(session_number)
+        self.patient_vars[PatientDataVar.SESS_NUM].set(prim_session_number)
 
         self.current_patient_field = 0
         self.patient_frames[self.current_patient_field].place(x=self.x, y=self.y)
@@ -415,7 +416,14 @@ class PatientDataFields:
         self.patient_frames[self.current_patient_field].place(x=self.x, y=self.y)
 
     def check_radio(self):
-        pass
+        if self.patient_vars[PatientDataVar.PRIM_DATA].get() == "Primary":
+            self.patient_vars[PatientDataVar.SESS_NUM].set(self.prim_session_num)
+            self.session_number = self.prim_session_num
+        elif self.patient_vars[PatientDataVar.PRIM_DATA].get() == "Reliability":
+            self.patient_vars[PatientDataVar.SESS_NUM].set(self.reli_session_num)
+            self.session_number = self.reli_session_num
+        else:
+            print(f"ERROR: Something went wrong assigning the session type {self.patient_vars[PatientDataVar.PRIM_DATA].get()}")
 
     def save_patient_fields(self):
         self.patient.save_patient(self.patient_vars[PatientDataVar.PATIENT_NAME].get(),
@@ -582,7 +590,8 @@ class SessionManagerWindow:
                                      height=self.patient_field_height,
                                      width=self.field_width,
                                      patient_file=self.patient_file,
-                                     session_number=self.prim_session_number,
+                                     prim_session_number=self.prim_session_number,
+                                     reli_session_number=self.reli_session_number,
                                      session_date=self.session_date,
                                      session_time=self.session_time,
                                      conditions=project_setup.conditions,
