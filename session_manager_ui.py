@@ -423,7 +423,8 @@ class PatientDataFields:
             self.patient_vars[PatientDataVar.SESS_NUM].set(self.reli_session_num)
             self.session_number = self.reli_session_num
         else:
-            print(f"ERROR: Something went wrong assigning the session type {self.patient_vars[PatientDataVar.PRIM_DATA].get()}")
+            print(f"ERROR: Something went wrong assigning the session type "
+                  f"{self.patient_vars[PatientDataVar.PRIM_DATA].get()}")
 
     def save_patient_fields(self):
         self.patient.save_patient(self.patient_vars[PatientDataVar.PATIENT_NAME].get(),
@@ -657,15 +658,15 @@ class SessionManagerWindow:
     def on_press(self, key):
         try:
             key_char = key.char
-            # Only process key input if the main window has focus, otherwise ignore
-            if self.root.focus_get():
-                # Only process key input if session has started
-                if self.stf.session_started:
+            # Only process key input if session has started
+            if self.stf.session_started:
+                # Only process key input if the main window has focus, otherwise ignore
+                if self.root.focus_get():
                     # Enforce lower case for all inputs that are characters
                     key_char = str(key_char).lower()
                     self.handle_key_press(key_char)
-            else:
-                print("INFO: Typing outside window")
+                else:
+                    print("INFO: Typing outside window")
         except AttributeError:
             self.handle_global_press(key)
 
