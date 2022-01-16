@@ -14,7 +14,8 @@ class MenuBar(Frame):
         self.parent.config(menu=menu)
 
         file_menu = Menu(menu)
-        file_menu.add_command(label="Start New Session", command=self.restart_program)
+        file_menu.add_command(label="Start New Session", command=self.start_new_session)
+        file_menu.add_command(label="Open New Project", command=self.open_new_project)
         menu.add_cascade(label="File", menu=file_menu)
 
         export_menu = Menu(menu)
@@ -30,10 +31,14 @@ class MenuBar(Frame):
         help_menu.add_command(label="Open documentation", command=self.open_docs)
         menu.add_cascade(label="Help", menu=help_menu)
 
+    def open_new_project(self):
+        self.caller.restart_program()
+        return True
+
     def open_docs(self):
         pass
 
-    def restart_program(self):
+    def start_new_session(self):
         """Restarts the current program.
         Note: this function does not return. Any cleanup action (like
         saving data) must be done before calling this function."""

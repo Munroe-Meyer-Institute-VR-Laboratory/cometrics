@@ -178,7 +178,7 @@ class SessionTimeFields:
     def stop_session(self):
         self.session_toggle_button['text'] = "Restart Session"
         self.session_toggle_button['bg'] = self.session_pause_button['bg']
-        self.session_toggle_button['command'] = self.caller.menu.restart_program
+        # self.session_toggle_button['command'] = self.caller.menu.restart_program
         self.timer_running = False
         if self.video_playing:
             self.video_playing = self.caller.ovu.video_view.toggle_video()
@@ -189,6 +189,7 @@ class SessionTimeFields:
         self.session_stopped_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
                                          anchor=CENTER)
         self.session_started = False
+        self.caller.save_session()
 
     def pause_session(self):
         if self.session_started:
@@ -708,7 +709,8 @@ class SessionManagerWindow:
             "Session Date": self.session_date,
             "Session Start Time": self.session_time,
             "Session Time": self.stf.session_time,
-            "Pause Time": self.stf.break_time
+            "Pause Time": self.stf.break_time,
+            "Keystroke File": pathlib.Path(self.keystroke_file).stem
         }
         session_fields.update(x)
         session_fields["Event History"] = session_data

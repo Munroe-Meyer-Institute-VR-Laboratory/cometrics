@@ -91,38 +91,59 @@ def import_ksf(filename, ksf_dir):
         messagebox.showwarning("Warning", "Select the protocol Excel tracker spreadsheet.")
 
 
-def cal_acc(self):
-    if path.isfile(self.rel_filename) and path.isfile(self.prim_filename) and path.isfile(self.ksf_filename):
-        try:
-            with open(self.ksf_filename) as f:
-                keystroke_json = json.load(f)
-            freq_bindings = []
-            dur_bindings = []
-            for key in keystroke_json:
-                if key == "Frequency":
-                    for bindings in keystroke_json[key]:
-                        freq_bindings.append(bindings[0])
-                if key == "Duration":
-                    for bindings in keystroke_json[key]:
-                        dur_bindings.append(bindings[0])
-            with open(self.prim_filename, 'r') as f:
-                prim_session = json.load(f)
-            with open(self.rel_filename, 'r') as f:
-                rel_session = json.load(f)
-            prim_ksf, rel_ksf, rel_type = prim_session["Keystroke File"], rel_session["Keystroke File"], rel_session["Primary Data"]
-            # Perform error checking before causing errors
-            if not os.path.samefile(prim_ksf, self.ksf_filename):
-                messagebox.showerror("Error", "Primary session does not use the selected KSF!")
-                return
-            elif not os.path.samefile(rel_ksf, self.ksf_filename):
-                messagebox.showerror("Error", "Reliability session does not use the selected KSF!")
-                return
-            elif rel_type == "Primary":
-                messagebox.showerror("Error", "Selected reliability file is not a reliability collection!")
-                return
-            prim_window_freq, prim_window_dur = get_keystroke_window(self.ksf, prim_session, int(self.window_var.get()))
-            rel_window_freq, rel_window_dur = get_keystroke_window(self.ksf, rel_session, int(self.window_var.get()))
+def load_ksf(ksf_filename):
+    with open(ksf_filename) as f:
+        keystroke_json = json.load(f)
+    freq_bindings = []
+    dur_bindings = []
+    for key in keystroke_json:
+        if key == "Frequency":
+            for bindings in keystroke_json[key]:
+                freq_bindings.append(bindings[0])
+        if key == "Duration":
+            for bindings in keystroke_json[key]:
+                dur_bindings.append(bindings[0])
+    return freq_bindings, dur_bindings
 
+
+def cal_acc(ksf_filename, prim_filename, reli_filename, window_size, output_dir):
+    if path.isfile(reli_filename) and path.isfile(prim_filename) and path.isfile(ksf_filename):
+        try:
+            # Get the bindings from the KSF file
+            freq_bindings, dur_bindings = load_ksf(ksf_filename)
+            # Get the filename stem to compare against prim and reli files
+            ksf_filename = pathlib.Path(ksf_filename).stem
+            # Load in prim and reli files
+            with open(prim_filename, 'r') as f:
+                prim_session = json.load(f)
+            with open(reli_filename, 'r') as f:
+                reli_session = json.load(f)
+            prim_ksf, reli_ksf, reli_type = prim_session["Keystroke File"], reli_session["Keystroke File"], \
+                                          reli_session["Primary Data"]
+            prim_num, reli_num = int(prim_session["Session Number"]), int(reli_session["Session Number"])
+            # Perform error checking before causing errors
+            if prim_num != reli_num:
+                messagebox.showerror("Error", "Session numbers are not the same!")
+                print("ERROR: Session numbers are not the same")
+                return
+            if prim_ksf != ksf_filename:
+                messagebox.showerror("Error", "Primary session does not use the selected KSF!")
+                print("ERROR: Primary session does not use the selected KSF")
+                return
+            elif reli_ksf != ksf_filename:
+                messagebox.showerror("Error", "Reliability session does not use the selected KSF!")
+                print("ERROR: Reliability session does not use the selected KSF")
+                return
+            elif reli_type == "Primary":
+                messagebox.showerror("Error", "Selected reliability file is not a reliability collection!")
+                print("ERROR: Selected reliability file is not a reliability collection")
+                return
+            # Generate freq and dur windows
+            prim_window_freq, prim_window_dur = get_keystroke_window(freq_bindings, dur_bindings,
+                                                                     prim_session, int(window_size))
+            rel_window_freq, rel_window_dur = get_keystroke_window(freq_bindings, dur_bindings,
+                                                                   reli_session, int(window_size))
+            # Append windows to accommodate jagged sessions
             if len(prim_window_freq) > len(rel_window_freq):
                 for i in range(0, len(prim_window_freq) - len(rel_window_freq)):
                     rel_window_freq.append([0] * len(freq_bindings))
@@ -135,6 +156,7 @@ def cal_acc(self):
             elif len(prim_window_dur) < len(rel_window_dur):
                 for i in range(0, len(rel_window_dur) - len(prim_window_dur)):
                     prim_window_dur.append([0] * len(dur_bindings))
+            # Setup IOA variables
             freq_pia = [0] * len(freq_bindings)
             freq_oia_agree, freq_oia_disagree = [0] * len(freq_bindings), [0] * len(freq_bindings)
             freq_nia_agree, freq_nia_disagree = [0] * len(freq_bindings), [0] * len(freq_bindings)
@@ -143,6 +165,7 @@ def cal_acc(self):
             freq_intervals, dur_intervals = [0] * len(freq_bindings), [0] * len(dur_bindings)
             dur_pia = [0] * len(dur_bindings)
             dur_eia_agree = [0] * len(dur_bindings)
+            # Iterate through the windows
             for row in range(0, len(prim_window_freq)):
                 for cell in range(0, len(prim_window_freq[row])):
                     if prim_window_freq[row][cell] > rel_window_freq[row][cell]:
@@ -194,15 +217,13 @@ def cal_acc(self):
                 "Primary Therapist": prim_session["Primary Therapist"],
                 "Primary Case Manager": prim_session["Case Manager"],
                 "Primary Session Therapist": prim_session["Session Therapist"],
-                "Reliability Session Date": rel_session["Session Date"] + " " + rel_session["Session Start Time"],
-                "Reliability Therapist": rel_session["Primary Therapist"],
-                "Reliability Case Manager": rel_session["Case Manager"],
-                "Reliability Session Therapist": rel_session["Session Therapist"],
-                "Window Size (seconds)": str(self.window_entry.get()) + " seconds"
+                "Reliability Session Date": reli_session["Session Date"] + " " + reli_session["Session Start Time"],
+                "Reliability Therapist": reli_session["Primary Therapist"],
+                "Reliability Case Manager": reli_session["Case Manager"],
+                "Reliability Session Therapist": reli_session["Session Therapist"],
+                "Window Size (seconds)": str(window_size) + " seconds"
             }
-            path_to_file = filedialog.asksaveasfilename(
-                defaultextension='.xlsx', filetypes=[("Excel files", '*.xlsx')],
-                title="Choose output filename")
+            path_to_file = path.join(output_dir, f"{ksf_filename}_IOA_{prim_num}.xlsx")
             wb = openpyxl.Workbook()
             ws = wb.active
             wb.create_sheet("Primary Data")
@@ -299,11 +320,10 @@ def cal_acc(self):
                 row += 1
 
             wb.save(path_to_file)
-            os.startfile(pathlib.Path(path_to_file).parent)
-            self.root.iconify()
+            return path_to_file
         except Exception as e:
             messagebox.showerror("Error", "Error encountered!\n" + str(e))
-            print(traceback.print_exc())
+            print(f"ERROR: Error encountered:\n{str(e)}\n{traceback.print_exc()}")
     else:
         messagebox.showwarning("Warning", "Please choose valid files!")
 
@@ -420,46 +440,35 @@ def populate_spreadsheet(root, patient_file, ksf, session_dir):
     root.root.iconify()
 
 
-def get_keystroke_window(key_file, session_file, window_size):
+def get_keystroke_window(freq_bindings, dur_bindings, session_file, window_size):
     session_time = int(session_file["Session Time"])
-    with open(key_file) as f:
-        keystroke_json = json.load(f)
-    freq_bindings = []
-    dur_bindings = []
-    for key in keystroke_json:
-        if key == "Frequency":
-            for bindings in keystroke_json[key]:
-                freq_bindings.append(bindings[0])
-        if key == "Duration":
-            for bindings in keystroke_json[key]:
-                dur_bindings.append(bindings[0])
+    event_history = session_file["Event History"]
     if session_time % window_size != 0:
         session_time += window_size - (session_time % window_size)
     freq_windows = [[0] * len(freq_bindings) for i in range(int(session_time / window_size))]
     dur_windows = [[0] * len(dur_bindings) for i in range(int(session_time / window_size))]
-    keys = list(session_file.keys())[14:]
     dur_keys, freq_keys = [], []
-    for key in keys:
-        if type(session_file[key][1]) is list:
-            dur_keys.append(key)
+    for event in event_history:
+        if type(event[1]) is list:
+            dur_keys.append(event)
         else:
-            freq_keys.append(key)
+            freq_keys.append(event)
     for i in range(0, session_time, window_size):
-        for key in freq_keys[:]:
-            if i <= session_file[key][1] < (i + window_size):
-                freq_windows[int(i / window_size)][freq_bindings.index(session_file[key][0])] += 1
-                freq_keys.remove(key)
+        for event in freq_keys[:]:
+            if i <= event[1] < (i + window_size):
+                freq_windows[int(i / window_size)][freq_bindings.index(event[0])] += 1
+                freq_keys.remove(event)
             else:
                 break
     for i in range(0, session_time, window_size):
-        for key in dur_keys[:]:
-            if i <= session_file[key][1][0] < (i + window_size):
-                dur_windows[int(i / window_size)][dur_bindings.index(session_file[key][0])] += 1
-                if i <= session_file[key][1][1] < (i + window_size):
-                    dur_keys.remove(key)
-            elif i <= session_file[key][1][1] < (i + window_size):
-                dur_windows[int(i / window_size)][dur_bindings.index(session_file[key][0])] += 1
-                dur_keys.remove(key)
+        for event in dur_keys[:]:
+            if i <= event[1][0] < (i + window_size):
+                dur_windows[int(i / window_size)][dur_bindings.index(event[0])] += 1
+                if i <= event[1][1] < (i + window_size):
+                    dur_keys.remove(event)
+            elif i <= event[1][1] < (i + window_size):
+                dur_windows[int(i / window_size)][dur_bindings.index(event[0])] += 1
+                dur_keys.remove(event)
             else:
                 break
     return freq_windows, dur_windows

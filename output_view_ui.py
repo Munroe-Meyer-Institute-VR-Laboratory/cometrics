@@ -172,6 +172,7 @@ class ViewVideo:
     def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60):
         self.root = root
         self.video_loaded = False
+        self.video_file = None
         self.video_label = Label(self.root, bg='white')
         self.video_height, self.video_width = height - 200, width - 10
         self.video_label.place(x=width / 2, y=5, width=width - 10, height=height - 200, anchor=N)

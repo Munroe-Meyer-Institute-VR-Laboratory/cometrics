@@ -1,4 +1,4 @@
-ui_title = "cometrics v0.8.11"
+ui_title = "cometrics v0.8.13"
 
 # x, y, height, width
 project_treeview_params = [40, 60, 400, 300]
