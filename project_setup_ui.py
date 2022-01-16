@@ -461,11 +461,14 @@ class ProjectSetupWindow:
 
     # region Exit UI Controls
     def on_closing(self):
-        sys.exit(1)
+        self.setup_complete = False
+        self.main_root.destroy()
 
     def continue_project(self):
+        self.setup_complete = True
         self.main_root.destroy()
 
     def cancel_project(self):
-        sys.exit(1)
+        self.setup_complete = False
+        self.main_root.destroy()
     # endregion

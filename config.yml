@@ -2,6 +2,7 @@ data-folders:
 - Graph
 - Raw Data
 - KSF
+- Export
 first-time: false
 patient-concerns: concerns.yml
 phases:

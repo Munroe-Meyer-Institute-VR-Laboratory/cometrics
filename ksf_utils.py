@@ -1,15 +1,17 @@
+import csv
 import datetime
+import json
 import os
 import pathlib
 import traceback
 from os import walk
-from tkinter import *
-from tkinter import filedialog, messagebox
-from tkinter.ttk import Treeview, Style
-import json
-from logger_util import *
-import openpyxl
 from shutil import copy2
+from tkinter import messagebox
+
+import openpyxl
+from openpyxl.cell import MergedCell, Cell
+
+from logger_util import *
 
 
 def import_ksf(filename, ksf_dir):
@@ -328,116 +330,175 @@ def cal_acc(ksf_filename, prim_filename, reli_filename, window_size, output_dir)
         messagebox.showwarning("Warning", "Please choose valid files!")
 
 
-def export_columnwise_csv(root, session_dir):
-    sessions = get_session_files(session_dir)
-    sess_parts = session_dir.split('\\')
-    export_dir = path.join(sess_parts[0], sess_parts[1], sess_parts[2], sess_parts[3], 'export')
-    export_files = []
+def export_columnwise_csv(prim_dir, reli_dir, output_dir):
+    # Get existing session files
+    prim_sessions = get_session_files(prim_dir)
+    reli_sessions = get_session_files(reli_dir)
+    # Create the primary and reliability directories
+    prim_export = path.join(output_dir, "Primary")
+    reli_export = path.join(output_dir, "Reliability")
+    prim_export_files = []
+    reli_export_files = []
+    # Create directories if they don't exist
+    if not path.exists(output_dir):
+        os.mkdir(output_dir)
+    if not path.exists(prim_export):
+        os.mkdir(prim_export)
+    else:
+        prim_export_files = get_export_files(prim_export)
+    # Get reliability files from export dir, if it exists
+    if not path.exists(reli_export):
+        os.mkdir(reli_export)
+    else:
+        reli_export_files = get_export_files(reli_export)
+    # Convert files
+    convert_json_csv(prim_sessions, prim_export_files, prim_export)
+    convert_json_csv(reli_sessions, reli_export_files, reli_export)
+
+
+def convert_json_csv(json_files, existing_files, output_dir):
+    # Get the current time to put into export files
     date = datetime.datetime.today().strftime("%B %d, %Y")
     time = datetime.datetime.now().strftime("%H:%M:%S")
-    if not path.exists(export_dir):
-        os.mkdir(export_dir)
-    else:
-        export_files = get_export_files(export_dir)
-    for file in sessions:
+    # Iterate through files
+    for file in json_files:
+        # If converted file exists already, skip it
         name = pathlib.Path(file).stem
-        if name in export_files:
+        if name in existing_files:
             continue
-        with open(path.join(session_dir, file), 'r') as f:
+        # Load session and split it up
+        with open(file, 'r') as f:
             session = json.load(f)
-        with open(path.join(export_dir, name + ".csv"), 'w', newline='') as f:
+        session_data = session[:14]
+        event_history = session["Event History"]
+        e4_data = session["E4 Data"]
+        # Open output file and write session to it
+        with open(path.join(output_dir, f"{name}.csv"), 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow([name, 'Generated on', date, time])
-            writer.writerow(['Event', 'Tag', 'Onset', 'Offset'])
-            for key in session:
-                # Event
-                if type(session[key]) is list:
-                    row = [key, session[key][0]]
-                    # Duration event
-                    if type(session[key][1]) is list:
-                        row.append(session[key][1][0])
-                        row.append(session[key][1][1])
-                    # Frequency event
-                    else:
-                        row.append(session[key][1])
-                # Data Field
+            # Write out the session fields
+            writer.writerow(['Field', 'Value'])
+            for key in session_data:
+                writer.writerow([key, session[key]])
+            # Write out the event history
+            writer.writerow(['Tag', 'Onset', 'Offset', 'Frame', 'E4 Window'])
+            for event in event_history:
+                row = [event[0]]
+                if type(event[1]) is list:
+                    row.append(event[1][0])
+                    row.append(event[1][1])
                 else:
-                    row = ['', key, session[key]]
+                    row.append(event[1])
+                    row.append('')
+                row.append(event[2])
+                row.append(event[3])
                 writer.writerow(row)
-    os.startfile(export_dir)
-    root.root.iconify()
 
 
-def populate_spreadsheet(root, patient_file, ksf, session_dir):
-    parts = pathlib.Path(patient_file).parts
-    template = path.join(*parts[0:-2], "data", pathlib.Path(ksf).stem + ".xlsx")
-    wb = openpyxl.load_workbook(template)
+def get_key_cells(data_wb):
+    tracker_headers = {'Assessment:____________': [Cell, 3],
+                       'Client:________': [Cell, 2],
+                       'Data Coll.': ['', 2],
+                       'Therapist': ['', 1],
+                       'Session': ['', 1],
+                       'Cond.': ['', 1],
+                       'Date': ['', 1],
+                       'Primary': ['', 1],
+                       'Reliability': ['', 1],
+                       'Notes': ['', 1],
+                       'Sess. Dur. (mins)': ['', 1],
+                       'Session Data': ['', 1],
+                       'Session Data Start': None,
+                       'Frequency': ['', 1],
+                       'Frequency Start': None,
+                       'Duration': ['', 1],
+                       'Duration Start': None,
+                       'ST': ['', 1],
+                       'PT': ['', 1],
+                       'Session Time': ['', 1],
+                       'Session Time Start': None,
+                       'Pause Time': ['', 1],
+                       'Pause Time Start': None
+                       }
+    freq_headers = {}
+    dur_headers = {}
+    # Parse the tracker file and find the key cells
+    for row in data_wb.iter_rows(1, 4):
+        for i in range(0, len(row)):
+            if tracker_headers['Frequency Start'] and tracker_headers['Duration Start']:
+                if row[i].value:
+                    if len(row[i].value) == 1:
+                        col_value = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                        if col_value < tracker_headers['Duration Start']:
+                            freq_headers[row[i].value] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                        else:
+                            dur_headers[row[i].value] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+            if row[i].value in tracker_headers:
+                cell_value = row[i].value
+                if cell_value == 'Session Data':
+                    tracker_headers['Session Data Start'] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                elif cell_value == 'Frequency':
+                    tracker_headers['Frequency Start'] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                elif cell_value == 'Duration':
+                    tracker_headers['Duration Start'] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                elif cell_value == 'Session Time':
+                    tracker_headers['Session Time Start'] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                elif cell_value == 'Pause Time':
+                    tracker_headers['Pause Time Start'] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                elif cell_value == 'Assessment:____________':
+                    tracker_headers['Assessment:____________'][0] = row[i]
+                elif cell_value == 'Client:________':
+                    tracker_headers['Client:________'][0] = row[i]
+                else:
+                    tracker_headers[cell_value][0] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                    tracker_headers[cell_value][1] = 1
+                if i + 1 < len(row):
+                    # Check if next cell is MergedCell,
+                    while type(row[i + 1]) is MergedCell:
+                        tracker_headers[cell_value][1] += 1
+                        i += 1
+    return tracker_headers, freq_headers, dur_headers
+
+
+def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
+    # Load the tracker spreadsheet
+    wb = openpyxl.load_workbook(ksf_excel)
+    ksf_file = ksf_excel[:-5] + ".json"
+    # Isolate the Data sheet
     data_wb = wb['Data']
-    sessions = get_sessions(session_dir)
-    sess_parts = pathlib.Path(session_dir).parts
-    analysis_dir = path.join(*sess_parts[0:-1], 'analysis')
-    if not path.exists(analysis_dir):
-        os.mkdir(analysis_dir)
-    patient = PatientContainer(patient_file)
-    m_cells = data_wb.merged_cells
-    freq_cell, freq_coords = None, None
-    dur_cell, dur_coords = None, None
-    st_cell, pt_cell = None, None
-    for row in data_wb.iter_rows(3, 3):
-        for cell in row:
-            if cell.value == 'ST':
-                st_cell = cell
-            if cell.value == 'PT':
-                pt_cell = cell
-    for cell in m_cells:
-        try:
-            if cell.start_cell.coordinate == 'J2' and cell.start_cell.value == "Frequency":
-                freq_cell = cell
-                coordinates = cell.coord.split(':')
-                freq_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
-                               ''.join([i for i in coordinates[1] if not i.isdigit()])]
-                break
-        except AttributeError:
-            continue
-    for cell in m_cells:
-        try:
-            if cell.min_col == freq_cell.max_col + 1 and cell.start_cell.value == "Duration":
-                dur_cell = cell
-                coordinates = cell.coord.split(':')
-                dur_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
-                              ''.join([i for i in coordinates[1] if not i.isdigit()])]
-                break
-        except AttributeError:
-            continue
-    data_wb['A1'].value = "Assessment: " + sessions[0]['Assessment Name']
-    data_wb['A2'].value = "Client: " + patient.name
-    row, col, sess = 5, 7, 1
+    # Load in all of the sessions
+    sessions = get_sessions(prim_session_dir)
+    # If output folder doesn't exist, then make it
+    if not path.exists(output_dir):
+        os.mkdir(output_dir)
+    # Get the key cells in the spreadsheet
+    tracker_headers, freq_headers, dur_headers = get_key_cells(data_wb)
+    # Assign values in header
+    tracker_headers['Assessment:____________'][0].value = "Assessment: " + sessions[0]['Assessment Name']
+    tracker_headers['Client:________'][0].value = "Client: " + patient_name
+    # We expect the
+    row, col, sess = 5, tracker_headers['Session Data Start'], 1
     for session in sessions:
-        st_cell = data_wb[''.join([i for i in st_cell.coordinate if not i.isdigit()]) + str(row)]
-        pt_cell = data_wb[''.join([i for i in pt_cell.coordinate if not i.isdigit()]) + str(row)]
-        key_freq, key_dur = get_keystroke_info(ksf, session)
-        d = data_wb['A' + str(row):'H' + str(row)]
-        freq_d = data_wb[freq_coords[0] + str(row):freq_coords[1] + str(row)]
-        dur_d = data_wb[dur_coords[0] + str(row):dur_coords[1] + str(row)]
-        d[0][0].value = sess
-        d[0][1].value = session['Condition Name']
-        d[0][2].value = session['Session Date']
-        d[0][3].value = session['Session Therapist']
-        d[0][4].value = session['Primary Therapist']
-        d[0][5].value = session['Primary Data']
-        d[0][7].value = int(session['Session Time'])/60
-        data_wb[st_cell.coordinate].value = session['Session Time']
-        data_wb[pt_cell.coordinate].value = session['Pause Time']
+        key_freq, key_dur = get_keystroke_info(ksf_file, session)
+        data_wb[tracker_headers['Session'][0] + str(row)].value = sess
+        data_wb[tracker_headers['Cond.'][0] + str(row)].value = session['Condition Name']
+        data_wb[tracker_headers['Date'][0] + str(row)].value = session['Session Date']
+        data_wb[tracker_headers['Therapist'][0] + str(row)].value = session['Session Therapist']
+        data_wb[tracker_headers['Primary'][0] + str(row)].value = session['Primary Therapist']
+        # data_wb[tracker_headers['Session'] + str(row)].value = session['Primary Data']
+        data_wb[tracker_headers['Sess. Dur. (mins)'][0] + str(row)].value = int(session['Session Time'])/60
+        data_wb[tracker_headers['ST'][0] + str(row)].value = session['Session Time']
+        data_wb[tracker_headers['PT'][0] + str(row)].value = session['Pause Time']
         # Populate frequency and duration keys
-        for freq, col in zip(key_freq, range(0, len(key_freq))):
-            freq_d[0][col].value = freq
-        for dur, col in zip(key_dur, range(0, len(key_dur))):
-            dur_d[0][col].value = dur
+        for freq in key_freq:
+            data_wb[freq_headers[freq] + str(row)].value = key_freq[freq]
+        for dur in key_dur:
+            data_wb[dur_headers[dur] + str(row)].value = key_dur[dur]
         row += 1
         sess += 1
-    wb.save(path.join(analysis_dir, sess_parts[-2] + "_analysis.xlsx"))
-    os.startfile(analysis_dir)
-    root.root.iconify()
+    output_file = path.join(output_dir, f"{pathlib.Path(ksf_file).stem}_Charted.xlsx")
+    wb.save(output_file)
+    return output_file
 
 
 def get_keystroke_window(freq_bindings, dur_bindings, session_file, window_size):
@@ -475,32 +536,31 @@ def get_keystroke_window(freq_bindings, dur_bindings, session_file, window_size)
 
 
 def get_keystroke_info(key_file, session_file):
-    freq_bindings = []
-    dur_bindings = []
-    key_freq = []
-    key_dur = []
+    freq_bindings = {}
+    dur_bindings = {}
+    key_freq = {}
+    key_dur = {}
     with open(key_file) as f:
         keystroke_json = json.load(f)
     for key in keystroke_json:
         if key == "Frequency":
             for bindings in keystroke_json[key]:
-                freq_bindings.append(bindings[0])
-            key_freq = [0]*len(freq_bindings)
+                freq_bindings[bindings[0]] = bindings[1]
+                key_freq[bindings[1]] = 0
         if key == "Duration":
             for bindings in keystroke_json[key]:
-                dur_bindings.append(bindings[0])
-            key_dur = [0]*len(dur_bindings)
-    for session_info in session_file:
-        session_param = session_file[session_info]
+                dur_bindings[bindings[0]] = bindings[1]
+                key_dur[bindings[1]] = 0
+    event_history = session_file["Event History"]
+    for session_info in event_history:
+        session_param = session_info[0]
         try:
-            if session_param[0] in freq_bindings:
-                key_freq[freq_bindings.index(session_param[0])] += 1
-            elif session_param[0] in dur_bindings:
-                i = dur_bindings.index(session_param[0])
-                key_dur[i] += int(session_param[1][1]) - int(session_param[1][0])
+            if session_param in freq_bindings:
+                key_freq[freq_bindings[session_param]] += 1
+            elif session_param in dur_bindings:
+                key_dur[dur_bindings[session_param]] += int(session_info[1][1]) - int(session_info[1][0])
         except Exception as e:
-            print(str(e))
-            print(traceback.print_exc())
+            print(f"ERROR: Error encountered\n{str(e)}\n{traceback.print_exc()}")
             continue
     return key_freq, key_dur
 
@@ -521,7 +581,7 @@ def get_session_files(session_dir):
         _, _, files = next(walk(session_dir))
         for file in files:
             if pathlib.Path(file).suffix == ".json":
-                session_files.append(file)
+                session_files.append(path.join(session_dir, file))
     return session_files
 
 
@@ -549,3 +609,7 @@ def open_keystroke_file(key_file):
         if key != "Name":
             bindings.append((key, keystroke_json[key]))
     return bindings
+
+
+def create_new_ksf_revision(original_ksf):
+    pass

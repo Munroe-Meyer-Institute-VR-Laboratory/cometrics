@@ -33,7 +33,6 @@ class MenuBar(Frame):
 
     def open_new_project(self):
         self.caller.restart_program()
-        return True
 
     def open_docs(self):
         pass
@@ -42,7 +41,7 @@ class MenuBar(Frame):
         """Restarts the current program.
         Note: this function does not return. Any cleanup action (like
         saving data) must be done before calling this function."""
-        self.caller.restart_program()
+        self.caller.create_new_session()
 
     def export_csv(self):
         export_columnwise_csv(self.caller, self.caller.session_dir)

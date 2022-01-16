@@ -616,6 +616,9 @@ class SessionManagerWindow:
         self.listener.start()
         # Configure window close override
         root.protocol("WM_DELETE_WINDOW", self.on_closing)
+        self.restart = False
+        self.setup_again = False
+        self.close_program = False
         # Start the window in fullscreen
         root.state('zoomed')
         # Start the UI loop
@@ -627,6 +630,15 @@ class SessionManagerWindow:
         self.listener.stop()
         self.root.quit()
         self.root.destroy()
+        self.setup_again = True
+
+    def create_new_session(self):
+        self.stf.stop_timer()
+        self.ovu.close()
+        self.listener.stop()
+        self.root.quit()
+        self.root.destroy()
+        self.restart = True
 
     def on_closing(self):
         self.stf.stop_timer()
@@ -634,7 +646,7 @@ class SessionManagerWindow:
         self.listener.stop()
         self.root.quit()
         self.root.destroy()
-        sys.exit(0)
+        self.close_program = True
 
     def get_reli_session(self, directory):
         if path.isdir(directory):
@@ -715,13 +727,14 @@ class SessionManagerWindow:
         session_fields.update(x)
         session_fields["Event History"] = session_data
         session_fields["E4 Data"] = e4_data
+        reli = '_R' if session_fields["Primary Data"] == "Reliability" else ''
         output_session_file = path.join(self.session_dir,
                                         self.config.get_data_folders()[1],
                                         session_fields["Primary Data"],
                                         f"{session_fields['Session Number']}"
                                         f"{session_fields['Assessment Name'][:2]}"
                                         f"{session_fields['Condition Name'][:2]}"
-                                        f"{self.session_file_date}.json")
+                                        f"{self.session_file_date}{reli}.json")
         with open(output_session_file, 'w') as f:
             json.dump(session_fields, f)
         print(f"INFO: Saved session file to: {output_session_file}")
