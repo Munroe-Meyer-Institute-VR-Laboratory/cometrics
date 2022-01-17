@@ -132,13 +132,15 @@ class OutputViewPanel:
             # Get the current frame of the video if it's playing
             if self.video_view.video_loaded:
                 current_frame = self.video_view.player.current_frame
+            current_window = None
             # Add the frame and key to the latest E4 window reading if streaming
             if self.e4_view.windowed_readings:
                 if current_frame:
                     self.e4_view.windowed_readings[-1][-1].append(current_frame)
                 self.e4_view.windowed_readings[-1][-2].append(key_char)
+                current_window = len(self.e4_view.windowed_readings) - 1
             # Get the appropriate key event
-            key_events = self.key_view.check_key(key_char, start_time, current_frame)
+            key_events = self.key_view.check_key(key_char, start_time, current_frame, current_window)
             # Add to session history
             self.key_view.add_session_event(key_events)
 
@@ -752,20 +754,20 @@ class KeystrokeDataFields:
     def add_dur_popup(self):
         NewKeyPopup(self, self.frame, True)
 
-    def check_key(self, key_char, start_time, current_frame):
+    def check_key(self, key_char, start_time, current_frame, current_window):
         return_bindings = []
         for i in range(0, len(self.bindings)):
             if self.bindings[i][1] == key_char:
                 self.bindings_freq[i] += 1
                 self.freq_treeview.set(str(i), column="1", value=self.bindings_freq[i])
-                return_bindings.append((self.bindings[i][0], start_time, current_frame))
+                return_bindings.append((self.bindings[i][0], start_time, current_frame, current_window))
         for i in range(0, len(self.dur_bindings)):
             if self.dur_bindings[i][1] == key_char:
                 if self.dur_sticky[i]:
                     self.dur_treeview.item(str(i), tags=treeview_bind_tags[i % 2])
                     self.dur_sticky[i] = False
                     duration = [self.sticky_start[i], start_time]
-                    return_bindings.append((self.dur_bindings[i][0], duration, current_frame))
+                    return_bindings.append((self.dur_bindings[i][0], duration, current_frame, current_window))
                     self.sticky_dur[i] += start_time - self.sticky_start[i]
                     self.sticky_start[i] = 0
                     self.dur_treeview.set(str(i), column="2", value=self.sticky_dur[i])

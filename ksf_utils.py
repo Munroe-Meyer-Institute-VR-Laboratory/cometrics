@@ -65,9 +65,10 @@ def import_ksf(filename, ksf_dir):
                 return keystroke_file, x
         except Exception as e:
             messagebox.showwarning("Warning", "Excel format is not correct!\n" + str(e))
-            print(traceback.print_exc())
+            print(f"WARNING: Excel format is not correct\n{str(e)}\n{traceback.print_exc()}")
     else:
         messagebox.showwarning("Warning", "Select the protocol Excel tracker spreadsheet.")
+        print("WARNING: Select the protocol Excel tracker spreadsheet")
 
 
 def load_ksf(ksf_filename):
@@ -442,6 +443,8 @@ def get_key_cells(data_wb):
 
 
 def increment_cell(cell, i):
+    # TODO: Can probably make this more generic by taking the mod of 26 and applying appropriately while iterating through cell
+    # ord('Z') - ord('A') = 25, 26 is a rollover, take ord('Z') - ord(cell) to find remainder before rollover
     number = cell[-1]
     cell = cell[:-1]
     if len(cell) == 1:
@@ -458,6 +461,8 @@ def increment_cell(cell, i):
         else:
             new_cell = cell[0] + increment_char(cell[1], i)
         return new_cell + number
+    else:
+        print("You're asking for too much")
 
 
 def increment_char(character, i):
@@ -698,3 +703,11 @@ def create_new_ksf_revision(original_ksf, keystrokes):
     new_ksf = f"{original_ksf[:-5]}_V{ksf_count + 1}.xlsx"
     wb.save(new_ksf)
     return new_ksf
+
+
+def compare_keystrokes(old, new):
+    if old['Frequency'] == new['Frequency']:
+        if old['Duration'] == new['Duration']:
+            if old['Conditions'] == new['Conditions']:
+                return True
+    return False

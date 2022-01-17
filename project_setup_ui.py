@@ -123,8 +123,8 @@ class ProjectSetupWindow:
                                                                                     key_treeview_height,
                                                                                     treeview_width,
                                                                                     freq_heading_dict,
-                                                                                    key_column_dict)
-                                                                                    # double_bind=self.select_frequency_key)
+                                                                                    key_column_dict,
+                                                                                    double_bind=self.select_frequency_key)
         self.duration_treeview_parents = []
         self.duration_key_treeview, self.duration_key_filescroll = build_treeview(self.main_root,
                                                                                   20 + self.window_width / 2,
@@ -134,8 +134,8 @@ class ProjectSetupWindow:
                                                                                   key_treeview_height,
                                                                                   treeview_width,
                                                                                   dur_heading_dict,
-                                                                                  key_column_dict)
-                                                                                  # double_bind=self.select_duration_key)
+                                                                                  key_column_dict,
+                                                                                  double_bind=self.select_duration_key)
 
         self.continue_button = Button(self.main_root, text='Continue', width=12, command=self.continue_project,
                                       font=self.field_font)
@@ -367,12 +367,14 @@ class ProjectSetupWindow:
 
     # region KSF UI Controls
     def key_popup_return(self, tag, key, caller):
+        print(tag, key, caller)
         if not tag or not key:
             messagebox.showwarning("Warning", "Invalid key entered! Please try again.")
+            print(f"WARNING: Invalid key entered {tag} {key} {caller}")
         if caller == 1:
-            self.create_frequency_key()
+            self.create_frequency_key(tag, key)
         elif caller == 2:
-            self.create_duration_key()
+            self.create_duration_key(tag, key)
 
     def load_concern_ksf(self):
         with open(self.ksf_file) as f:
@@ -399,9 +401,9 @@ class ProjectSetupWindow:
             messagebox.showwarning("Warning", "No tracker file selected! Please try again.")
 
     def populate_frequency_treeview(self):
-        # self.frequency_treeview_parents.append(
-        #     self.frequency_key_treeview.insert("", 'end', str(0), text="Create New Frequency Key",
-        #                                        tags=treeview_tags[2]))
+        self.frequency_treeview_parents.append(
+            self.frequency_key_treeview.insert("", 'end', str(0), text="Create New Frequency Key",
+                                               tags=treeview_tags[2]))
         if self.frequency_keys:
             for i in range(0, len(self.frequency_keys)):
                 self.frequency_treeview_parents.append(
@@ -420,9 +422,9 @@ class ProjectSetupWindow:
         self.duration_treeview_parents = []
 
     def populate_duration_treeview(self):
-        # self.duration_treeview_parents.append(
-        #     self.duration_key_treeview.insert("", 'end', str(0), text="Create New Duration Key",
-        #                                       tags=treeview_tags[2]))
+        self.duration_treeview_parents.append(
+            self.duration_key_treeview.insert("", 'end', str(0), text="Create New Duration Key",
+                                              tags=treeview_tags[2]))
         if self.duration_keys:
             for i in range(0, len(self.duration_keys)):
                 self.duration_treeview_parents.append(
@@ -436,7 +438,7 @@ class ProjectSetupWindow:
             if selection == '0':
                 NewKeyPopup(self, self.main_root, 1)
             else:
-                self.delete_frequency_key()
+                self.delete_frequency_key(int(selection))
 
     def select_duration_key(self, event):
         selection = self.duration_key_treeview.identify_row(event.y)
@@ -444,19 +446,19 @@ class ProjectSetupWindow:
             if selection == '0':
                 NewKeyPopup(self, self.main_root, 2)
             else:
-                self.delete_duration_key()
+                self.delete_duration_key(int(selection))
 
-    def create_frequency_key(self):
-        print()
+    def create_frequency_key(self, tag, key):
+        self.frequency_keys.append([str(key), str(tag)])
 
-    def create_duration_key(self):
-        print()
+    def create_duration_key(self, tag, key):
+        self.duration_keys.append([str(key), str(tag)])
 
-    def delete_frequency_key(self):
-        print()
+    def delete_frequency_key(self, index):
+        self.frequency_keys.pop(index)
 
-    def delete_duration_key(self):
-        print()
+    def delete_duration_key(self, index):
+        self.duration_keys.pop(index)
     # endregion
 
     # region Exit UI Controls
