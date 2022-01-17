@@ -1,5 +1,6 @@
 import csv
 import datetime
+import glob
 import json
 import os
 import pathlib
@@ -9,6 +10,7 @@ from shutil import copy2
 from tkinter import messagebox
 
 import openpyxl
+from openpyxl import Workbook
 from openpyxl.cell import MergedCell, Cell
 
 from logger_util import *
@@ -24,68 +26,43 @@ def import_ksf(filename, ksf_dir):
             except KeyError as e:
                 messagebox.showerror("Error", "Sheet 'Data' not found!\n"
                                               "This is required for importing the keystrokes!\n" + str(e))
+                print("ERROR: Sheet 'Data' not found!\n"
+                      "This is required for importing the keystrokes!\n" + str(e))
             if data_wb is not None:
-                freq_cell, freq_coords, freq_keys = None, None, []
-                dur_cell, dur_coords, dur_keys = None, None, []
-                m_cells = data_wb.merged_cells
-                for cell in m_cells:
-                    try:
-                        if cell.start_cell.coordinate == 'J2' and cell.start_cell.value == "Frequency":
-                            freq_cell = cell
-                            coordinates = cell.coord.split(':')
-                            freq_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
-                                           ''.join([i for i in coordinates[1] if not i.isdigit()])]
+                tracker_headers, freq_headers, dur_headers = get_key_cells(data_wb)
+                conditions, freq_keys, dur_keys = [], [], []
+                for key in freq_headers:
+                    freq_keys.append([key, freq_headers[key][2]])
+                for key in dur_headers:
+                    dur_keys.append([key, dur_headers[key][2]])
+                try:
+                    cond_wb = wb['Conditions']
+                    for i in range(1, 20):
+                        if cond_wb['A' + str(i)].value is None:
                             break
-                    except AttributeError:
-                        continue
-                for cell in m_cells:
-                    try:
-                        if cell.min_col == freq_cell.max_col + 1 and cell.start_cell.value == "Duration":
-                            coordinates = cell.coord.split(':')
-                            dur_coords = [''.join([i for i in coordinates[0] if not i.isdigit()]),
-                                          ''.join([i for i in coordinates[1] if not i.isdigit()])]
-                            break
-                    except AttributeError:
-                        continue
-                if freq_coords is None:
-                    messagebox.showerror("Error", "Frequency bindings were not found, make sure they start at cell J2!")
-                elif dur_coords is None:
-                    messagebox.showerror("Error", "Duration bindings were not found, make sure they start in the cell "
-                                                  "after 'Frequency' header!\nIf the 'Frequency' header ends at column "
-                                                  "5, then 'Duration' should start at column 6!")
-                else:
-                    freq_key_cells = data_wb[freq_coords[0] + str(3):freq_coords[1] + str(3)]
-                    freq_tag_cells = data_wb[freq_coords[0] + str(4):freq_coords[1] + str(4)]
-                    for key, tag in zip(freq_key_cells[0], freq_tag_cells[0]):
-                        freq_keys.append((str(tag.value), str(key.value)))
-                    dur_key_cells = data_wb[dur_coords[0] + str(3):dur_coords[1] + str(3)]
-                    dur_tag_cells = data_wb[dur_coords[0] + str(4):dur_coords[1] + str(4)]
-                    for key, tag in zip(dur_key_cells[0], dur_tag_cells[0]):
-                        dur_keys.append((str(tag.value), str(key.value)))
-                    conditions = []
-                    try:
-                        cond_wb = wb['Conditions']
-                        for i in range(1, 20):
-                            if cond_wb['A' + str(i)].value is None:
-                                break
-                            else:
-                                conditions.append(str(cond_wb['A' + str(i)].value))
-                    except KeyError as e:
-                        print("No conditions in the workbook!", str(e))
-                        messagebox.showwarning("Warning", "Conditions not found in selected spreadsheet!\n"
-                                                          "Add sheet called 'Conditions' for this feature!")
-                    name = pathlib.Path(filename).stem
-                    x = {
-                        "Name": name,
-                        "Frequency": freq_keys,
-                        "Duration": dur_keys,
-                        "Conditions": conditions
-                    }
-                    with open(path.normpath(path.join(ksf_dir, name + '.json')), 'w') as f:
-                        json.dump(x, f)
-                    keystroke_file = path.join(ksf_dir, name + '.json')
-                    copy2(filename, path.join(ksf_dir, pathlib.Path(filename).name))
-                    return keystroke_file, x
+                        else:
+                            conditions.append(str(cond_wb['A' + str(i)].value))
+                except KeyError as e:
+                    print("No conditions in the workbook!", str(e))
+                    messagebox.showwarning("Warning", "Conditions not found in selected spreadsheet!\n"
+                                                      "Add sheet called 'Conditions' for this feature!")
+                    print("ERROR: Conditions not found in selected spreadsheet!\n"
+                          "Add sheet called 'Conditions' for this feature!")
+                name = pathlib.Path(filename).stem
+                x = {
+                    "Name": name,
+                    "Frequency": freq_keys,
+                    "Duration": dur_keys,
+                    "Conditions": conditions
+                }
+                keystroke_file = path.join(ksf_dir, name + '.json')
+                original_move = path.join(ksf_dir, pathlib.Path(filename).name)
+                with open(path.normpath(keystroke_file), 'w') as f:
+                    json.dump(x, f)
+                if path.exists(original_move):
+                    os.remove(original_move)
+                copy2(filename, original_move)
+                return keystroke_file, x
         except Exception as e:
             messagebox.showwarning("Warning", "Excel format is not correct!\n" + str(e))
             print(traceback.print_exc())
@@ -121,7 +98,7 @@ def cal_acc(ksf_filename, prim_filename, reli_filename, window_size, output_dir)
             with open(reli_filename, 'r') as f:
                 reli_session = json.load(f)
             prim_ksf, reli_ksf, reli_type = prim_session["Keystroke File"], reli_session["Keystroke File"], \
-                                          reli_session["Primary Data"]
+                                            reli_session["Primary Data"]
             prim_num, reli_num = int(prim_session["Session Number"]), int(reli_session["Session Number"])
             # Perform error checking before causing errors
             if prim_num != reli_num:
@@ -251,17 +228,17 @@ def cal_acc(ksf_filename, prim_filename, reli_filename, window_size, output_dir)
                     ws.cell(row=row, column=col).value = "N/A"
                 else:
                     ws.cell(row=row, column=col).value = str(int((val / (val + freq_nia_disagree[
-                                                                 freq_nia_agree.index(val)])) * 100)) + "%"
+                        freq_nia_agree.index(val)])) * 100)) + "%"
             row += 1
             ws.cell(row=row, column=1).value = "Freq TIA"
             for col, val in enumerate(freq_tia_agree, start=2):
                 ws.cell(row=row, column=col).value = str(int((val / freq_intervals[
-                                                             freq_tia_agree.index(val)]) * 100)) + "%"
+                    freq_tia_agree.index(val)]) * 100)) + "%"
             row += 1
             ws.cell(row=row, column=1).value = "Freq EIA"
             for col, val in enumerate(freq_eia_agree, start=2):
                 ws.cell(row=row, column=col).value = str(int((val / freq_intervals[
-                                                             freq_eia_agree.index(val)]) * 100)) + "%"
+                    freq_eia_agree.index(val)]) * 100)) + "%"
             row += 1
             ws.cell(row=row, column=1).value = "Freq OIA"
             for col, val in enumerate(freq_oia_agree, start=2):
@@ -270,7 +247,7 @@ def cal_acc(ksf_filename, prim_filename, reli_filename, window_size, output_dir)
                     ws.cell(row=row, column=col).value = "N/A"
                 else:
                     ws.cell(row=row, column=col).value = str(int((val / (val + freq_oia_disagree[
-                                                                 freq_oia_agree.index(val)])) * 100)) + "%"
+                        freq_oia_agree.index(val)])) * 100)) + "%"
             row += 2
             for col, val in enumerate(dur_bindings, start=2):
                 ws.cell(row=row, column=col).value = val
@@ -282,7 +259,7 @@ def cal_acc(ksf_filename, prim_filename, reli_filename, window_size, output_dir)
             ws.cell(row=row, column=1).value = "Dur EIA"
             for col, val in enumerate(dur_eia_agree, start=2):
                 ws.cell(row=row, column=col).value = str(int((val / dur_intervals[
-                                                             dur_eia_agree.index(val)]) * 100)) + "%"
+                    dur_eia_agree.index(val)]) * 100)) + "%"
             row += 1
 
             ws = wb["Primary Data"]
@@ -396,28 +373,28 @@ def convert_json_csv(json_files, existing_files, output_dir):
 
 
 def get_key_cells(data_wb):
-    tracker_headers = {'Assessment:____________': [Cell, 3],
-                       'Client:________': [Cell, 2],
-                       'Data Coll.': ['', 2],
-                       'Therapist': ['', 1],
-                       'Session': ['', 1],
-                       'Cond.': ['', 1],
-                       'Date': ['', 1],
-                       'Primary': ['', 1],
-                       'Reliability': ['', 1],
-                       'Notes': ['', 1],
-                       'Sess. Dur. (mins)': ['', 1],
-                       'Session Data': ['', 1],
+    tracker_headers = {'Assessment:____________': [Cell, '', '', 3],
+                       'Client:________': [Cell, '', '', 2],
+                       'Data Coll.': [Cell, '', '', 2],
+                       'Therapist': [Cell, '', '', 1],
+                       'Session': [Cell, '', '', 1],
+                       'Cond.': [Cell, '', '', 1],
+                       'Date': [Cell, '', '', 1],
+                       'Primary': [Cell, '', '', 1],
+                       'Reliability': [Cell, '', '', 1],
+                       'Notes': [Cell, '', '', 1],
+                       'Sess. Dur. (mins)': [Cell, '', '', 1],
+                       'Session Data': [Cell, '', '', 1],
                        'Session Data Start': None,
-                       'Frequency': ['', 1],
+                       'Frequency': [Cell, '', '', 1],
                        'Frequency Start': None,
-                       'Duration': ['', 1],
+                       'Duration': [Cell, '', '', 1],
                        'Duration Start': None,
-                       'ST': ['', 1],
-                       'PT': ['', 1],
-                       'Session Time': ['', 1],
+                       'ST': [Cell, '', '', 1],
+                       'PT': [Cell, '', '', 1],
+                       'Session Time': [Cell, '', '', 1],
                        'Session Time Start': None,
-                       'Pause Time': ['', 1],
+                       'Pause Time': [Cell, '', '', 1],
                        'Pause Time Start': None
                        }
     freq_headers = {}
@@ -429,10 +406,17 @@ def get_key_cells(data_wb):
                 if row[i].value:
                     if len(row[i].value) == 1:
                         col_value = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                        value_cell = ''.join([i for i in row[i].coordinate if not i.isdigit()]) \
+                                     + str(int(''.join([i for i in row[i].coordinate if i.isdigit()])) + 1)
+                        cell_value = data_wb[value_cell].value
                         if col_value < tracker_headers['Duration Start']:
-                            freq_headers[row[i].value] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                            freq_headers[row[i].value] = [row[i].coordinate,
+                                                          ''.join([i for i in row[i].coordinate if not i.isdigit()]),
+                                                          cell_value]
                         else:
-                            dur_headers[row[i].value] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                            dur_headers[row[i].value] = [row[i].coordinate,
+                                                         ''.join([i for i in row[i].coordinate if not i.isdigit()]),
+                                                         cell_value]
             if row[i].value in tracker_headers:
                 cell_value = row[i].value
                 if cell_value == 'Session Data':
@@ -445,19 +429,39 @@ def get_key_cells(data_wb):
                     tracker_headers['Session Time Start'] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
                 elif cell_value == 'Pause Time':
                     tracker_headers['Pause Time Start'] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
-                elif cell_value == 'Assessment:____________':
-                    tracker_headers['Assessment:____________'][0] = row[i]
-                elif cell_value == 'Client:________':
-                    tracker_headers['Client:________'][0] = row[i]
-                else:
-                    tracker_headers[cell_value][0] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
-                    tracker_headers[cell_value][1] = 1
+                tracker_headers[cell_value][0] = row[i].coordinate
+                tracker_headers[cell_value][1] = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                tracker_headers[cell_value][2] = ''.join([i for i in row[i].coordinate if i.isdigit()])
+                tracker_headers[cell_value][3] = 0
                 if i + 1 < len(row):
                     # Check if next cell is MergedCell,
                     while type(row[i + 1]) is MergedCell:
-                        tracker_headers[cell_value][1] += 1
+                        tracker_headers[cell_value][3] += 1
                         i += 1
     return tracker_headers, freq_headers, dur_headers
+
+
+def increment_cell(cell, i):
+    number = cell[-1]
+    cell = cell[:-1]
+    if len(cell) == 1:
+        if ord(cell) + i > 90:
+            diff = ((ord(cell) + i) - 90) - 1
+            new_cell = 'A' + increment_char('A', diff)
+        else:
+            new_cell = increment_char(cell, i)
+        return new_cell + number
+    elif len(cell) == 2:
+        if ord(cell[1]) + i > 90:
+            diff = ((ord(cell[1]) + i) - 90) - 1
+            new_cell = increment_char(cell[0], 1) + increment_char('A', diff)
+        else:
+            new_cell = cell[0] + increment_char(cell[1], i)
+        return new_cell + number
+
+
+def increment_char(character, i):
+    return chr(ord(character) + i)
 
 
 def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
@@ -480,20 +484,20 @@ def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
     row, col, sess = 5, tracker_headers['Session Data Start'], 1
     for session in sessions:
         key_freq, key_dur = get_keystroke_info(ksf_file, session)
-        data_wb[tracker_headers['Session'][0] + str(row)].value = sess
-        data_wb[tracker_headers['Cond.'][0] + str(row)].value = session['Condition Name']
-        data_wb[tracker_headers['Date'][0] + str(row)].value = session['Session Date']
-        data_wb[tracker_headers['Therapist'][0] + str(row)].value = session['Session Therapist']
-        data_wb[tracker_headers['Primary'][0] + str(row)].value = session['Primary Therapist']
+        data_wb[tracker_headers['Session'][1] + str(row)].value = sess
+        data_wb[tracker_headers['Cond.'][1] + str(row)].value = session['Condition Name']
+        data_wb[tracker_headers['Date'][1] + str(row)].value = session['Session Date']
+        data_wb[tracker_headers['Therapist'][1] + str(row)].value = session['Session Therapist']
+        data_wb[tracker_headers['Primary'][1] + str(row)].value = session['Primary Therapist']
         # data_wb[tracker_headers['Session'] + str(row)].value = session['Primary Data']
-        data_wb[tracker_headers['Sess. Dur. (mins)'][0] + str(row)].value = int(session['Session Time'])/60
-        data_wb[tracker_headers['ST'][0] + str(row)].value = session['Session Time']
-        data_wb[tracker_headers['PT'][0] + str(row)].value = session['Pause Time']
+        data_wb[tracker_headers['Sess. Dur. (mins)'][1] + str(row)].value = int(session['Session Time']) / 60
+        data_wb[tracker_headers['ST'][1] + str(row)].value = session['Session Time']
+        data_wb[tracker_headers['PT'][1] + str(row)].value = session['Pause Time']
         # Populate frequency and duration keys
         for freq in key_freq:
-            data_wb[freq_headers[freq] + str(row)].value = key_freq[freq]
+            data_wb[freq_headers[freq][0] + str(row)].value = key_freq[freq]
         for dur in key_dur:
-            data_wb[dur_headers[dur] + str(row)].value = key_dur[dur]
+            data_wb[dur_headers[dur][0] + str(row)].value = key_dur[dur]
         row += 1
         sess += 1
     output_file = path.join(output_dir, f"{pathlib.Path(ksf_file).stem}_Charted.xlsx")
@@ -611,5 +615,86 @@ def open_keystroke_file(key_file):
     return bindings
 
 
-def create_new_ksf_revision(original_ksf):
-    pass
+def create_new_ksf_revision(original_ksf, keystrokes):
+    ksf_wb = openpyxl.load_workbook(original_ksf)
+    data_wb = ksf_wb['Data']
+    cond_wb = ksf_wb['Conditions']
+    tracker_headers, freq_headers, dur_headers = get_key_cells(data_wb)
+    wb = Workbook()
+    ws = wb.active
+    wb.create_sheet("Conditions")
+    cond_ws = wb['Conditions']
+    ws.title = "Data"
+    skip_headers = ['Session Data', 'Frequency', 'Duration', 'ST', 'PT', 'Session Time', 'Pause Time']
+    for key in tracker_headers:
+        if key in skip_headers:
+            continue
+        if type(tracker_headers[key]) is list:
+            ws[tracker_headers[key][0]].value = key
+            if tracker_headers[key][3] > 0:
+                cell_range = f"{tracker_headers[key][0]}:" \
+                             f"{increment_char(tracker_headers[key][1], tracker_headers[key][3])}{tracker_headers[key][2]}"
+                ws.merge_cells(cell_range)
+
+    for key in freq_headers:
+        ws[freq_headers[key][0]].value = key
+        name_cell = freq_headers[key][1] + '4'
+        ws[name_cell].value = freq_headers[key][2]
+
+    if len(freq_headers) != len(keystrokes['Frequency']):
+        difference = len(keystrokes['Frequency']) - len(freq_headers)
+        last_cell = freq_headers[key][0]
+        i = 1
+        for key in keystrokes['Frequency'][-difference:]:
+            ws[increment_cell(last_cell, i)].value = key[0]
+            name_cell = increment_cell(last_cell, i)[:-1] + '4'
+            ws[name_cell].value = key[1]
+            i += 1
+        for key in dur_headers:
+            dur_headers[key][0] = increment_cell(dur_headers[key][0], difference)
+        tracker_headers['Session Data'][3] += difference
+        tracker_headers['Frequency'][3] += difference
+        tracker_headers['Duration'][0] = increment_cell(tracker_headers['Duration'][0], difference)
+        tracker_headers['ST'][0] = increment_cell(tracker_headers['ST'][0], difference)
+        tracker_headers['PT'][0] = increment_cell(tracker_headers['PT'][0], difference)
+        tracker_headers['Session Time'][0] = increment_cell(tracker_headers['Session Time'][0], difference)
+        tracker_headers['Pause Time'][0] = increment_cell(tracker_headers['Pause Time'][0], difference)
+
+    for key in dur_headers:
+        ws[dur_headers[key][0]].value = key
+        name_cell = dur_headers[key][0][:-1] + '4'
+        ws[name_cell].value = dur_headers[key][2]
+
+    if len(dur_headers) != len(keystrokes['Duration']):
+        difference = len(keystrokes['Duration']) - len(dur_headers)
+        last_cell = dur_headers[key][0]
+        i = 1
+        for key in keystrokes['Duration'][-difference:]:
+            ws[increment_cell(last_cell, i)].value = key[0]
+            name_cell = increment_cell(last_cell, i)[:-1] + '4'
+            ws[name_cell].value = key[1]
+            i += 1
+        tracker_headers['Session Data'][3] += difference
+        tracker_headers['Duration'][3] += difference
+        tracker_headers['ST'][0] = increment_cell(tracker_headers['ST'][0], difference)
+        tracker_headers['PT'][0] = increment_cell(tracker_headers['PT'][0], difference)
+        tracker_headers['Session Time'][0] = increment_cell(tracker_headers['Session Time'][0], difference)
+        tracker_headers['Pause Time'][0] = increment_cell(tracker_headers['Pause Time'][0], difference)
+
+    for key in skip_headers:
+        if type(tracker_headers[key]) is list:
+            ws[tracker_headers[key][0]].value = key
+            if tracker_headers[key][3] > 0:
+                cell_range = f"{tracker_headers[key][0]}:" \
+                             f"{increment_char(tracker_headers[key][0][:-1], tracker_headers[key][3])}{tracker_headers[key][2]}"
+                ws.merge_cells(cell_range)
+    for i in range(1, 20):
+        if cond_wb['A' + str(i)].value is None:
+            break
+        else:
+            cond_ws['A' + str(i)].value = cond_wb['A' + str(i)].value
+    ksf_dir = pathlib.Path(original_ksf).parent
+    ksf_count = len(glob.glob1(ksf_dir, "*.xlsx"))
+    new_ksf = f"{original_ksf[:-5]}_V{ksf_count + 1}.xlsx"
+    wb.save(new_ksf)
+    return new_ksf
