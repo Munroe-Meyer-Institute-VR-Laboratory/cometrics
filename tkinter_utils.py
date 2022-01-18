@@ -1,5 +1,5 @@
 import tkinter
-from tkinter import TOP, W, N, NW, CENTER
+from tkinter import TOP, W, N, NW, CENTER, messagebox
 from tkinter.ttk import Style
 
 from ttk import Treeview
@@ -172,3 +172,8 @@ class NewKeyPopup:
         if len(self.key_entry.get()) == 1:
             self.caller.key_popup_return(self.tag_entry.get(), self.key_entry.get(), self.dur_freq)
             self.popup_root.destroy()
+        else:
+            messagebox.showwarning("Warning", 'New key binding can only be one character!')
+            print("WARNING: New key binding can only be one character!")
+            self.popup_root.focus_force()
+            self.tag_entry.focus()

@@ -178,7 +178,7 @@ class SessionTimeFields:
     def stop_session(self):
         self.session_toggle_button['text'] = "Restart Session"
         self.session_toggle_button['bg'] = self.session_pause_button['bg']
-        # self.session_toggle_button['command'] = self.caller.menu.restart_program
+        self.session_toggle_button['command'] = self.caller.menu.create_new_session
         self.timer_running = False
         if self.video_playing:
             self.video_playing = self.caller.ovu.video_view.toggle_video()

@@ -1,16 +1,17 @@
 import json
 import os
 import pathlib
+import traceback
 from tkinter import *
 from tkinter import messagebox, filedialog
 
 import yaml
 from ttk import Combobox
 
-from ksf_utils import import_ksf
+from ksf_utils import import_ksf, create_new_ksf_revision, compare_keystrokes
 from logger_util import *
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
-    NewKeyPopup
+    NewKeyPopup, clear_treeview
 from ui_params import project_treeview_params as ptp, treeview_tags, window_ratio, large_field_font, medium_field_font, \
     small_field_font, large_treeview_font, \
     medium_treeview_font, small_treeview_font, large_treeview_rowheight, medium_treeview_rowheight, \
@@ -136,6 +137,14 @@ class ProjectSetupWindow:
                                                                                   dur_heading_dict,
                                                                                   key_column_dict,
                                                                                   double_bind=self.select_duration_key)
+        # Create KSF generation button
+        self.generate_button = Button(self.main_root, text='Generate', width=12, command=self.generate_ksf,
+                                      font=self.field_font)
+        self.generate_button.place(x=self.window_width*0.77+self.button_size[0]+10,
+                                   y=ptp[1] + key_treeview_height + (self.window_height * 0.15) +
+                                     (self.window_height * 0.2) + self.button_size[1] / 2,
+                                   width=self.button_size[0], height=self.button_size[1])
+        self.generate_button.config(state='disabled')
 
         self.continue_button = Button(self.main_root, text='Continue', width=12, command=self.continue_project,
                                       font=self.field_font)
@@ -312,6 +321,7 @@ class ProjectSetupWindow:
             if selection == '0':
                 self.create_new_concern()
             else:
+                # TODO: There is a bug when concern file is created that it is not loaded correctly
                 self.selected_concern = self.concerns[int(selection) - 1]
                 self.phases_menu.config(state='active')
                 self.phases_menu['state'] = 'readonly'
@@ -342,18 +352,7 @@ class ProjectSetupWindow:
         self.ksf_dir = os.path.join(self.patient_dir, self.selected_concern + " " + self.phases_var.get(),
                                     self.config.get_data_folders()[2])
         if os.path.exists(self.ksf_dir):
-            ksf_dir = pathlib.Path(self.ksf_dir)
-            ksf_pattern = r'*.json'
-            try:
-                self.ksf_file = max(ksf_dir.glob(ksf_pattern), key=lambda f: f.stat().st_ctime)
-                self.ksf_path['text'] = pathlib.Path(self.ksf_file).stem
-                self.load_concern_ksf()
-            except ValueError:
-                self.ksf_file = None
-                self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
-                self.ksf_import.config(state='active')
-                self.clear_duration_treeview()
-                self.clear_frequency_treeview()
+            self.load_ksf()
         else:
             messagebox.showerror("Error", "Something went wrong creating your patient data folder!")
 
@@ -366,6 +365,37 @@ class ProjectSetupWindow:
     # endregion
 
     # region KSF UI Controls
+    def load_ksf(self):
+        ksf_dir = pathlib.Path(self.ksf_dir)
+        ksf_pattern = r'*.json'
+        tracker_pattern = r'*.xlsx'
+        try:
+            self.tracker_file = str(max(ksf_dir.glob(tracker_pattern), key=lambda f: f.stat().st_ctime))
+            self.ksf_file = str(max(ksf_dir.glob(ksf_pattern), key=lambda f: f.stat().st_ctime))
+            self.ksf_path['text'] = pathlib.Path(self.ksf_file).stem
+            self.load_concern_ksf()
+        except ValueError:
+            self.ksf_file = None
+            self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
+            self.ksf_import.config(state='active')
+            self.clear_duration_treeview()
+            self.clear_frequency_treeview()
+
+    def generate_ksf(self):
+        new_tracker_file = create_new_ksf_revision(self.tracker_file, self._ksf)
+        new_ksf_file, new_keystrokes = import_ksf(new_tracker_file, self.ksf_dir)
+        if compare_keystrokes(self._ksf, new_keystrokes):
+            self.tracker_file = new_tracker_file
+            self._ksf = new_keystrokes
+            self.ksf_file = new_ksf_file
+            self.clear_duration_treeview()
+            self.clear_frequency_treeview()
+            self.load_ksf()
+            print("INFO: Successfully updated tracker spreadsheet")
+        else:
+            messagebox.showerror("Error", "Failed to update tracker spreadsheet!")
+            print("ERROR: Failed to update tracker spreadsheet")
+
     def key_popup_return(self, tag, key, caller):
         print(tag, key, caller)
         if not tag or not key:
@@ -379,8 +409,6 @@ class ProjectSetupWindow:
     def load_concern_ksf(self):
         with open(self.ksf_file) as f:
             self._ksf = json.load(f)
-        self.frequency_keys = self._ksf["Frequency"]
-        self.duration_keys = self._ksf["Duration"]
         self.conditions = self._ksf["Conditions"]
         self.populate_frequency_treeview()
         self.populate_duration_treeview()
@@ -389,14 +417,19 @@ class ProjectSetupWindow:
     def import_concern_ksf(self):
         tracker_file = filedialog.askopenfilename(filetypes=(("Excel Files", "*.xlsx"),))
         if tracker_file:
-            self.ksf_file, self._ksf = import_ksf(tracker_file, self.ksf_dir)
-            self.ksf_path['text'] = pathlib.Path(self.ksf_file).stem
-            self.frequency_keys = self._ksf["Frequency"]
-            self.duration_keys = self._ksf["Duration"]
-            self.conditions = self._ksf["Conditions"]
-            self.populate_frequency_treeview()
-            self.populate_duration_treeview()
-            self.continue_button.config(state='active')
+            try:
+                self.tracker_file = tracker_file
+                self.ksf_file, self._ksf = import_ksf(tracker_file, self.ksf_dir)
+                self.ksf_path['text'] = pathlib.Path(self.ksf_file).stem
+                self.frequency_keys = self._ksf["Frequency"]
+                self.duration_keys = self._ksf["Duration"]
+                self.conditions = self._ksf["Conditions"]
+                self.populate_frequency_treeview()
+                self.populate_duration_treeview()
+                self.continue_button.config(state='active')
+            except Exception as e:
+                messagebox.showerror("Error", f"Error encountered when processing tracker spreadsheet!\n{str(e)}")
+                print(f"ERROR: Error encountered when processing tracker spreadsheet\n{str(e)}\n{traceback.print_exc()}")
         else:
             messagebox.showwarning("Warning", "No tracker file selected! Please try again.")
 
@@ -404,32 +437,30 @@ class ProjectSetupWindow:
         self.frequency_treeview_parents.append(
             self.frequency_key_treeview.insert("", 'end', str(0), text="Create New Frequency Key",
                                                tags=treeview_tags[2]))
-        if self.frequency_keys:
-            for i in range(0, len(self.frequency_keys)):
+        if self._ksf:
+            for i in range(0, len(self._ksf['Frequency'])):
                 self.frequency_treeview_parents.append(
-                    self.frequency_key_treeview.insert("", 'end', text=str(self.frequency_keys[i][1]),
-                                                       values=(str(self.frequency_keys[i][0]),),
+                    self.frequency_key_treeview.insert("", 'end', text=str(self._ksf['Frequency'][i][1]),
+                                                       values=(str(self._ksf['Frequency'][i][0]),),
                                                        tags=(treeview_tags[i % 2])))
 
     def clear_frequency_treeview(self):
-        for parent in self.frequency_treeview_parents:
-            self.frequency_key_treeview.delete(parent)
+        clear_treeview(self.frequency_key_treeview)
         self.frequency_treeview_parents = []
 
     def clear_duration_treeview(self):
-        for parent in self.duration_treeview_parents:
-            self.duration_key_treeview.delete(parent)
+        clear_treeview(self.duration_key_treeview)
         self.duration_treeview_parents = []
 
     def populate_duration_treeview(self):
         self.duration_treeview_parents.append(
             self.duration_key_treeview.insert("", 'end', str(0), text="Create New Duration Key",
                                               tags=treeview_tags[2]))
-        if self.duration_keys:
-            for i in range(0, len(self.duration_keys)):
+        if self._ksf:
+            for i in range(0, len(self._ksf['Duration'])):
                 self.duration_treeview_parents.append(
-                    self.duration_key_treeview.insert("", 'end', text=str(self.duration_keys[i][1]),
-                                                      values=(str(self.duration_keys[i][0]),),
+                    self.duration_key_treeview.insert("", 'end', text=str(self._ksf['Duration'][i][1]),
+                                                      values=(str(self._ksf['Duration'][i][0]),),
                                                       tags=(treeview_tags[i % 2])))
 
     def select_frequency_key(self, event):
@@ -449,16 +480,28 @@ class ProjectSetupWindow:
                 self.delete_duration_key(int(selection))
 
     def create_frequency_key(self, tag, key):
-        self.frequency_keys.append([str(key), str(tag)])
+        self._ksf['Frequency'].append([str(key), str(tag)])
+        clear_treeview(self.frequency_key_treeview)
+        self.populate_frequency_treeview()
+        self.generate_button.config(state='active')
 
     def create_duration_key(self, tag, key):
-        self.duration_keys.append([str(key), str(tag)])
+        self._ksf['Duration'].append([str(key), str(tag)])
+        clear_treeview(self.duration_key_treeview)
+        self.populate_duration_treeview()
+        self.generate_button.config(state='active')
 
     def delete_frequency_key(self, index):
-        self.frequency_keys.pop(index)
+        self._ksf['Frequency'].pop(index)
+        clear_treeview(self.frequency_key_treeview)
+        self.populate_frequency_treeview()
+        self.generate_button.config(state='active')
 
     def delete_duration_key(self, index):
-        self.duration_keys.pop(index)
+        self._ksf['Duration'].pop(index)
+        clear_treeview(self.duration_key_treeview)
+        self.populate_duration_treeview()
+        self.generate_button.config(state='active')
     # endregion
 
     # region Exit UI Controls

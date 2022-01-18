@@ -59,9 +59,10 @@ def import_ksf(filename, ksf_dir):
                 original_move = path.join(ksf_dir, pathlib.Path(filename).name)
                 with open(path.normpath(keystroke_file), 'w') as f:
                     json.dump(x, f)
-                if path.exists(original_move):
-                    os.remove(original_move)
-                copy2(filename, original_move)
+                if filename != original_move:
+                    if path.exists(original_move):
+                        os.remove(original_move)
+                    copy2(filename, original_move)
                 return keystroke_file, x
         except Exception as e:
             messagebox.showwarning("Warning", "Excel format is not correct!\n" + str(e))
@@ -700,7 +701,10 @@ def create_new_ksf_revision(original_ksf, keystrokes):
             cond_ws['A' + str(i)].value = cond_wb['A' + str(i)].value
     ksf_dir = pathlib.Path(original_ksf).parent
     ksf_count = len(glob.glob1(ksf_dir, "*.xlsx"))
-    new_ksf = f"{original_ksf[:-5]}_V{ksf_count + 1}.xlsx"
+    if ksf_count > 1:
+        new_ksf = f"{original_ksf[:-8]}_V{ksf_count + 1}.xlsx"
+    else:
+        new_ksf = f"{original_ksf[:-5]}_V{ksf_count + 1}.xlsx"
     wb.save(new_ksf)
     return new_ksf
 
