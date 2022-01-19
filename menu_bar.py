@@ -1,8 +1,6 @@
-import sys
+import webbrowser
 from tkinter import *
 from analysis_ui import populate_spreadsheet, export_columnwise_csv, AccuracyPopup
-import os
-import pathlib
 
 
 class MenuBar(Frame):
@@ -35,12 +33,10 @@ class MenuBar(Frame):
         self.caller.restart_program()
 
     def open_docs(self):
-        pass
+        docs_url = 'https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics'
+        webbrowser.open_new_tab(docs_url)
 
     def start_new_session(self):
-        """Restarts the current program.
-        Note: this function does not return. Any cleanup action (like
-        saving data) must be done before calling this function."""
         self.caller.create_new_session()
 
     def export_csv(self):

@@ -340,7 +340,6 @@ class ProjectSetupWindow:
         with open(self.concern_file, 'w') as file:
             yaml.dump(self.concerns, file)
         self.read_concern_file()
-
     # endregion
 
     # region Phase UI Controls
@@ -361,7 +360,6 @@ class ProjectSetupWindow:
             data_folder = os.path.join(self.phase_dir, folder)
             if not os.path.exists(data_folder):
                 os.mkdir(data_folder)
-
     # endregion
 
     # region KSF UI Controls
