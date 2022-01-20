@@ -438,8 +438,8 @@ class ProjectSetupWindow:
         if self._ksf:
             for i in range(0, len(self._ksf['Frequency'])):
                 self.frequency_treeview_parents.append(
-                    self.frequency_key_treeview.insert("", 'end', text=str(self._ksf['Frequency'][i][1]),
-                                                       values=(str(self._ksf['Frequency'][i][0]),),
+                    self.frequency_key_treeview.insert("", 'end', text=str(self._ksf['Frequency'][i][0]),
+                                                       values=(str(self._ksf['Frequency'][i][1]),),
                                                        tags=(treeview_tags[i % 2])))
 
     def clear_frequency_treeview(self):
@@ -457,8 +457,8 @@ class ProjectSetupWindow:
         if self._ksf:
             for i in range(0, len(self._ksf['Duration'])):
                 self.duration_treeview_parents.append(
-                    self.duration_key_treeview.insert("", 'end', text=str(self._ksf['Duration'][i][1]),
-                                                      values=(str(self._ksf['Duration'][i][0]),),
+                    self.duration_key_treeview.insert("", 'end', text=str(self._ksf['Duration'][i][0]),
+                                                      values=(str(self._ksf['Duration'][i][1]),),
                                                       tags=(treeview_tags[i % 2])))
 
     def select_frequency_key(self, event):

@@ -184,22 +184,22 @@ class ViewVideo:
                                      anchor=CENTER)
         self.play_image = PhotoImage(file='images/video-start.png')
         self.pause_image = PhotoImage(file='images/video-pause.png')
-        self.play_button = Button(self.root, image=self.play_image)
-        self.play_button.place(x=5, y=self.video_height + 40, anchor=NW)
+        # self.play_button = Button(self.root, image=self.play_image)
+        # self.play_button.place(x=5, y=self.video_height + 40, anchor=NW)
         self.frame_var = IntVar(self.root)
         self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
         self.video_slider.config(length=self.video_width)
         self.video_slider.place(x=5, y=self.video_height, anchor=NW)
 
-        event_header_dict = {"#0": ["Event Time", 'w', 1, YES, 'w']}
-        event_column_dict = {"1": ["Event Tag", 'w', 1, YES, 'w'],
-                             "2": ["Event Frame", 'w', 1, YES, 'w']}
-        self.event_treeview, self.event_fs = build_treeview(self.root,
-                                                            x=20, y=self.video_height + 90,
-                                                            height=120,
-                                                            width=width - 25,
-                                                            heading_dict=event_header_dict,
-                                                            column_dict=event_column_dict)
+        # event_header_dict = {"#0": ["Event Time", 'w', 1, YES, 'w']}
+        # event_column_dict = {"1": ["Event Tag", 'w', 1, YES, 'w'],
+        #                      "2": ["Event Frame", 'w', 1, YES, 'w']}
+        # self.event_treeview, self.event_fs = build_treeview(self.root,
+        #                                                     x=20, y=self.video_height + 90,
+        #                                                     height=120,
+        #                                                     width=width - 25,
+        #                                                     heading_dict=event_header_dict,
+        #                                                     column_dict=event_column_dict)
 
     def load_video(self):
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
@@ -211,9 +211,6 @@ class ViewVideo:
                     self.player = tkvideo.tkvideo(video_file, self.video_label, loop=False,
                                                   size=(self.video_width, self.video_height),
                                                   keep_ratio=True,
-                                                  play_button=self.play_button,
-                                                  pause_image=self.pause_image,
-                                                  play_image=self.play_image,
                                                   slider=self.video_slider,
                                                   slider_var=self.frame_var)
                     self.video_loaded = True
@@ -858,8 +855,8 @@ class KeystrokeDataFields:
     def populate_freq_bindings(self):
         for i in range(0, len(self.bindings)):
             bind = self.bindings[i]
-            self.freq_treeview_parents.append(self.freq_treeview.insert("", 'end', str(i), text=str(bind[1]),
-                                                                        values=(self.bindings_freq[i], bind[0]),
+            self.freq_treeview_parents.append(self.freq_treeview.insert("", 'end', str(i), text=str(bind[0]),
+                                                                        values=(self.bindings_freq[i], bind[1]),
                                                                         tags=(treeview_bind_tags[i % 2])))
 
     def populate_dur_bindings(self):
@@ -868,8 +865,8 @@ class KeystrokeDataFields:
             self.dur_sticky.append(False)
             self.sticky_start.append(0)
             self.sticky_dur.append(0)
-            self.dur_treeview_parents.append(self.dur_treeview.insert("", 'end', str(i), text=str(bind[1]),
-                                                                      values=(0, 0, bind[0]),
+            self.dur_treeview_parents.append(self.dur_treeview.insert("", 'end', str(i), text=str(bind[0]),
+                                                                      values=(0, 0, bind[1]),
                                                                       tags=(treeview_bind_tags[i % 2])))
 
     def populate_sh_bindings(self):
