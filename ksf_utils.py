@@ -32,9 +32,9 @@ def import_ksf(filename, ksf_dir):
                 tracker_headers, freq_headers, dur_headers = get_key_cells(data_wb)
                 conditions, freq_keys, dur_keys = [], [], []
                 for key in freq_headers:
-                    freq_keys.append([key, freq_headers[key][2]])
+                    freq_keys.append([freq_headers[key][2], key])
                 for key in dur_headers:
-                    dur_keys.append([key, dur_headers[key][2]])
+                    dur_keys.append([dur_headers[key][2], key])
                 try:
                     cond_wb = wb['Conditions']
                     for i in range(1, 20):
@@ -87,13 +87,13 @@ def load_ksf(ksf_filename):
     return freq_bindings, dur_bindings
 
 
-def cal_acc(ksf_filename, prim_filename, reli_filename, window_size, output_dir):
-    if path.isfile(reli_filename) and path.isfile(prim_filename) and path.isfile(ksf_filename):
+def cal_acc(prim_filename, reli_filename, window_size, output_dir):
+    if path.isfile(reli_filename) and path.isfile(prim_filename):
         try:
             # Get the bindings from the KSF file
-            freq_bindings, dur_bindings = load_ksf(ksf_filename)
+            # freq_bindings, dur_bindings = load_ksf(ksf_filename)
             # Get the filename stem to compare against prim and reli files
-            ksf_filename = pathlib.Path(ksf_filename).stem
+            # ksf_filename = pathlib.Path(ksf_filename).stem
             # Load in prim and reli files
             with open(prim_filename, 'r') as f:
                 prim_session = json.load(f)
@@ -101,19 +101,17 @@ def cal_acc(ksf_filename, prim_filename, reli_filename, window_size, output_dir)
                 reli_session = json.load(f)
             prim_ksf, reli_ksf, reli_type = prim_session["Keystroke File"], reli_session["Keystroke File"], \
                                             reli_session["Primary Data"]
+            freq_bindings = prim_session["KSF"]["Frequency"]
+            dur_bindings = prim_session["KSF"]["Duration"]
             prim_num, reli_num = int(prim_session["Session Number"]), int(reli_session["Session Number"])
             # Perform error checking before causing errors
             if prim_num != reli_num:
                 messagebox.showerror("Error", "Session numbers are not the same!")
                 print("ERROR: Session numbers are not the same")
                 return
-            if prim_ksf != ksf_filename:
-                messagebox.showerror("Error", "Primary session does not use the selected KSF!")
-                print("ERROR: Primary session does not use the selected KSF")
-                return
-            elif reli_ksf != ksf_filename:
-                messagebox.showerror("Error", "Reliability session does not use the selected KSF!")
-                print("ERROR: Reliability session does not use the selected KSF")
+            if prim_ksf != reli_ksf:
+                messagebox.showerror("Error", "Sessions do not use the same KSF file!")
+                print("ERROR: Sessions do not use the same KSF file")
                 return
             elif reli_type == "Primary":
                 messagebox.showerror("Error", "Selected reliability file is not a reliability collection!")
@@ -204,7 +202,7 @@ def cal_acc(ksf_filename, prim_filename, reli_filename, window_size, output_dir)
                 "Reliability Session Therapist": reli_session["Session Therapist"],
                 "Window Size (seconds)": str(window_size) + " seconds"
             }
-            path_to_file = path.join(output_dir, f"{ksf_filename}_IOA_{prim_num}.xlsx")
+            path_to_file = path.join(output_dir, f"{prim_ksf}_IOA_{prim_num}.xlsx")
             wb = openpyxl.Workbook()
             ws = wb.active
             wb.create_sheet("Primary Data")
@@ -348,8 +346,9 @@ def convert_json_csv(json_files, existing_files, output_dir):
         # Load session and split it up
         with open(file, 'r') as f:
             session = json.load(f)
-        session_data = session[:14]
+        session_data = {k: v for k, v in session.items() if k in list(session.keys())[:14]}
         event_history = session["Event History"]
+        # TODO: Export E4 data to CSV
         e4_data = session["E4 Data"]
         # Open output file and write session to it
         with open(path.join(output_dir, f"{name}.csv"), 'w', newline='') as f:
@@ -412,13 +411,13 @@ def get_key_cells(data_wb):
                                      + str(int(''.join([i for i in row[i].coordinate if i.isdigit()])) + 1)
                         cell_value = data_wb[value_cell].value
                         if col_value < tracker_headers['Duration Start']:
-                            freq_headers[row[i].value] = [row[i].coordinate,
-                                                          ''.join([i for i in row[i].coordinate if not i.isdigit()]),
-                                                          cell_value]
+                            freq_headers[cell_value] = [row[i].coordinate,
+                                                        ''.join([i for i in row[i].coordinate if not i.isdigit()]),
+                                                        row[i].value]
                         else:
-                            dur_headers[row[i].value] = [row[i].coordinate,
-                                                         ''.join([i for i in row[i].coordinate if not i.isdigit()]),
-                                                         cell_value]
+                            dur_headers[cell_value] = [row[i].coordinate,
+                                                       ''.join([i for i in row[i].coordinate if not i.isdigit()]),
+                                                       row[i].value]
             if row[i].value in tracker_headers:
                 cell_value = row[i].value
                 if cell_value == 'Session Data':
@@ -484,8 +483,8 @@ def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
     # Get the key cells in the spreadsheet
     tracker_headers, freq_headers, dur_headers = get_key_cells(data_wb)
     # Assign values in header
-    tracker_headers['Assessment:____________'][0].value = "Assessment: " + sessions[0]['Assessment Name']
-    tracker_headers['Client:________'][0].value = "Client: " + patient_name
+    data_wb[tracker_headers['Assessment:____________'][0]] = "Assessment: " + sessions[0]['Assessment Name']
+    data_wb[tracker_headers['Client:________'][0]] = "Client: " + patient_name
     # We expect the
     row, col, sess = 5, tracker_headers['Session Data Start'], 1
     for session in sessions:
@@ -501,13 +500,19 @@ def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
         data_wb[tracker_headers['PT'][1] + str(row)].value = session['Pause Time']
         # Populate frequency and duration keys
         for freq in key_freq:
-            data_wb[freq_headers[freq][0] + str(row)].value = key_freq[freq]
+            data_wb[freq_headers[freq][1] + str(row)].value = key_freq[freq]
         for dur in key_dur:
-            data_wb[dur_headers[dur][0] + str(row)].value = key_dur[dur]
+            data_wb[dur_headers[dur][1] + str(row)].value = key_dur[dur]
         row += 1
         sess += 1
     output_file = path.join(output_dir, f"{pathlib.Path(ksf_file).stem}_Charted.xlsx")
-    wb.save(output_file)
+    try:
+        wb.save(output_file)
+    except PermissionError as e:
+        messagebox.showerror("Error", "Permission denied to save charted tracker, make sure your have permissions to "
+                                      f"save in the output directory or that the spreadsheet is closed!\n{output_file}")
+        print("ERROR: Permission denied to save charted tracker, make sure your have permissions to "
+              f"save in the output directory or that the spreadsheet is closed!\n{output_file}")
     return output_file
 
 
@@ -555,20 +560,20 @@ def get_keystroke_info(key_file, session_file):
     for key in keystroke_json:
         if key == "Frequency":
             for bindings in keystroke_json[key]:
-                freq_bindings[bindings[0]] = bindings[1]
+                freq_bindings[bindings[1]] = bindings[0]
                 key_freq[bindings[1]] = 0
         if key == "Duration":
             for bindings in keystroke_json[key]:
-                dur_bindings[bindings[0]] = bindings[1]
+                dur_bindings[bindings[1]] = bindings[0]
                 key_dur[bindings[1]] = 0
     event_history = session_file["Event History"]
     for session_info in event_history:
         session_param = session_info[0]
         try:
             if session_param in freq_bindings:
-                key_freq[freq_bindings[session_param]] += 1
+                key_freq[session_param] += 1
             elif session_param in dur_bindings:
-                key_dur[dur_bindings[session_param]] += int(session_info[1][1]) - int(session_info[1][0])
+                key_dur[session_param] += int(session_info[1][1]) - int(session_info[1][0])
         except Exception as e:
             print(f"ERROR: Error encountered\n{str(e)}\n{traceback.print_exc()}")
             continue
@@ -643,9 +648,9 @@ def create_new_ksf_revision(original_ksf, keystrokes):
                 ws.merge_cells(cell_range)
 
     for key in freq_headers:
-        ws[freq_headers[key][0]].value = key
+        ws[freq_headers[key][0]].value = freq_headers[key][2]
         name_cell = freq_headers[key][1] + '4'
-        ws[name_cell].value = freq_headers[key][2]
+        ws[name_cell].value = key
 
     if len(freq_headers) != len(keystrokes['Frequency']):
         difference = len(keystrokes['Frequency']) - len(freq_headers)
@@ -667,9 +672,9 @@ def create_new_ksf_revision(original_ksf, keystrokes):
         tracker_headers['Pause Time'][0] = increment_cell(tracker_headers['Pause Time'][0], difference)
 
     for key in dur_headers:
-        ws[dur_headers[key][0]].value = key
+        ws[dur_headers[key][0]].value = dur_headers[key][2]
         name_cell = dur_headers[key][0][:-1] + '4'
-        ws[name_cell].value = dur_headers[key][2]
+        ws[name_cell].value = key
 
     if len(dur_headers) != len(keystrokes['Duration']):
         difference = len(keystrokes['Duration']) - len(dur_headers)

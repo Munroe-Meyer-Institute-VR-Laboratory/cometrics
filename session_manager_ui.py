@@ -282,6 +282,7 @@ class PatientDataFields:
         ]
         if self.patient.name:
             self.patient_vars[PatientDataVar.PATIENT_NAME].set(self.patient.name)
+            self.patient_name = self.patient.name
         if self.patient.medical_record_number:
             self.patient_vars[PatientDataVar.MRN].set(self.patient.medical_record_number)
         self.session_number = prim_session_number
@@ -507,6 +508,9 @@ class SessionManagerWindow:
         self.patient_file = project_setup.patient_data_file
         self.keystroke_file = project_setup.ksf_file
         self.session_dir = project_setup.phase_dir
+        self.tracker_file = project_setup.tracker_file
+        self.graph_dir = path.join(self.session_dir, config.get_data_folders()[0])
+        self.export_dir = path.join(self.session_dir, config.get_data_folders()[3])
         self.data_dir = path.join(self.session_dir, config.get_data_folders()[1])
         self.prim_dir = path.join(self.data_dir, "Primary")
         if not os.path.exists(self.prim_dir):
@@ -599,6 +603,7 @@ class SessionManagerWindow:
                                      header_font=self.header_font,
                                      field_font=self.field_font,
                                      field_offset=self.field_offset, debug=True)
+        self.patient_name = self.pdf.patient_name
         # endregion
 
         # Setup key listener
@@ -713,7 +718,6 @@ class SessionManagerWindow:
             print(f"ERROR: Exception encountered when handling key press:\n{str(e)}")
 
     def save_session(self):
-        # TODO: Redo the saving procedure
         session_fields = self.pdf.get_session_fields()
         session_data, e4_data = self.ovu.get_session_data()
         x = {
@@ -726,6 +730,7 @@ class SessionManagerWindow:
         session_fields.update(x)
         session_fields["Event History"] = session_data
         session_fields["E4 Data"] = e4_data
+        session_fields["KSF"] = self.ovu.key_view.keystroke_json
         reli = '_R' if session_fields["Primary Data"] == "Reliability" else ''
         output_session_file = path.join(self.session_dir,
                                         self.config.get_data_folders()[1],

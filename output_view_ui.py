@@ -840,12 +840,15 @@ class KeystrokeDataFields:
         with open(self.key_file) as f:
             self.keystroke_json = json.load(f)
         if len(self.keystroke_json) == 1:
-            self.new_keystroke = True
+            messagebox.showerror("Error", "Keystroke file is empty, which it should not be!")
+            print(f"ERROR: Keystroke file is empty\n{self.key_file}\n{self.keystroke_json}")
         else:
             for key in self.keystroke_json:
                 if key == "Frequency":
                     for binding in self.keystroke_json[key]:
+                        # TODO: Refactor this variable to 'freq_bindings'
                         self.bindings.append(binding)
+                        # TODO: What is this variable and why do I do this to myself
                         self.bindings_freq.append(0)
                 elif key == "Duration":
                     for binding in self.keystroke_json[key]:

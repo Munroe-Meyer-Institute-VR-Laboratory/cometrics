@@ -109,7 +109,7 @@ class ProjectSetupWindow:
 
         self.ksf_import = Button(self.main_root, text="Import", font=self.field_font, width=10,
                                  command=self.import_concern_ksf)
-        self.ksf_import.place(x=int(self.window_width*0.3) + self.button_size[0] / 2 + self.window_width / 2, y=ptp[1],
+        self.ksf_import.place(x=self.window_width*0.77+self.button_size[0]+10, y=ptp[1],
                               width=self.button_size[0], height=self.button_size[1], anchor=NW)
         self.ksf_import.config(state='disabled')
         # Define frequency and duration key headers
@@ -186,9 +186,9 @@ class ProjectSetupWindow:
                 os.mkdir(self.project_dir)
             # Add to treeview
             self.project_treeview_parents.append(
-                self.project_treeview.insert("", 'end', str((len(self.project_treeview_parents) + 1)), text=data,
-                                             tags=treeview_tags[(len(self.project_treeview_parents) + 1) % 2]))
-            select_focus(self.project_treeview, len(self.project_treeview_parents))
+                self.project_treeview.insert("", 'end', str((int(self.project_treeview_parents[-1]) + 1)), text=data,
+                                             tags=treeview_tags[(int(self.project_treeview_parents[-1]) + 1) % 2]))
+            select_focus(self.project_treeview, self.project_treeview_parents[-1])
             # Save recent path to config
             if not self.recent_projects:
                 self.recent_projects = []
@@ -201,18 +201,17 @@ class ProjectSetupWindow:
             if not os.path.exists(self.patient_dir):
                 os.mkdir(self.patient_dir)
             self.patient_treeview_parents.append(
-                self.patient_treeview.insert("", 'end', str((len(self.patient_treeview_parents) + 1)), text=data,
-                                             tags=treeview_tags[(len(self.patient_treeview_parents) + 1) % 2]))
-            select_focus(self.patient_treeview, len(self.patient_treeview_parents))
+                self.patient_treeview.insert("", 'end', str((int(self.patient_treeview_parents[-1]) + 1)), text=data,
+                                             tags=treeview_tags[(int(self.patient_treeview_parents[-1]) + 1) % 2]))
+            select_focus(self.patient_treeview, self.patient_treeview_parents[-1])
             self.load_patient(self.patient_dir)
         elif caller == 2:
             self.concerns.append(data)
             self.write_concern_file()
             self.concern_treeview_parents.append(
-                self.concern_treeview.insert("", 'end', str((len(self.concern_treeview_parents) + 1)), text=data,
-                                             tags=treeview_tags[(len(self.concern_treeview_parents) + 1) % 2]))
-            select_focus(self.concern_treeview, len(self.concern_treeview_parents))
-
+                self.concern_treeview.insert("", 'end', str((int(self.concern_treeview_parents[-1]) + 1)), text=data,
+                                             tags=treeview_tags[(int(self.concern_treeview_parents[-1]) + 1) % 2]))
+            select_focus(self.concern_treeview, self.concern_treeview_parents[-1])
     # endregion
 
     # region Project UI Controls
@@ -222,11 +221,16 @@ class ProjectSetupWindow:
             if selection == '0':
                 self.create_new_project()
             else:
-                self.load_project(self.recent_projects[int(selection) - 1])
+                try:
+                    self.load_project(self.recent_projects[int(selection) - 1])
+                except IndexError as e:
+                    print(f"ERROR: Error encountered when selecting project:\n{str(e)}\n{traceback.print_exc()}\n"
+                          f"{self.recent_projects}\n{selection}")
 
     def create_new_project(self):
         self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
         print("INFO:", self.top_dir)
+        # TODO: Need to handle the case where they've configured a project but want to change the project
         if not self.top_dir:
             messagebox.showwarning("Warning", "No root filepath chosen! Please try again.")
             return
@@ -252,8 +256,9 @@ class ProjectSetupWindow:
         except StopIteration:
             messagebox.showerror("Error", "Selected project cannot be found!")
             return
+        clear_treeview(self.patient_treeview)
+        self.patient_treeview_parents = []
         self.populate_patients()
-
     # endregion
 
     # region Patient UI Controls
@@ -321,10 +326,13 @@ class ProjectSetupWindow:
             if selection == '0':
                 self.create_new_concern()
             else:
-                # TODO: There is a bug when concern file is created that it is not loaded correctly
-                self.selected_concern = self.concerns[int(selection) - 1]
-                self.phases_menu.config(state='active')
-                self.phases_menu['state'] = 'readonly'
+                try:
+                    # TODO: There is a bug when concern file is created that it is not loaded correctly
+                    self.selected_concern = self.concerns[int(selection) - 1]
+                    self.phases_menu.config(state='active')
+                    self.phases_menu['state'] = 'readonly'
+                except IndexError as e:
+                    print(f"ERROR: Error encountered when selecting concern: \n{str(e)}\n{traceback.print_exc()}\n{self.concerns}\n{selection}")
 
     def create_new_concern(self):
         EntryPopup(self, self.main_root, "Enter New Concern", 2)

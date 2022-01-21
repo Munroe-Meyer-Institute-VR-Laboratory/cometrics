@@ -1,6 +1,7 @@
 import webbrowser
 from tkinter import *
-from analysis_ui import populate_spreadsheet, export_columnwise_csv, AccuracyPopup
+from analysis_ui import AccuracyPopup
+from ksf_utils import export_columnwise_csv, populate_spreadsheet
 
 
 class MenuBar(Frame):
@@ -40,10 +41,10 @@ class MenuBar(Frame):
         self.caller.create_new_session()
 
     def export_csv(self):
-        export_columnwise_csv(self.caller, self.caller.session_dir)
+        export_columnwise_csv(self.caller.prim_dir, self.caller.reli_dir, self.caller.export_dir)
 
     def get_session_acc(self):
-        AccuracyPopup(self.caller.root, self.caller.keystroke_file)
+        AccuracyPopup(self.caller.root, self.caller.keystroke_file, self.caller)
 
     def load_sessions(self):
-        populate_spreadsheet(self.caller, self.caller.patient_file, self.caller.keystroke_file, self.caller.session_dir)
+        populate_spreadsheet(self.caller.patient_name, self.caller.tracker_file, self.caller.prim_dir, self.caller.graph_dir)
