@@ -9,7 +9,7 @@ from tkinter import filedialog, messagebox
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
-import tkvideo
+from tkvideoplayer import tkvideoplayer
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 # Implement the default Matplotlib key bindings.
 from matplotlib.figure import Figure
@@ -125,7 +125,6 @@ class OutputViewPanel:
         self.e4_view.session_started = False
 
     def check_event(self, key_char, start_time):
-        # TODO: Use this to synchronize events across the output view
         # Make sure it is not None
         if key_char:
             current_frame = None
@@ -142,7 +141,10 @@ class OutputViewPanel:
             # Get the appropriate key event
             key_events = self.key_view.check_key(key_char, start_time, current_frame, current_window)
             # Add to session history
-            self.key_view.add_session_event(key_events)
+            if key_events:
+                self.key_view.add_session_event(key_events)
+            else:
+                print("INFO: No key events returned")
 
     def get_session_data(self):
         if self.e4_view.windowed_readings:
@@ -208,7 +210,7 @@ class ViewVideo:
                 if pathlib.Path(video_file).suffix == ".mp4":
                     self.load_video_button.place_forget()
                     self.video_file = video_file
-                    self.player = tkvideo.tkvideo(video_file, self.video_label, loop=False,
+                    self.player = tkvideoplayer(video_file, self.video_label, loop=False,
                                                   size=(self.video_width, self.video_height),
                                                   keep_ratio=True,
                                                   slider=self.video_slider,
@@ -556,24 +558,24 @@ class ViewE4:
         if self.streaming:
             if self.e4:
                 if self.e4.connected:
+                    if self.session_started:
+                        if self.save_reading:
+                            self.save_reading = False
+                            self.windowed_readings.append(
+                                (self.e4.acc_3d[-(32 * 3):],
+                                 self.e4.acc_x[-32:], self.e4.acc_y[-32:], self.e4.acc_z[-32:],
+                                 self.e4.acc_timestamps[-32:],
+                                 self.e4.bvp[-64:], self.e4.bvp_timestamps[-64:],
+                                 self.e4.gsr[-4:], self.e4.gsr_timestamps[-4:],
+                                 self.e4.tmp[-4:], self.e4.tmp_timestamps[-4:],
+                                 # Key tag
+                                 [],
+                                 # Frame index
+                                 [])
+                            )
+                        else:
+                            self.save_reading = True
                     if self.root.winfo_viewable():
-                        if self.session_started:
-                            if self.save_reading:
-                                self.save_reading = False
-                                self.windowed_readings.append(
-                                    (self.e4.acc_3d[-(32 * 3):],
-                                     self.e4.acc_x[-32:], self.e4.acc_y[-32:], self.e4.acc_z[-32:],
-                                     self.e4.acc_timestamps[-32:],
-                                     self.e4.bvp[-64:], self.e4.bvp_timestamps[-64:],
-                                     self.e4.gsr[-4:], self.e4.gsr_timestamps[-4:],
-                                     self.e4.tmp[-4:], self.e4.tmp_timestamps[-4:],
-                                     # Key tag
-                                     [],
-                                     # Frame index
-                                     [])
-                                )
-                            else:
-                                self.save_reading = True
                         # Limit x and y lists to 20 items
                         x_ys = self.e4.acc_x[-100:]
                         y_ys = self.e4.acc_y[-100:]
@@ -754,17 +756,17 @@ class KeystrokeDataFields:
     def check_key(self, key_char, start_time, current_frame, current_window):
         return_bindings = []
         for i in range(0, len(self.bindings)):
-            if self.bindings[i][1] == key_char:
+            if self.bindings[i][0] == key_char:
                 self.bindings_freq[i] += 1
                 self.freq_treeview.set(str(i), column="1", value=self.bindings_freq[i])
-                return_bindings.append((self.bindings[i][0], start_time, current_frame, current_window))
+                return_bindings.append((self.bindings[i][1], start_time, current_frame, current_window))
         for i in range(0, len(self.dur_bindings)):
-            if self.dur_bindings[i][1] == key_char:
+            if self.dur_bindings[i][0] == key_char:
                 if self.dur_sticky[i]:
                     self.dur_treeview.item(str(i), tags=treeview_bind_tags[i % 2])
                     self.dur_sticky[i] = False
                     duration = [self.sticky_start[i], start_time]
-                    return_bindings.append((self.dur_bindings[i][0], duration, current_frame, current_window))
+                    return_bindings.append((self.dur_bindings[i][1], duration, current_frame, current_window))
                     self.sticky_dur[i] += start_time - self.sticky_start[i]
                     self.sticky_start[i] = 0
                     self.dur_treeview.set(str(i), column="2", value=self.sticky_dur[i])

@@ -3,10 +3,13 @@ data-folders:
 - Raw Data
 - KSF
 - Export
-first-time: true
+first-time: false
 patient-concerns: concerns.yml
 phases:
 - Assessment
 - Treatment
-recent-projects: []
-window-size: []
+recent-projects:
+- C:\Users\wsarc\Desktop\ExpDir\Haircut Simulator
+window-size:
+- 864
+- 1536

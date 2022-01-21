@@ -155,7 +155,7 @@ class SessionTimeFields:
                                                       value=self.session_time - self.kdf.sticky_start[i])
                     if self.session_duration:
                         if self.session_time >= self.session_duration:
-                            self.stop_session()
+                            self.caller.stop_session()
                 elif self.session_paused:
                     self.break_time += 1
                 self.break_time_label['text'] = str(datetime.timedelta(seconds=self.break_time))
@@ -178,7 +178,7 @@ class SessionTimeFields:
     def stop_session(self):
         self.session_toggle_button['text'] = "Restart Session"
         self.session_toggle_button['bg'] = self.session_pause_button['bg']
-        self.session_toggle_button['command'] = self.caller.menu.create_new_session
+        self.session_toggle_button['command'] = self.caller.menu.start_new_session
         self.timer_running = False
         if self.video_playing:
             self.video_playing = self.caller.ovu.video_view.toggle_video()
@@ -189,7 +189,6 @@ class SessionTimeFields:
         self.session_stopped_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
                                          anchor=CENTER)
         self.session_started = False
-        self.caller.save_session()
 
     def pause_session(self):
         if self.session_started:
