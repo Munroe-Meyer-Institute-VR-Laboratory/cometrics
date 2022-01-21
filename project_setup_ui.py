@@ -430,6 +430,7 @@ class ProjectSetupWindow:
                 print(f"ERROR: Error encountered when processing tracker spreadsheet\n{str(e)}\n{traceback.print_exc()}")
         else:
             messagebox.showwarning("Warning", "No tracker file selected! Please try again.")
+            print(f"WARNING: No tracker file selected")
 
     def populate_frequency_treeview(self):
         self.frequency_treeview_parents.append(
