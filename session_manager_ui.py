@@ -719,13 +719,14 @@ class SessionManagerWindow:
 
     def save_session(self):
         session_fields = self.pdf.get_session_fields()
-        session_data, e4_data = self.ovu.get_session_data()
+        session_data, e4_data, video_file = self.ovu.get_session_data()
         x = {
             "Session Date": self.session_date,
             "Session Start Time": self.session_time,
             "Session Time": self.stf.session_time,
             "Pause Time": self.stf.break_time,
-            "Keystroke File": pathlib.Path(self.keystroke_file).stem
+            "Keystroke File": pathlib.Path(self.keystroke_file).stem,
+            "Video File": pathlib.Path(video_file).name
         }
         session_fields.update(x)
         session_fields["Event History"] = session_data

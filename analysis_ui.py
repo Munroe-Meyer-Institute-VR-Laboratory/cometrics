@@ -92,7 +92,7 @@ class AccuracyPopup:
 
         self.acc_var = StringVar(self.popup)
         self.acc_var.set("Not Calculated")
-        self.acc_report = Label(self.popup, textvariable=self.acc_var, width=16, bg='white')
+        self.acc_report = Label(self.popup, textvariable=self.acc_var, width=30, bg='white')
         self.acc_report.place(x=150, y=140, anchor=N)
         center(popup_root)
         popup_root.focus_force()

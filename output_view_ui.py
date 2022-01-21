@@ -147,10 +147,7 @@ class OutputViewPanel:
                 print("INFO: No key events returned")
 
     def get_session_data(self):
-        if self.e4_view.windowed_readings:
-            return self.key_view.event_history, self.e4_view.windowed_readings
-        else:
-            return self.key_view.event_history, None
+        return self.key_view.event_history, self.e4_view.windowed_readings, self.video_view.video_file
 
     def save_session(self, filename, keystrokes):
         if self.e4_view.windowed_readings:

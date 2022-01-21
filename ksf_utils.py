@@ -90,10 +90,6 @@ def load_ksf(ksf_filename):
 def cal_acc(prim_filename, reli_filename, window_size, output_dir):
     if path.isfile(reli_filename) and path.isfile(prim_filename):
         try:
-            # Get the bindings from the KSF file
-            # freq_bindings, dur_bindings = load_ksf(ksf_filename)
-            # Get the filename stem to compare against prim and reli files
-            # ksf_filename = pathlib.Path(ksf_filename).stem
             # Load in prim and reli files
             with open(prim_filename, 'r') as f:
                 prim_session = json.load(f)
@@ -101,8 +97,14 @@ def cal_acc(prim_filename, reli_filename, window_size, output_dir):
                 reli_session = json.load(f)
             prim_ksf, reli_ksf, reli_type = prim_session["Keystroke File"], reli_session["Keystroke File"], \
                                             reli_session["Primary Data"]
-            freq_bindings = prim_session["KSF"]["Frequency"]
-            dur_bindings = prim_session["KSF"]["Duration"]
+            freq_b = prim_session["KSF"]["Frequency"]
+            freq_bindings = []
+            for freq in freq_b:
+                freq_bindings.append(freq[1])
+            dur_b = prim_session["KSF"]["Duration"]
+            dur_bindings = []
+            for dur in dur_b:
+                dur_bindings.append(dur[1])
             prim_num, reli_num = int(prim_session["Session Number"]), int(reli_session["Session Number"])
             # Perform error checking before causing errors
             if prim_num != reli_num:
@@ -346,9 +348,9 @@ def convert_json_csv(json_files, existing_files, output_dir):
         # Load session and split it up
         with open(file, 'r') as f:
             session = json.load(f)
-        session_data = {k: v for k, v in session.items() if k in list(session.keys())[:14]}
+        session_data = {k: v for k, v in session.items() if k in list(session.keys())[:15]}
         event_history = session["Event History"]
-        # TODO: Export E4 data to CSV
+        # TODO: Export E4 data to CSV... somehow
         e4_data = session["E4 Data"]
         # Open output file and write session to it
         with open(path.join(output_dir, f"{name}.csv"), 'w', newline='') as f:
