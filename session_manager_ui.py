@@ -602,7 +602,7 @@ class SessionManagerWindow:
                                      conditions=project_setup.conditions,
                                      header_font=self.header_font,
                                      field_font=self.field_font,
-                                     field_offset=self.field_offset, debug=True)
+                                     field_offset=self.field_offset)
         self.patient_name = self.pdf.patient_name
         # endregion
 
