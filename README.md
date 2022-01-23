@@ -1,5 +1,23 @@
+<br />
+<div align="center">
+  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics">
+    <img src="images/cometrics_logo.png" alt="Logo" width="572" height="100">
+  </a>
+
+  <p align="center">
+    cometrics is a Windows-based computer program that allows for the real-time coregistration of frequency- and duration-based behavior metrics, physiological signals from an Empatica E4, and video data.
+    <br />
+    <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues">Request Feature</a>
+  </p>
+</div>
+
 # Introduction 
-Cometrics is a Windows-based computer program that allows for the real-time coregistration of frequency- and duration-based behavior metrics, physiological signals from an Empatica E4, and video data.  It has been designed to integrate directly into the workflow of the Severe Behavior Clinic at the Munroe-Meyer Institute in the University of Nebraska Medical Center, while simplifying multiple manual steps into a few mouse clicks.  By using a tracker spreadsheet, an entire patient's history can be collected into a single document from the software with your own specified graphs and format within that spreadsheet.  You can find an example of a tracker spreadsheet [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/reference/Reference_Tracker.xlsx).  
+Cometrics has been designed to integrate directly into the workflow of the Severe Behavior Clinic at the Munroe-Meyer Institute in the University of Nebraska Medical Center, while simplifying multiple manual steps into a few mouse clicks.  By using a tracker spreadsheet, an entire patient's history can be collected into a single document from the software with your own specified graphs and format within that spreadsheet.  You can find an example of a tracker spreadsheet [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/reference/Reference_Tracker.xlsx).  
 
 # Getting Started
 TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
