@@ -228,7 +228,8 @@ def cal_acc(prim_filename, reli_filename, window_size, output_dir):
                 if val == 0 and freq_nia_disagree[col - 2] == 0:
                     ws.cell(row=row, column=col).value = "N/A"
                 else:
-                    ws.cell(row=row, column=col).value = str(int((val / (val + freq_nia_disagree[col - 2])) * 100)) + "%"
+                    ws.cell(row=row, column=col).value = str(
+                        int((val / (val + freq_nia_disagree[col - 2])) * 100)) + "%"
             row += 1
             ws.cell(row=row, column=1).value = "Freq TIA"
             for col, val in enumerate(freq_tia_agree, start=2):
@@ -244,7 +245,8 @@ def cal_acc(prim_filename, reli_filename, window_size, output_dir):
                 if val == 0 and freq_oia_disagree[col - 2] == 0:
                     ws.cell(row=row, column=col).value = "N/A"
                 else:
-                    ws.cell(row=row, column=col).value = str(int((val / (val + freq_oia_disagree[col - 2])) * 100)) + "%"
+                    ws.cell(row=row, column=col).value = str(
+                        int((val / (val + freq_oia_disagree[col - 2])) * 100)) + "%"
             row += 2
             for col, val in enumerate(dur_bindings, start=2):
                 ws.cell(row=row, column=col).value = val
@@ -369,6 +371,27 @@ def convert_json_csv(json_files, existing_files, output_dir):
                 writer.writerow(row)
 
 
+def compare_cells(a, b):
+    """
+    Compares two Excel format cells, returns -1 if a < b, return 0 if a == 0, returns 1 if a > b
+    :param a:
+    :param b:
+    :return:
+    """
+    a_val = 0
+    for a_v in a:
+        a_val += ord(a_v)
+    b_val = 0
+    for b_v in b:
+        b_val += ord(b_v)
+    if a_val < b_val:
+        return -1
+    elif a_val == b_val:
+        return 0
+    else:
+        return 1
+
+
 def get_key_cells(data_wb):
     tracker_headers = {'Assessment:____________': [Cell, '', '', 3],
                        'Client:________': [Cell, '', '', 2],
@@ -401,19 +424,48 @@ def get_key_cells(data_wb):
         for i in range(0, len(row)):
             if tracker_headers['Frequency Start'] and tracker_headers['Duration Start']:
                 if row[i].value:
-                    if len(row[i].value) == 1:
-                        col_value = ''.join([i for i in row[i].coordinate if not i.isdigit()])
-                        value_cell = ''.join([i for i in row[i].coordinate if not i.isdigit()]) \
-                                     + str(int(''.join([i for i in row[i].coordinate if i.isdigit()])) + 1)
-                        cell_value = data_wb[value_cell].value
-                        if col_value < tracker_headers['Duration Start']:
-                            freq_headers[cell_value] = [row[i].coordinate,
-                                                        ''.join([i for i in row[i].coordinate if not i.isdigit()]),
-                                                        row[i].value]
-                        else:
-                            dur_headers[cell_value] = [row[i].coordinate,
-                                                       ''.join([i for i in row[i].coordinate if not i.isdigit()]),
-                                                       row[i].value]
+                    col_value = ''.join([i for i in row[i].coordinate if not i.isdigit()])
+                    row_value = ''.join([i for i in row[i].coordinate if i.isdigit()])
+                    dur_end_value = ''.join([i for i in increment_cell(tracker_headers['Duration Start'],
+                                                                       tracker_headers['Duration'][3]) if
+                                             not i.isdigit()])
+                    freq_start_value = ''.join([i for i in tracker_headers['Frequency Start'] if not i.isdigit()])
+                    # Make sure the Excel cell is within the freq or dur headers
+                    # Check if row_value is not greater than dur_end_value
+                    # Check if row_value is not less than freq_start_value
+                    if int(row_value) == 3:
+                        if compare_cells(col_value, dur_end_value) != 1 and compare_cells(col_value, freq_start_value) != -1:
+                            try:
+                                # TODO: Assuming it's a str, which is excluding the number keystrokes
+                                # If it's a str check it
+                                if type(row[i].value) is str and len(row[i].value) > 1:
+                                    messagebox.showwarning("Warning",
+                                                           f"Key excluded at {row[i].coordinate}, only one char per keystroke!")
+                                    print(f"WARNING: Key excluded at {row[i].coordinate}, only one char per keystroke!")
+                                    continue
+                                # Check if it's an int
+                                elif type(row[i].value) is int and not 10 > row[i].value > -1:
+                                    messagebox.showwarning("Warning",
+                                                           f"Key excluded at {row[i].coordinate}, only integers 0-9!")
+                                    print(f"WARNING: Key excluded at {row[i].coordinate}, only integers 0-9!")
+                                    continue
+                                else:
+                                    value_cell = ''.join([i for i in row[i].coordinate if not i.isdigit()]) \
+                                                 + str(int(''.join([i for i in row[i].coordinate if i.isdigit()])) + 1)
+                                    cell_value = data_wb[value_cell].value
+                                    if compare_cells(col_value, tracker_headers['Duration Start']) == -1:
+                                        freq_headers[cell_value] = [row[i].coordinate,
+                                                                    ''.join(
+                                                                        [i for i in row[i].coordinate if not i.isdigit()]),
+                                                                    str(row[i].value)]
+                                    else:
+                                        dur_headers[cell_value] = [row[i].coordinate,
+                                                                   ''.join(
+                                                                       [i for i in row[i].coordinate if not i.isdigit()]),
+                                                                   str(row[i].value)]
+                            except TypeError as e:
+                                print(f"ERROR: Processing KSF error\n{str(e)}")
+                                continue
             if row[i].value in tracker_headers:
                 cell_value = row[i].value
                 if cell_value == 'Session Data':
@@ -441,8 +493,8 @@ def get_key_cells(data_wb):
 def increment_cell(cell, i):
     # TODO: Can probably make this more generic by taking the mod of 26 and applying appropriately while iterating through cell
     # ord('Z') - ord('A') = 25, 26 is a rollover, take ord('Z') - ord(cell) to find remainder before rollover
-    number = cell[-1]
-    cell = cell[:-1]
+    number = ''.join([i for i in cell if i.isdigit()])
+    cell = ''.join([i for i in cell if not i.isdigit()])
     if len(cell) == 1:
         if ord(cell) + i > 90:
             diff = ((ord(cell) + i) - 90) - 1
@@ -640,7 +692,7 @@ def create_new_ksf_revision(original_ksf, keystrokes):
             ws[tracker_headers[key][0]].value = key
             if tracker_headers[key][3] > 0:
                 cell_range = f"{tracker_headers[key][0]}:" \
-                             f"{increment_char(tracker_headers[key][1], tracker_headers[key][3])}{tracker_headers[key][2]}"
+                             f"{increment_cell(tracker_headers[key][0], tracker_headers[key][3])}"
                 ws.merge_cells(cell_range)
 
     for key in freq_headers:
@@ -693,7 +745,7 @@ def create_new_ksf_revision(original_ksf, keystrokes):
             ws[tracker_headers[key][0]].value = key
             if tracker_headers[key][3] > 0:
                 cell_range = f"{tracker_headers[key][0]}:" \
-                             f"{increment_char(tracker_headers[key][0][:-1], tracker_headers[key][3])}{tracker_headers[key][2]}"
+                             f"{increment_cell(tracker_headers[key][0], tracker_headers[key][3])}"
                 ws.merge_cells(cell_range)
     for i in range(1, 20):
         if cond_wb['A' + str(i)].value is None:
