@@ -147,6 +147,14 @@ class OutputViewPanel:
             else:
                 print("INFO: No key events returned")
 
+    def delete_last_event(self):
+        self.key_view.delete_last_event()
+        self.video_view.delete_last_event()
+
+    def undo_last_delete(self):
+        self.key_view.undo_last_delete()
+        self.video_view.undo_last_delete()
+
     def get_session_data(self):
         return self.key_view.event_history, self.e4_view.windowed_readings, self.video_view.video_file
 
@@ -172,7 +180,7 @@ class OutputViewPanel:
 
 class ViewVideo:
     def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60):
-        self.events = []
+        self.event_history = []
         self.root = root
         self.video_loaded = False
         self.video_file = None
@@ -208,6 +216,18 @@ class ViewVideo:
         # TODO: Implement slider event visualization
         # TODO: Implement webcam recording while recording behavioral events
 
+    def delete_last_event(self):
+        if self.event_history:
+            self.event_treeview.delete(self.event_treeview_parents[len(self.event_history) - 1])
+            self.event_treeview_parents.pop(len(self.event_history) - 1)
+            self.deleted_event = self.event_history[-1]
+            self.event_history.pop(len(self.event_history) - 1)
+
+    def undo_last_delete(self):
+        if self.deleted_event:
+            self.add_event([self.deleted_event])
+            self.deleted_event = None
+
     def add_event(self, events):
         if self.video_loaded:
             for event in events:
@@ -215,14 +235,19 @@ class ViewVideo:
                     start_time = int(event[1][1]) - int(event[1][0])
                 else:
                     start_time = event[1]
-                self.events.append((self.frame_var.get(), event[0], start_time))
-                clear_treeview(self.event_treeview)
-                self.populate_event_treeview()
+                self.event_history.append((self.frame_var.get(), event[0], start_time))
+                self.event_treeview_parents.append(self.event_treeview.insert("", 'end', str(len(self.event_history)),
+                                                                              text=str(self.event_history[-1][2]),
+                                                                              values=(self.event_history[-1][1],
+                                                                                      self.event_history[-1][0]),
+                                                                              tags=(
+                                                                                  treeview_tags[len(self.event_history) % 2])))
+            self.event_treeview.see(self.event_treeview_parents[-1])
 
     def populate_event_treeview(self):
-        if self.events:
-            for i in range(0, len(self.events)):
-                bind = self.events[i]
+        if self.event_history:
+            for i in range(0, len(self.event_history)):
+                bind = self.event_history[i]
                 self.event_treeview_parents.append(self.event_treeview.insert("", 'end', str(i), text=str(bind[2]),
                                                                               values=(bind[1], bind[0]),
                                                                               tags=(treeview_bind_tags[i % 2])))
