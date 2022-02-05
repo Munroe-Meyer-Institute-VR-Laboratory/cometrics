@@ -310,7 +310,7 @@ class PatientDataFields:
             [Label, self.label_texts[PatientDataVar.SESS_NUM], self.patient_vars[PatientDataVar.SESS_NUM]],
             [Entry, self.label_texts[PatientDataVar.SESS_NUM], self.patient_vars[PatientDataVar.SESS_NUM]],
         ]
-
+        # TODO: Create key viewer on a page appended at the end of the other pages
         info_count = 0
         frame_select = 0
         patient_y = 30
@@ -374,7 +374,7 @@ class PatientDataFields:
             patient_y += field_offset / 2
         # Session start time field
         self.start_label = Label(self.patient_frames[frame_select], text="Session Start Time: " + session_time,
-                            anchor=NW, font=field_font)
+                                 anchor=NW, font=field_font)
         self.start_label.place(x=5, y=patient_y, anchor=NW)
 
         self.patient_vars[PatientDataVar.PATIENT_NAME].set(self.patient.name)

@@ -143,6 +143,7 @@ class OutputViewPanel:
             # Add to session history
             if key_events:
                 self.key_view.add_session_event(key_events)
+                self.video_view.add_event(key_events)
             else:
                 print("INFO: No key events returned")
 
@@ -171,6 +172,7 @@ class OutputViewPanel:
 
 class ViewVideo:
     def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60):
+        self.events = []
         self.root = root
         self.video_loaded = False
         self.video_file = None
@@ -189,16 +191,41 @@ class ViewVideo:
         self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
         self.video_slider.config(length=self.video_width)
         self.video_slider.place(x=5, y=self.video_height, anchor=NW)
+        # TODO: Implement this feature
+        event_header_dict = {"#0": ["Event Time", 'w', 1, YES, 'w']}
+        event_column_dict = {"1": ["Event Tag", 'w', 1, YES, 'w'],
+                             "2": ["Event Frame", 'w', 1, YES, 'w']}
+        self.event_treeview_parents = []
+        self.event_treeview, self.event_fs = build_treeview(self.root,
+                                                            x=20, y=self.video_height + 90,
+                                                            height=120,
+                                                            width=width - 25,
+                                                            heading_dict=event_header_dict,
+                                                            column_dict=event_column_dict)
+        # TODO: Implement session control by video import
+        # TODO: Implement video scrubbing by clicking events in history
+        # TODO: Implement forward 1 sec and backward 1 sec buttons
+        # TODO: Implement slider event visualization
+        # TODO: Implement webcam recording while recording behavioral events
 
-        # event_header_dict = {"#0": ["Event Time", 'w', 1, YES, 'w']}
-        # event_column_dict = {"1": ["Event Tag", 'w', 1, YES, 'w'],
-        #                      "2": ["Event Frame", 'w', 1, YES, 'w']}
-        # self.event_treeview, self.event_fs = build_treeview(self.root,
-        #                                                     x=20, y=self.video_height + 90,
-        #                                                     height=120,
-        #                                                     width=width - 25,
-        #                                                     heading_dict=event_header_dict,
-        #                                                     column_dict=event_column_dict)
+    def add_event(self, events):
+        if self.video_loaded:
+            for event in events:
+                if type(event[1]) is list:
+                    start_time = int(event[1][1]) - int(event[1][0])
+                else:
+                    start_time = event[1]
+                self.events.append((self.frame_var.get(), event[0], start_time))
+                clear_treeview(self.event_treeview)
+                self.populate_event_treeview()
+
+    def populate_event_treeview(self):
+        if self.events:
+            for i in range(0, len(self.events)):
+                bind = self.events[i]
+                self.event_treeview_parents.append(self.event_treeview.insert("", 'end', str(i), text=str(bind[2]),
+                                                                              values=(bind[1], bind[0]),
+                                                                              tags=(treeview_bind_tags[i % 2])))
 
     def load_video(self):
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
@@ -208,10 +235,10 @@ class ViewVideo:
                     self.load_video_button.place_forget()
                     self.video_file = video_file
                     self.player = tkvideoplayer(video_file, self.video_label, loop=False,
-                                                  size=(self.video_width, self.video_height),
-                                                  keep_ratio=True,
-                                                  slider=self.video_slider,
-                                                  slider_var=self.frame_var)
+                                                size=(self.video_width, self.video_height),
+                                                keep_ratio=True,
+                                                slider=self.video_slider,
+                                                slider_var=self.frame_var)
                     self.video_loaded = True
         except Exception as e:
             messagebox.showerror("Error", f"Error loading video:\n{str(e)}")
@@ -303,7 +330,7 @@ class ViewE4:
         fig_width = width - fig_offset
         fig_height = (height - 70) / 3
         ani_update = 500
-
+        # TODO: Refactor variable names
         self.hr_canvas = Canvas(self.root, width=40, height=40, bg=fig_color, bd=-2)
         self.hr_canvas.place(x=fig_offset + (fig_width * 0.2), y=start_y)
         self.hr_image = PhotoImage(file='images/heartrate.png')
@@ -480,7 +507,7 @@ class ViewE4:
         for i in range(0, len(self.emp_client.device_list)):
             self.e4_treeview_parents.append(
                 self.e4_treeview.insert("", 'end', str(i),
-                                        text=str(self.emp_client.device_list[i].decode("utf-8"),),
+                                        text=str(self.emp_client.device_list[i].decode("utf-8"), ),
                                         tags=(treeview_tags[i % 2])))
 
     def get_selection(self, event):
