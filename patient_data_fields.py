@@ -1,28 +1,7 @@
-import datetime
 import json
 import math
-import os
-import pathlib
-import threading
-import time
-import winsound
-from os import walk
 from tkinter import *
-from tkinter import messagebox
-
-from PIL import Image, ImageTk
-from pynput import keyboard
 from ttk import Combobox
-
-# Custom library imports
-from logger_util import *
-from menu_bar import MenuBar
-from output_view_ui import OutputViewPanel
-from session_time_fields import SessionTimeFields
-from tkinter_utils import get_treeview_style
-from ui_params import large_header_font, large_field_font, large_field_offset, medium_header_font, medium_field_font, \
-    medium_field_offset, small_header_font, small_field_font, small_field_offset, small_tab_size, medium_tab_size, \
-    large_tab_size, ui_title
 
 
 class PatientDataVar:

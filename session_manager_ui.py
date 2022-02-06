@@ -108,7 +108,8 @@ class SessionManagerWindow:
                                    button_size=self.button_size,
                                    ksf=self.keystroke_file,
                                    field_font=self.field_font,
-                                   header_font=self.header_font)
+                                   header_font=self.header_font,
+                                   video_import_cb=self.start_video_control)
         self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root,
                                      x=5,
@@ -148,6 +149,11 @@ class SessionManagerWindow:
         root.state('zoomed')
         # Start the UI loop
         root.mainloop()
+
+    def start_video_control(self):
+        self.ovu.video_view.load_video()
+        if self.ovu.video_view.video_loaded:
+            pass
 
     def restart_program(self):
         self.stf.stop_timer()

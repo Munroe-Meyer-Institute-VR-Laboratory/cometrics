@@ -27,7 +27,7 @@ class OutputViews:
 
 class OutputViewPanel:
     def __init__(self, parent, x, y, height, width, button_size, ksf,
-                 field_font, header_font):
+                 field_font, header_font, video_import_cb):
         self.height, self.width = height, width
         self.x, self.y, self.button_size = x, y, button_size
         self.current_button = 0
@@ -87,7 +87,8 @@ class OutputViewPanel:
                                             field_font=field_font, header_font=header_font, button_size=button_size)
         self.video_view = ViewVideo(self.view_frames[OutputViews.VIDEO_VIEW],
                                     height=self.height - self.button_size[1], width=self.width,
-                                    field_font=field_font, header_font=header_font, button_size=button_size)
+                                    field_font=field_font, header_font=header_font, button_size=button_size,
+                                    video_import_cb=video_import_cb)
         self.event_history = []
 
     def switch_key_frame(self):
@@ -179,7 +180,8 @@ class OutputViewPanel:
 
 
 class ViewVideo:
-    def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60):
+    def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60,
+                 video_import_cb=None):
         self.event_history = []
         self.root = root
         self.video_loaded = False
@@ -187,19 +189,29 @@ class ViewVideo:
         self.video_label = Label(self.root, bg='white')
         self.video_height, self.video_width = height - 200, width - 10
         self.video_label.place(x=width / 2, y=5, width=width - 10, height=height - 200, anchor=N)
-        self.load_video_button = Button(self.root, text="Load Video", font=field_font, command=self.load_video)
+        self.load_video_button = Button(self.root, text="Load Video", font=field_font, command=video_import_cb)
         self.load_video_button.place(x=width / 2, y=5 + (self.video_height / 2), height=button_size[1],
                                      width=button_size[0],
                                      anchor=CENTER)
         self.play_image = PhotoImage(file='images/video-start.png')
         self.pause_image = PhotoImage(file='images/video-pause.png')
-        # self.play_button = Button(self.root, image=self.play_image)
-        # self.play_button.place(x=5, y=self.video_height + 40, anchor=NW)
+        self.forward_image = PhotoImage(file='images/skip_forward.png')
+        self.backward_image = PhotoImage(file='images/skip_bacward.png')
+        #
+        self.play_button = Button(self.root, image=self.play_image)
+        self.play_button.place(x=width/2, y=self.video_height + 40, anchor=N)
+
+        self.forward_button = Button(self.root, image=self.forward_image)
+        self.forward_button.place(x=(width/2)+60, y=self.video_height + 40, height=40, width=40, anchor=N)
+
+        self.backward_button = Button(self.root, image=self.backward_image)
+        self.backward_button.place(x=(width/2)-60, y=self.video_height + 40, height=40, width=40, anchor=N)
+
         self.frame_var = IntVar(self.root)
         self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
         self.video_slider.config(length=self.video_width)
         self.video_slider.place(x=5, y=self.video_height, anchor=NW)
-        # TODO: Implement this feature
+        # Event treeview shows all events in relation to the video
         event_header_dict = {"#0": ["Event Time", 'w', 1, YES, 'w']}
         event_column_dict = {"1": ["Event Tag", 'w', 1, YES, 'w'],
                              "2": ["Event Frame", 'w', 1, YES, 'w']}
@@ -209,12 +221,21 @@ class ViewVideo:
                                                             height=120,
                                                             width=width - 25,
                                                             heading_dict=event_header_dict,
-                                                            column_dict=event_column_dict)
+                                                            column_dict=event_column_dict,
+                                                            button_1_bind=self.select_event)
         # TODO: Implement session control by video import
         # TODO: Implement video scrubbing by clicking events in history
         # TODO: Implement forward 1 sec and backward 1 sec buttons
-        # TODO: Implement slider event visualization
+        # TODO: Implement slider event visualization?
         # TODO: Implement webcam recording while recording behavioral events
+
+    def select_event(self, event):
+        selection = self.event_treeview.identify_row(event.y)
+        if selection:
+            selected_event = self.event_history[int(selection) - 1]
+            if self.player.playing:
+                self.toggle_video()
+            self.player.load_frame(int(selected_event[0]))
 
     def delete_last_event(self):
         if self.event_history:
@@ -225,8 +246,20 @@ class ViewVideo:
 
     def undo_last_delete(self):
         if self.deleted_event:
-            self.add_event([self.deleted_event])
+            self.add_event_direct(self.deleted_event)
             self.deleted_event = None
+
+    def add_event_direct(self, event):
+        if self.video_loaded:
+            self.event_history.append(event)
+            self.event_treeview_parents.append(self.event_treeview.insert("", 'end', str(len(self.event_history)),
+                                                                          text=str(self.event_history[-1][2]),
+                                                                          values=(self.event_history[-1][1],
+                                                                                  self.event_history[-1][0]),
+                                                                          tags=(
+                                                                              treeview_tags[
+                                                                                  len(self.event_history) % 2])))
+            self.event_treeview.see(self.event_treeview_parents[-1])
 
     def add_event(self, events):
         if self.video_loaded:
@@ -265,6 +298,8 @@ class ViewVideo:
                                                 slider=self.video_slider,
                                                 slider_var=self.frame_var)
                     self.video_loaded = True
+                    self.forward_button.config(command=self.player.skip_video_forward)
+                    self.backward_button.config(command=self.player.skip_video_backward)
         except Exception as e:
             messagebox.showerror("Error", f"Error loading video:\n{str(e)}")
             print(f"ERROR: Error loading video:\n{str(e)}\n" + traceback.print_exc())
