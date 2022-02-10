@@ -81,9 +81,9 @@ class OutputViewPanel:
         # self.view_buttons.append(tactor_view_button)
         # self.view_buttons[3].place(x=276, y=0)
 
-        self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW],
-                              height=self.height - self.button_size[1], width=self.width,
-                              field_font=field_font, header_font=header_font, button_size=button_size)
+        # self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW],
+        #                       height=self.height - self.button_size[1], width=self.width,
+        #                       field_font=field_font, header_font=header_font, button_size=button_size)
         self.key_view = KeystrokeDataFields(self.view_frames[OutputViews.KEY_VIEW], ksf,
                                             height=self.height - self.button_size[1], width=self.width,
                                             field_font=field_font, header_font=header_font, button_size=button_size)
@@ -184,13 +184,6 @@ class OutputViewPanel:
 class ViewVideo:
     def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60,
                  video_import_cb=None):
-        #
-        self.camera_sources = VideoRecorder.get_sources()
-        print(self.camera_sources)
-        self.selectable_sources = []
-        for source in self.camera_sources:
-            self.selectable_sources.append(f"Input {str(source[0])}")
-        #
         self.event_history = []
         self.root = root
         self.video_loaded = False
@@ -205,11 +198,9 @@ class ViewVideo:
                                      width=button_size[0],
                                      anchor=E)
 
-        self.camera_str_var = StringVar(self.root)
-        if not self.camera_sources:
-            self.camera_str_var.set("No Cameras Found")
+        self.camera_str_var = StringVar()
+
         self.load_camera_box = Combobox(self.root, textvariable=self.camera_str_var, font=field_font)
-        self.load_camera_box['values'] = self.selectable_sources
         self.load_camera_box['state'] = 'readonly'
         self.load_camera_box.config(font=field_font)
         self.load_camera_box.place(x=(width / 2) + 10, y=5 + (self.video_height / 2), height=button_size[1],
@@ -246,14 +237,26 @@ class ViewVideo:
                                                             heading_dict=event_header_dict,
                                                             column_dict=event_column_dict,
                                                             button_1_bind=self.select_event)
+        load_cam_thread = threading.Thread(target=self.get_camera_sources)
+        load_cam_thread.daemon = 1
+        load_cam_thread.start()
         # TODO: Implement session control by video import
         # TODO: Implement video scrubbing by clicking events in history
         # DONE: Implement forward 1 sec and backward 1 sec buttons
         # REMV: Implement slider event visualization?
         # TODO: Implement webcam recording while recording behavioral events
+
+    def get_camera_sources(self):
         self.camera_sources = VideoRecorder.get_sources()
-        print(self.camera_sources)
         self.selectable_sources = []
+        for source in self.camera_sources:
+            self.selectable_sources.append(f"Input {str(source[0])}")
+        if not self.camera_sources:
+            self.camera_str_var.set("No Cameras Found")
+        else:
+            self.camera_str_var.set("Select Camera")
+        self.load_camera_box['values'] = self.selectable_sources
+        self.load_camera_box.bind("<<ComboboxSelected>>", self.load_camera)
 
     def select_event(self, event):
         selection = self.event_treeview.identify_row(event.y)
@@ -312,8 +315,8 @@ class ViewVideo:
                                                                               values=(bind[1], bind[0]),
                                                                               tags=(treeview_bind_tags[i % 2])))
 
-    def load_camera(self):
-        pass
+    def load_camera(self, event):
+        print(f"Selected {self.camera_str_var.get()}")
 
     def load_video(self):
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))

@@ -70,7 +70,7 @@ class SessionManagerWindow:
             self.field_font = small_field_font
             self.field_offset = small_field_offset
             self.button_size = small_tab_size
-        print("INFO:", self.header_font, self.field_font, self.field_offset)
+        print("INFO:", self.header_font, self.field_font, self.field_offset, self.window_width, self.window_height)
 
         root = self.root = Tk()
         root.config(bg="white", bd=-2)
