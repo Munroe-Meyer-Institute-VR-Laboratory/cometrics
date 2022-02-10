@@ -1,7 +1,7 @@
 import json
 import math
 from tkinter import *
-from ttk import Combobox
+from tkinter.ttk import Combobox
 
 
 class PatientDataVar:

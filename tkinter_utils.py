@@ -1,8 +1,7 @@
 import tkinter
 from tkinter import TOP, W, N, NW, CENTER, messagebox
 from tkinter.ttk import Style
-
-from ttk import Treeview
+from tkinter.ttk import Treeview
 
 from ui_params import treeview_default_tag_dict
 

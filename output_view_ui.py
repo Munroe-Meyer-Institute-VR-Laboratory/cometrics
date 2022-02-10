@@ -6,10 +6,12 @@ import time
 import traceback
 from tkinter import *
 from tkinter import filedialog, messagebox
+from tkinter.ttk import Combobox
+
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
-from tkvideoplayer import tkvideoplayer
+from tkvideoutils import VideoRecorder, VideoPlayer
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 # Implement the default Matplotlib key bindings.
 from matplotlib.figure import Figure
@@ -182,30 +184,51 @@ class OutputViewPanel:
 class ViewVideo:
     def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60,
                  video_import_cb=None):
+        #
+        self.camera_sources = VideoRecorder.get_sources()
+        print(self.camera_sources)
+        self.selectable_sources = []
+        for source in self.camera_sources:
+            self.selectable_sources.append(f"Input {str(source[0])}")
+        #
         self.event_history = []
         self.root = root
         self.video_loaded = False
         self.video_file = None
+        #
         self.video_label = Label(self.root, bg='white')
         self.video_height, self.video_width = height - 200, width - 10
         self.video_label.place(x=width / 2, y=5, width=width - 10, height=height - 200, anchor=N)
+        #
         self.load_video_button = Button(self.root, text="Load Video", font=field_font, command=video_import_cb)
-        self.load_video_button.place(x=width / 2, y=5 + (self.video_height / 2), height=button_size[1],
+        self.load_video_button.place(x=(width / 2) - 10, y=5 + (self.video_height / 2), height=button_size[1],
                                      width=button_size[0],
-                                     anchor=CENTER)
+                                     anchor=E)
+
+        self.camera_str_var = StringVar(self.root)
+        if not self.camera_sources:
+            self.camera_str_var.set("No Cameras Found")
+        self.load_camera_box = Combobox(self.root, textvariable=self.camera_str_var, font=field_font)
+        self.load_camera_box['values'] = self.selectable_sources
+        self.load_camera_box['state'] = 'readonly'
+        self.load_camera_box.config(font=field_font)
+        self.load_camera_box.place(x=(width / 2) + 10, y=5 + (self.video_height / 2), height=button_size[1],
+                                   width=button_size[0] * 2,
+                                   anchor=W)
+        #
         self.play_image = PhotoImage(file='images/video-start.png')
         self.pause_image = PhotoImage(file='images/video-pause.png')
         self.forward_image = PhotoImage(file='images/skip_forward.png')
         self.backward_image = PhotoImage(file='images/skip_bacward.png')
         #
         self.play_button = Button(self.root, image=self.play_image)
-        self.play_button.place(x=width/2, y=self.video_height + 40, anchor=N)
+        self.play_button.place(x=width / 2, y=self.video_height + 40, anchor=N)
 
         self.forward_button = Button(self.root, image=self.forward_image)
-        self.forward_button.place(x=(width/2)+60, y=self.video_height + 40, height=40, width=40, anchor=N)
+        self.forward_button.place(x=(width / 2) + 60, y=self.video_height + 40, height=40, width=40, anchor=N)
 
         self.backward_button = Button(self.root, image=self.backward_image)
-        self.backward_button.place(x=(width/2)-60, y=self.video_height + 40, height=40, width=40, anchor=N)
+        self.backward_button.place(x=(width / 2) - 60, y=self.video_height + 40, height=40, width=40, anchor=N)
 
         self.frame_var = IntVar(self.root)
         self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
@@ -225,9 +248,12 @@ class ViewVideo:
                                                             button_1_bind=self.select_event)
         # TODO: Implement session control by video import
         # TODO: Implement video scrubbing by clicking events in history
-        # TODO: Implement forward 1 sec and backward 1 sec buttons
-        # TODO: Implement slider event visualization?
+        # DONE: Implement forward 1 sec and backward 1 sec buttons
+        # REMV: Implement slider event visualization?
         # TODO: Implement webcam recording while recording behavioral events
+        self.camera_sources = VideoRecorder.get_sources()
+        print(self.camera_sources)
+        self.selectable_sources = []
 
     def select_event(self, event):
         selection = self.event_treeview.identify_row(event.y)
@@ -274,7 +300,8 @@ class ViewVideo:
                                                                               values=(self.event_history[-1][1],
                                                                                       self.event_history[-1][0]),
                                                                               tags=(
-                                                                                  treeview_tags[len(self.event_history) % 2])))
+                                                                                  treeview_tags[
+                                                                                      len(self.event_history) % 2])))
             self.event_treeview.see(self.event_treeview_parents[-1])
 
     def populate_event_treeview(self):
@@ -285,6 +312,9 @@ class ViewVideo:
                                                                               values=(bind[1], bind[0]),
                                                                               tags=(treeview_bind_tags[i % 2])))
 
+    def load_camera(self):
+        pass
+
     def load_video(self):
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
         try:
@@ -292,11 +322,11 @@ class ViewVideo:
                 if pathlib.Path(video_file).suffix == ".mp4":
                     self.load_video_button.place_forget()
                     self.video_file = video_file
-                    self.player = tkvideoplayer(video_file, self.video_label, loop=False,
-                                                size=(self.video_width, self.video_height),
-                                                keep_ratio=True,
-                                                slider=self.video_slider,
-                                                slider_var=self.frame_var)
+                    self.player = VideoPlayer(video_file, self.video_label, loop=False,
+                                              size=(self.video_height, self.video_width),
+                                              keep_ratio=True,
+                                              slider=self.video_slider,
+                                              slider_var=self.frame_var)
                     self.video_loaded = True
                     self.forward_button.config(command=self.player.skip_video_forward)
                     self.backward_button.config(command=self.player.skip_video_backward)

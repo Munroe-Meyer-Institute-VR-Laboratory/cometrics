@@ -1,5 +1,7 @@
+import datetime
 import sys
 from os import listdir, mkdir, path
+import wmi
 
 
 class LogLevel:
@@ -16,12 +18,12 @@ class CreateLogger:
 
 
 class Log(object):
-    def __init__(self):
-        if not path.isdir('./logs'):
-            mkdir('./logs')
-        self.log_num = len(listdir('./logs'))
+    def __init__(self, log_path='./logs'):
+        if not path.isdir(log_path):
+            mkdir(log_path)
+        self.log_num = len(listdir(log_path))
         self.orgstdout = sys.stdout
-        self.log_name = "./logs/log_" + str(self.log_num) + ".txt"
+        self.log_name = f"{log_path}/log_" + str(self.log_num) + ".txt"
 
     def write(self, msg):
         self.log = open(self.log_name, "a")
@@ -31,6 +33,18 @@ class Log(object):
 
     def flush(self):
         pass
+
+
+def log_startup():
+    print("STARTUP:", datetime.datetime.now().strftime("%c"))
+    c = wmi.WMI()
+    my_system = c.Win32_ComputerSystem()[0]
+    print(f"STARTUP: Manufacturer - {my_system.Manufacturer}")
+    print(f"STARTUP: Model - {my_system.Model}")
+    print(f"STARTUP: Name - {my_system.Name}")
+    print(f"STARTUP: NumberOfProcessors - {my_system.NumberOfProcessors}")
+    print(f"STARTUP: SystemType - {my_system.SystemType}")
+    print(f"STARTUP: SystemFamily - {my_system.SystemFamily}")
 
 
 def parse_log(log_file):

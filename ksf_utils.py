@@ -8,11 +8,9 @@ import traceback
 from os import walk
 from shutil import copy2
 from tkinter import messagebox
-
 import openpyxl
 from openpyxl import Workbook
 from openpyxl.cell import MergedCell, Cell
-
 from logger_util import *
 
 

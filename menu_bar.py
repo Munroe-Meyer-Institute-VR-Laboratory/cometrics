@@ -28,10 +28,15 @@ class MenuBar(Frame):
 
         help_menu = Menu(menu)
         help_menu.add_command(label="Open documentation", command=self.open_docs)
+        help_menu.add_command(label="Open logs", command=self.open_logs)
         menu.add_cascade(label="Help", menu=help_menu)
 
     def open_new_project(self):
         self.caller.restart_program()
+
+    def open_logs(self):
+        # TODO: Add in log opening
+        pass
 
     def open_docs(self):
         docs_url = 'https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics'

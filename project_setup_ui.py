@@ -6,7 +6,7 @@ from tkinter import *
 from tkinter import messagebox, filedialog
 
 import yaml
-from ttk import Combobox
+from tkinter.ttk import Combobox
 
 from ksf_utils import import_ksf, create_new_ksf_revision, compare_keystrokes
 from logger_util import *
