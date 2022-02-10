@@ -81,9 +81,9 @@ class OutputViewPanel:
         # self.view_buttons.append(tactor_view_button)
         # self.view_buttons[3].place(x=276, y=0)
 
-        # self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW],
-        #                       height=self.height - self.button_size[1], width=self.width,
-        #                       field_font=field_font, header_font=header_font, button_size=button_size)
+        self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW],
+                              height=self.height - self.button_size[1], width=self.width,
+                              field_font=field_font, header_font=header_font, button_size=button_size)
         self.key_view = KeystrokeDataFields(self.view_frames[OutputViews.KEY_VIEW], ksf,
                                             height=self.height - self.button_size[1], width=self.width,
                                             field_font=field_font, header_font=header_font, button_size=button_size)
@@ -461,37 +461,38 @@ class ViewE4:
         self.bat_label = Label(self.root, text="N/A", font=field_font)
         self.bat_label.place(x=fig_offset + (fig_width * 0.8) + 50, y=start_y + 10, anchor=NW)
 
+        dpi = 100
         px = 1 / plt.rcParams['figure.dpi']
-        self.fig = Figure(figsize=(fig_width * px, fig_height * px), dpi=100)
+        self.fig = Figure(figsize=(fig_width * px, fig_height * px), dpi=dpi)
         self.fig.patch.set_facecolor(fig_color)
         self.acc_plt = self.fig.add_subplot(111)
         plt.gcf().subplots_adjust(bottom=0.15)
         self.acc_plt.set_title("Accelerometer Readings")
         self.acc_plt.legend(loc="upper left")
         self.canvas = FigureCanvasTkAgg(self.fig, master=self.root)
-        self.canvas.draw()
+        # self.canvas.draw()
         self.ani = animation.FuncAnimation(self.fig, self.acc_animate, fargs=([]), interval=ani_update)
         self.canvas.get_tk_widget().place(x=fig_offset + 30, y=70, anchor=NW)
 
-        self.fig1 = Figure(figsize=(fig_width * px, fig_height * px), dpi=100)
+        self.fig1 = Figure(figsize=(fig_width * px, fig_height * px), dpi=dpi)
         self.fig1.patch.set_facecolor(fig_color)
         self.bvp_plt = self.fig1.add_subplot(111)
         plt.gcf().subplots_adjust(bottom=0.15)
         self.bvp_plt.set_title("BVP Readings")
         self.bvp_plt.legend(loc="upper left")
         self.canvas1 = FigureCanvasTkAgg(self.fig1, master=self.root)  # A tk.DrawingArea.
-        self.canvas1.draw()
+        # self.canvas1.draw()
         self.ani1 = animation.FuncAnimation(self.fig1, self.bvp_animate, fargs=([]), interval=ani_update)
         self.canvas1.get_tk_widget().place(x=fig_offset + 30, y=70 + fig_height, anchor=NW)
 
-        self.fig2 = Figure(figsize=(fig_width * px, fig_height * px), dpi=100)
+        self.fig2 = Figure(figsize=(fig_width * px, fig_height * px), dpi=dpi)
         self.fig2.patch.set_facecolor(fig_color)
         self.gsr_plt = self.fig2.add_subplot(111)
         plt.gcf().subplots_adjust(bottom=0.15)
         self.gsr_plt.set_title("GSR Readings")
         self.gsr_plt.legend(loc="upper left")
         self.canvas2 = FigureCanvasTkAgg(self.fig2, master=self.root)  # A tk.DrawingArea.
-        self.canvas2.draw()
+        # self.canvas2.draw()
         self.ani2 = animation.FuncAnimation(self.fig2, self.gsr_animate, fargs=([]), interval=ani_update)
         self.canvas2.get_tk_widget().place(x=fig_offset + 30, y=70 + (fig_height * 2), anchor=NW)
 
