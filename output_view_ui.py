@@ -199,7 +199,7 @@ class ViewVideo:
                                      anchor=E)
 
         self.camera_str_var = StringVar()
-
+        self.recorder = None
         self.load_camera_box = Combobox(self.root, textvariable=self.camera_str_var, font=field_font)
         self.load_camera_box['state'] = 'readonly'
         self.load_camera_box.config(font=field_font)
@@ -237,6 +237,7 @@ class ViewVideo:
                                                             heading_dict=event_header_dict,
                                                             column_dict=event_column_dict,
                                                             button_1_bind=self.select_event)
+        # Must be pushed to a thread otherwise the session timer thread will crash
         load_cam_thread = threading.Thread(target=self.get_camera_sources)
         load_cam_thread.daemon = 1
         load_cam_thread.start()
@@ -316,7 +317,18 @@ class ViewVideo:
                                                                               tags=(treeview_bind_tags[i % 2])))
 
     def load_camera(self, event):
-        print(f"Selected {self.camera_str_var.get()}")
+        if self.camera_sources[self.selectable_sources.index(self.camera_str_var.get())]:
+            if not self.recorder:
+                self.load_video_button.place_forget()
+                self.load_camera_box.place_forget()
+                source = self.camera_sources[self.selectable_sources.index(self.camera_str_var.get())]
+                self.recorder = VideoRecorder(source=source,
+                                              path='test.mp4',
+                                              fps=8,
+                                              label=self.video_label,
+                                              size=(self.video_width, self.video_height),
+                                              keep_ratio=True)
+                self.recorder.start_playback()
 
     def load_video(self):
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
@@ -324,6 +336,7 @@ class ViewVideo:
             if video_file:
                 if pathlib.Path(video_file).suffix == ".mp4":
                     self.load_video_button.place_forget()
+                    self.load_camera_box.place_forget()
                     self.video_file = video_file
                     self.player = VideoPlayer(video_file, self.video_label, loop=False,
                                               size=(self.video_height, self.video_width),
