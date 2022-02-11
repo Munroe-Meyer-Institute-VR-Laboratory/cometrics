@@ -123,6 +123,7 @@ class OutputViewPanel:
 
     def start_session(self):
         self.e4_view.session_started = True
+        self.video_view.recorder.start_recording()
 
     def stop_session(self):
         self.e4_view.session_started = False
@@ -132,8 +133,10 @@ class OutputViewPanel:
         if key_char:
             current_frame = None
             # Get the current frame of the video if it's playing
-            if self.video_view.video_loaded:
+            if self.video_view.player:
                 current_frame = self.video_view.player.current_frame
+            elif self.video_view.recorder:
+                current_frame = self.video_view.recorder.current_frame
             current_window = None
             # Add the frame and key to the latest E4 window reading if streaming
             if self.e4_view.windowed_readings:
@@ -200,6 +203,7 @@ class ViewVideo:
 
         self.camera_str_var = StringVar()
         self.recorder = None
+        self.player = None
         self.load_camera_box = Combobox(self.root, textvariable=self.camera_str_var, font=field_font)
         self.load_camera_box['state'] = 'readonly'
         self.load_camera_box.config(font=field_font)
@@ -210,7 +214,7 @@ class ViewVideo:
         self.play_image = PhotoImage(file='images/video-start.png')
         self.pause_image = PhotoImage(file='images/video-pause.png')
         self.forward_image = PhotoImage(file='images/skip_forward.png')
-        self.backward_image = PhotoImage(file='images/skip_bacward.png')
+        self.backward_image = PhotoImage(file='images/skip_backward.png')
         #
         self.play_button = Button(self.root, image=self.play_image)
         self.play_button.place(x=width / 2, y=self.video_height + 40, anchor=N)
