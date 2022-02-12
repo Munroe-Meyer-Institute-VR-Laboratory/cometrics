@@ -250,10 +250,10 @@ class ViewVideo:
         load_cam_thread.daemon = 1
         load_cam_thread.start()
         # TODO: Implement session control by video import
-        # TODO: Implement video scrubbing by clicking events in history
+        # DONE: Implement video scrubbing by clicking events in history
         # DONE: Implement forward 1 sec and backward 1 sec buttons
         # REMV: Implement slider event visualization?
-        # TODO: Implement webcam recording while recording behavioral events
+        # DONE: Implement webcam recording while recording behavioral events
 
     def get_camera_sources(self):
         self.camera_sources = VideoRecorder.get_sources()
@@ -271,9 +271,11 @@ class ViewVideo:
         selection = self.event_treeview.identify_row(event.y)
         if selection:
             selected_event = self.event_history[int(selection) - 1]
-            if self.player.playing:
-                self.toggle_video()
-            self.player.load_frame(int(selected_event[0]))
+            if self.player:
+                # TODO: There's a short delay between the video pause and when it actually stops
+                if self.player.playing:
+                    self.pause_video()
+                self.player.load_frame(int(selected_event[0]))
 
     def delete_last_event(self):
         if self.event_history:
@@ -306,7 +308,8 @@ class ViewVideo:
                     start_time = int(event[1][1]) - int(event[1][0])
                 else:
                     start_time = event[1]
-                self.event_history.append((self.frame_var.get(), event[0], start_time))
+                current_frame = event[2]
+                self.event_history.append((current_frame, event[0], start_time))
                 self.event_treeview_parents.append(self.event_treeview.insert("", 'end', str(len(self.event_history)),
                                                                               text=str(self.event_history[-1][2]),
                                                                               values=(self.event_history[-1][1],
@@ -336,6 +339,7 @@ class ViewVideo:
                                               label=self.video_label,
                                               size=(self.video_width, self.video_height),
                                               keep_ratio=True)
+                self.video_loaded = True
                 self.recorder.start_playback()
 
     def load_video(self):

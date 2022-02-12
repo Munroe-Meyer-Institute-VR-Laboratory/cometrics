@@ -155,6 +155,7 @@ class SessionManagerWindow:
     def start_video_control(self):
         self.ovu.video_view.load_video()
         if self.ovu.video_view.video_loaded:
+            # TODO: The video controls should replace Start and Pause Session, remove video controls from video view
             pass
 
     def restart_program(self):
