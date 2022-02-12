@@ -121,9 +121,10 @@ class OutputViewPanel:
         self.e4_view.stop_plot()
         self.e4_view.disconnect_e4()
 
-    def start_session(self):
+    def start_session(self, recording_path=None):
         self.e4_view.session_started = True
-        self.video_view.recorder.start_recording()
+        if self.video_view.recorder:
+            self.video_view.recorder.start_recording(output_path=recording_path)
 
     def stop_session(self):
         self.e4_view.session_started = False
@@ -327,7 +328,7 @@ class ViewVideo:
                 self.load_camera_box.place_forget()
                 source = self.camera_sources[self.selectable_sources.index(self.camera_str_var.get())]
                 self.recorder = VideoRecorder(source=source,
-                                              path='test.mp4',
+                                              path=None,
                                               fps=8,
                                               label=self.video_label,
                                               size=(self.video_width, self.video_height),
@@ -343,7 +344,7 @@ class ViewVideo:
                     self.load_camera_box.place_forget()
                     self.video_file = video_file
                     self.player = VideoPlayer(video_file, self.video_label, loop=False,
-                                              size=(self.video_height, self.video_width),
+                                              size=(self.video_width, self.video_height),
                                               keep_ratio=True,
                                               slider=self.video_slider,
                                               slider_var=self.frame_var)
@@ -353,6 +354,31 @@ class ViewVideo:
         except Exception as e:
             messagebox.showerror("Error", f"Error loading video:\n{str(e)}")
             print(f"ERROR: Error loading video:\n{str(e)}\n" + traceback.print_exc())
+
+    def pause_video(self):
+        try:
+            if self.recorder:
+                self.recorder.stop_recording()
+                return self.recorder.recording
+            elif self.player:
+                self.player.pause_video()
+                return self.player.playing
+            return False
+        except Exception as e:
+            print(f"ERROR: Error starting video:\n{str(e)}\n{traceback.print_exc()}")
+
+    def play_video(self, output_path=None):
+        try:
+            if self.recorder:
+                self.recorder.start_recording(output_path=output_path)
+                self.video_file = self.recorder.output_path
+                return self.recorder.recording
+            elif self.player:
+                self.player.play_video()
+                return self.player.playing
+            return False
+        except Exception as e:
+            print(f"ERROR: Error starting video:\n{str(e)}\n{traceback.print_exc()}")
 
     def toggle_video(self):
         try:

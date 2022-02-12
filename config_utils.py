@@ -50,3 +50,17 @@ class ConfigUtils:
             else:
                 return False
 
+    def get_logs_dir(self):
+        if self.config:
+            if self.config['logs-dir']:
+                return self.config['logs-dir']
+
+    def set_logs_dir(self, new_logs_dir):
+        if self.config:
+            if self.config['logs-dir']:
+                self.config['logs-dir'] = new_logs_dir
+                self.save_config()
+                return True
+            else:
+                return False
+

@@ -1,3 +1,4 @@
+import os
 import webbrowser
 from tkinter import *
 from analysis_ui import AccuracyPopup
@@ -29,14 +30,17 @@ class MenuBar(Frame):
         help_menu = Menu(menu)
         help_menu.add_command(label="Open documentation", command=self.open_docs)
         help_menu.add_command(label="Open logs", command=self.open_logs)
+        help_menu.add_command(label="Open current directory", command=self.open_current_dir)
         menu.add_cascade(label="Help", menu=help_menu)
 
     def open_new_project(self):
         self.caller.restart_program()
 
+    def open_current_dir(self):
+        os.startfile(self.caller.session_dir)
+
     def open_logs(self):
-        # TODO: Add in log opening
-        pass
+        os.startfile(self.caller.config.get_logs_dir())
 
     def open_docs(self):
         docs_url = 'https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics'

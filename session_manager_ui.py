@@ -10,6 +10,8 @@ from PIL import Image, ImageTk
 from pynput import keyboard
 
 # Custom library imports
+from tkvideoutils.tkvideoutils import cp_rename
+
 from logger_util import *
 from menu_bar import MenuBar
 from output_view_ui import OutputViewPanel
@@ -247,13 +249,19 @@ class SessionManagerWindow:
     def save_session(self):
         session_fields = self.pdf.get_session_fields()
         session_data, e4_data, video_file = self.ovu.get_session_data()
+        # If no session data is recorded, ask before saving it
+        if not session_data:
+            response = messagebox.askyesno("Session Data Empty", "There was no session data recorded, "
+                                                                 "do you want to save an empty session?")
+            if not response:
+                return
         x = {
             "Session Date": self.session_date,
             "Session Start Time": self.session_time,
             "Session Time": self.stf.session_time,
             "Pause Time": self.stf.break_time,
             "Keystroke File": pathlib.Path(self.keystroke_file).stem,
-            "Video File": pathlib.Path(video_file).name
+            "Video File": pathlib.Path(video_file).name if video_file else ''
         }
         session_fields.update(x)
         session_fields["Event History"] = session_data
@@ -267,6 +275,15 @@ class SessionManagerWindow:
                                         f"{session_fields['Assessment Name'][:2]}"
                                         f"{session_fields['Condition Name'][:2]}"
                                         f"{self.session_file_date}{reli}.json")
+        if self.ovu.video_view.video_file:
+            cp_rename(src=self.ovu.video_view.video_file,
+                      dst=path.join(self.session_dir,
+                                    self.config.get_data_folders()[1],
+                                    session_fields["Primary Data"]),
+                      name=f"{session_fields['Session Number']}"
+                           f"{session_fields['Assessment Name'][:2]}"
+                           f"{session_fields['Condition Name'][:2]}"
+                           f"{self.session_file_date}{reli}")
         with open(output_session_file, 'w') as f:
             json.dump(session_fields, f)
         print(f"INFO: Saved session file to: {output_session_file}")
@@ -279,7 +296,16 @@ class SessionManagerWindow:
             self.pdf.save_patient_fields()
             self.pdf.lock_session_fields()
             self.stf.lock_session_fields()
-            self.ovu.start_session()
+            # Start the session
+            session_fields = self.pdf.get_session_fields()
+            reli = '_R' if session_fields["Primary Data"] == "Reliability" else ''
+            self.ovu.start_session(path.join(self.session_dir,
+                                             self.config.get_data_folders()[1],
+                                             session_fields["Primary Data"],
+                                             f"{session_fields['Session Number']}"
+                                             f"{session_fields['Assessment Name'][:2]}"
+                                             f"{session_fields['Condition Name'][:2]}"
+                                             f"{self.session_file_date}{reli}.mp4"))
             self.stf.start_session()
         else:
             messagebox.showwarning("Warning", response)
