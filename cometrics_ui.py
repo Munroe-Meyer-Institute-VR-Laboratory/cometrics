@@ -1,6 +1,5 @@
 import datetime
 import sys
-import wmi
 # Custom library imports
 from config_utils import ConfigUtils
 from session_manager_ui import SessionManagerWindow

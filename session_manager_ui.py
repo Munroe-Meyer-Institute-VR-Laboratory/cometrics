@@ -299,13 +299,13 @@ class SessionManagerWindow:
             # Start the session
             session_fields = self.pdf.get_session_fields()
             reli = '_R' if session_fields["Primary Data"] == "Reliability" else ''
-            self.ovu.start_session(path.join(self.session_dir,
-                                             self.config.get_data_folders()[1],
-                                             session_fields["Primary Data"],
-                                             f"{session_fields['Session Number']}"
-                                             f"{session_fields['Assessment Name'][:2]}"
-                                             f"{session_fields['Condition Name'][:2]}"
-                                             f"{self.session_file_date}{reli}.mp4"))
+            self.ovu.start_session(recording_path=path.join(self.session_dir,
+                                                            self.config.get_data_folders()[1],
+                                                            session_fields["Primary Data"],
+                                                            f"{session_fields['Session Number']}"
+                                                            f"{session_fields['Assessment Name'][:2]}"
+                                                            f"{session_fields['Condition Name'][:2]}"
+                                                            f"{self.session_file_date}{reli}.mp4"))
             self.stf.start_session()
         else:
             messagebox.showwarning("Warning", response)

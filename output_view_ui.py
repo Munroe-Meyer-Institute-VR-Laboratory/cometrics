@@ -128,6 +128,9 @@ class OutputViewPanel:
 
     def stop_session(self):
         self.e4_view.session_started = False
+        if self.video_view.recorder:
+            self.video_view.recorder.stop_recording()
+            self.video_view.recorder.stop_playback()
 
     def check_event(self, key_char, start_time):
         # Make sure it is not None
