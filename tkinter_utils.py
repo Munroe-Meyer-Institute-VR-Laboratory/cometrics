@@ -1,7 +1,7 @@
 import tkinter
-from tkinter import TOP, W, N, NW, CENTER, messagebox
+from tkinter import TOP, W, N, NW, CENTER, messagebox, END
 from tkinter.ttk import Style
-from tkinter.ttk import Treeview
+from tkinter.ttk import Treeview, Entry
 
 from ui_params import treeview_default_tag_dict
 
@@ -176,3 +176,8 @@ class NewKeyPopup:
             print("WARNING: New key binding can only be one character!")
             self.popup_root.focus_force()
             self.tag_entry.focus()
+
+
+def set_entry_text(widget: tkinter.Entry, text):
+    widget.delete(0, END)
+    widget.insert(0, text)

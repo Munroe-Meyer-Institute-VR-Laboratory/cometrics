@@ -120,6 +120,9 @@ class OutputViewPanel:
     def close(self):
         self.e4_view.stop_plot()
         self.e4_view.disconnect_e4()
+        if self.video_view.recorder:
+            self.video_view.recorder.stop_recording()
+            self.video_view.recorder.stop_playback()
 
     def start_session(self, recording_path=None):
         self.e4_view.session_started = True
@@ -224,10 +227,10 @@ class ViewVideo:
         self.play_button.place(x=width / 2, y=self.video_height + 40, anchor=N)
 
         self.forward_button = Button(self.root, image=self.forward_image)
-        self.forward_button.place(x=(width / 2) + 60, y=self.video_height + 40, height=40, width=40, anchor=N)
+        self.forward_button.place(x=(width / 2) + 60, y=self.video_height + 40, anchor=N)
 
         self.backward_button = Button(self.root, image=self.backward_image)
-        self.backward_button.place(x=(width / 2) - 60, y=self.video_height + 40, height=40, width=40, anchor=N)
+        self.backward_button.place(x=(width / 2) - 60, y=self.video_height + 40, anchor=N)
 
         self.frame_var = IntVar(self.root)
         self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
@@ -868,6 +871,7 @@ class KeystrokeDataFields:
         # Setup variables used
         self.keystroke_json = None
         self.new_keystroke = False
+        self.deleted_event = None
         self.bindings = []
         self.event_history = []
         self.dur_bindings = []

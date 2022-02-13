@@ -1,8 +1,11 @@
 import datetime
+import math
 import threading
 import time
 import winsound
 from tkinter import *
+
+from tkinter_utils import set_entry_text
 
 
 class SessionTimeFields:
@@ -83,12 +86,32 @@ class SessionTimeFields:
                                      justify=LEFT)
         self.key_explanation.place(x=width * 0.75, y=self.start_y + ((field_offset / 2) * 10.5), anchor=W)
 
+        self.play_image = PhotoImage(file='images/video-start.png')
+        self.pause_image = PhotoImage(file='images/video-pause.png')
+        self.forward_image = PhotoImage(file='images/skip_forward.png')
+        self.backward_image = PhotoImage(file='images/skip_backward.png')
+        #
+        self.play_button = Button(self.frame, image=self.play_image)
+        self.forward_button = Button(self.frame, image=self.forward_image)
+        self.backward_button = Button(self.frame, image=self.backward_image)
+
         self.session_duration = None
         self.beep_th = None
         self.interval_thread = None
 
         self.time_thread = threading.Thread(target=self.time_update_thread)
         self.time_thread.start()
+
+    def video_control(self, nframes):
+        self.play_button.place(x=self.width / 2,
+                               y=self.start_y + ((self.field_offset / 2) * 12.0), anchor=N)
+        self.forward_button.place(x=(self.width / 2) + 60,
+                                  y=self.start_y + ((self.field_offset / 2) * 12.0), anchor=N)
+        self.backward_button.place(x=(self.width / 2) - 60,
+                                   y=self.start_y + ((self.field_offset / 2) * 12.0), anchor=N)
+        self.session_dur_selection.set(True)
+        self.show_session_time()
+        set_entry_text(self.session_dur_input, str(int(math.ceil(nframes))))
 
     @staticmethod
     def validate_number(char):
