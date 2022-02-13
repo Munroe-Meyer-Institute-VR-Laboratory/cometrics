@@ -126,7 +126,8 @@ class SessionManagerWindow:
                                      conditions=project_setup.conditions,
                                      header_font=self.header_font,
                                      field_font=self.field_font,
-                                     field_offset=self.field_offset)
+                                     field_offset=self.field_offset,
+                                     ksf=self.keystroke_file)
         self.patient_name = self.pdf.patient_name
         # endregion
 
@@ -155,10 +156,8 @@ class SessionManagerWindow:
     def start_video_control(self):
         self.ovu.video_view.load_video()
         if self.ovu.video_view.video_loaded:
-            video_length = self.ovu.video_view.player.nframes * self.ovu.video_view.player.fps
+            video_length = self.ovu.video_view.player.nframes / self.ovu.video_view.player.fps
             self.stf.video_control(video_length)
-            # TODO: The video controls should replace Start and Pause Session, remove video controls from video view
-            pass
 
     def restart_program(self):
         self.stf.stop_timer()

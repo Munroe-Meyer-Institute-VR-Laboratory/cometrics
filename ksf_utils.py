@@ -663,14 +663,24 @@ def get_sessions(session_dir):
 
 
 def open_keystroke_file(key_file):
-    bindings = []
+    freq_bindings, dur_bindings, conditions = [], [], []
     with open(key_file) as f:
         keystroke_json = json.load(f)
-    for key in keystroke_json:
-        if key != "Name":
-            bindings.append((key, keystroke_json[key]))
-    return bindings
-
+    if len(keystroke_json) == 1:
+        messagebox.showerror("Error", "Keystroke file is empty, which it should not be!")
+        print(f"ERROR: Keystroke file is empty\n{key_file}\n{keystroke_json}")
+    else:
+        for key in keystroke_json:
+            if key == "Frequency":
+                for binding in keystroke_json[key]:
+                    freq_bindings.append(binding)
+            elif key == "Duration":
+                for binding in keystroke_json[key]:
+                    dur_bindings.append(binding)
+            elif key == "Conditions":
+                for binding in keystroke_json[key]:
+                    conditions.append(binding)
+    return freq_bindings, dur_bindings, conditions
 
 def create_new_ksf_revision(original_ksf, keystrokes):
     ksf_wb = openpyxl.load_workbook(original_ksf)

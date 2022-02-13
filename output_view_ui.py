@@ -218,20 +218,6 @@ class ViewVideo:
         self.load_camera_box.place(x=(width / 2) + 10, y=5 + (self.video_height / 2), height=button_size[1],
                                    width=button_size[0] * 2,
                                    anchor=W)
-        #
-        # self.play_image = PhotoImage(file='images/video-start.png')
-        # self.pause_image = PhotoImage(file='images/video-pause.png')
-        # self.forward_image = PhotoImage(file='images/skip_forward.png')
-        # self.backward_image = PhotoImage(file='images/skip_backward.png')
-        # #
-        # self.play_button = Button(self.root, image=self.play_image)
-        # self.play_button.place(x=width / 2, y=self.video_height + 40, anchor=N)
-        #
-        # self.forward_button = Button(self.root, image=self.forward_image)
-        # self.forward_button.place(x=(width / 2) + 60, y=self.video_height + 40, anchor=N)
-        #
-        # self.backward_button = Button(self.root, image=self.backward_image)
-        # self.backward_button.place(x=(width / 2) - 60, y=self.video_height + 40, anchor=N)
 
         self.frame_var = IntVar(self.root)
         self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
@@ -254,10 +240,6 @@ class ViewVideo:
         load_cam_thread.daemon = 1
         load_cam_thread.start()
         # TODO: Implement session control by video import
-        # DONE: Implement video scrubbing by clicking events in history
-        # DONE: Implement forward 1 sec and backward 1 sec buttons
-        # REMV: Implement slider event visualization?
-        # DONE: Implement webcam recording while recording behavioral events
 
     def get_camera_sources(self):
         self.camera_sources = VideoRecorder.get_sources()
@@ -334,17 +316,21 @@ class ViewVideo:
     def load_camera(self, event):
         if self.camera_sources[self.selectable_sources.index(self.camera_str_var.get())]:
             if not self.recorder:
-                self.load_video_button.place_forget()
-                self.load_camera_box.place_forget()
-                source = self.camera_sources[self.selectable_sources.index(self.camera_str_var.get())]
-                self.recorder = VideoRecorder(source=source,
-                                              path=None,
-                                              fps=8,
-                                              label=self.video_label,
-                                              size=(self.video_width, self.video_height),
-                                              keep_ratio=True)
-                self.video_loaded = True
-                self.recorder.start_playback()
+                try:
+                    self.load_video_button.place_forget()
+                    self.load_camera_box.place_forget()
+                    source = self.camera_sources[self.selectable_sources.index(self.camera_str_var.get())]
+                    self.recorder = VideoRecorder(source=source,
+                                                  path=None,
+                                                  fps=8,
+                                                  label=self.video_label,
+                                                  size=(self.video_width, self.video_height),
+                                                  keep_ratio=True)
+                    self.video_loaded = True
+                    self.recorder.start_playback()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Error loading camera:\n{str(e)}")
+                    print(f"ERROR: Error loading camera:\n{str(e)}\n" + traceback.print_exc())
 
     def load_video(self):
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
@@ -360,8 +346,6 @@ class ViewVideo:
                                               slider=self.video_slider,
                                               slider_var=self.frame_var)
                     self.video_loaded = True
-                    self.forward_button.config(command=self.player.skip_video_forward)
-                    self.backward_button.config(command=self.player.skip_video_backward)
         except Exception as e:
             messagebox.showerror("Error", f"Error loading video:\n{str(e)}")
             print(f"ERROR: Error loading video:\n{str(e)}\n" + traceback.print_exc())

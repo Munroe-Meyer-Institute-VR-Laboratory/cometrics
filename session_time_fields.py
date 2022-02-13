@@ -91,7 +91,8 @@ class SessionTimeFields:
         self.forward_image = PhotoImage(file='images/skip_forward.png')
         self.backward_image = PhotoImage(file='images/skip_backward.png')
         #
-        self.play_button = Button(self.frame, image=self.play_image)
+        self.play_button = Button(self.frame, image=self.play_image,
+                                  command=self.caller.start_session)
         self.forward_button = Button(self.frame, image=self.forward_image)
         self.backward_button = Button(self.frame, image=self.backward_image)
 
@@ -112,6 +113,11 @@ class SessionTimeFields:
         self.session_dur_selection.set(True)
         self.show_session_time()
         set_entry_text(self.session_dur_input, str(int(math.ceil(nframes))))
+        self.session_dur_input.config(state='disabled')
+        self.session_dur_checkbutton.config(state='disabled')
+        # TODO: This feels like a lot of dependency on structure
+        self.forward_button.config(command=self.caller.ovu.video_view.player.skip_video_forward)
+        self.backward_button.config(command=self.caller.ovu.video_view.player.skip_video_backward)
 
     @staticmethod
     def validate_number(char):
@@ -169,7 +175,9 @@ class SessionTimeFields:
         self.session_started = True
         self.session_toggle_button['text'] = "Stop Session"
         self.session_toggle_button['bg'] = '#ea2128'
-        self.session_toggle_button['command'] = self.caller.stop_session
+        self.session_toggle_button.config(command=self.caller.stop_session)
+        self.play_button.config(command=self.caller.pause_session)
+        self.play_button.config(image=self.pause_image)
         if self.session_dur_selection.get():
             self.session_duration = int(self.session_dur_input.get())
         if self.interval_selection.get():
@@ -183,9 +191,12 @@ class SessionTimeFields:
         self.session_toggle_button['text'] = "Restart Session"
         self.session_toggle_button['bg'] = self.session_pause_button['bg']
         self.session_toggle_button['command'] = self.caller.menu.start_new_session
+        self.play_button.config(state='disabled')
+        self.forward_button.config(state='disabled')
+        self.backward_button.config(state='disabled')
         self.timer_running = False
         if self.video_playing:
-            self.video_playing = self.caller.ovu.video_view.toggle_video()
+            self.video_playing = self.caller.ovu.video_view.pause_video()
         if self.session_paused:
             self.session_paused_label.place_forget()
         elif self.session_started:
@@ -197,13 +208,17 @@ class SessionTimeFields:
     def pause_session(self):
         if self.session_started:
             if not self.session_paused:
-                self.video_playing = self.caller.ovu.video_view.toggle_video()
+                if self.caller.ovu.video_view.player:
+                    self.video_playing = self.caller.ovu.video_view.pause_video()
+                    self.play_button.config(image=self.play_image)
                 self.session_start_label.place_forget()
                 self.session_paused_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
                                                 anchor=CENTER)
                 self.session_paused = True
             else:
-                self.video_playing = self.caller.ovu.video_view.toggle_video()
+                if self.caller.ovu.video_view.player:
+                    self.video_playing = self.caller.ovu.video_view.play_video()
+                    self.play_button.config(image=self.pause_image)
                 self.session_start_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4),
                                                anchor=CENTER)
                 self.session_paused_label.place_forget()

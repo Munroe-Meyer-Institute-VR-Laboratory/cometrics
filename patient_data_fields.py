@@ -3,6 +3,10 @@ import math
 from tkinter import *
 from tkinter.ttk import Combobox
 
+from ksf_utils import open_keystroke_file
+from tkinter_utils import build_treeview
+from ui_params import treeview_bind_tags
+
 
 class PatientDataVar:
     PATIENT_NAME = 0
@@ -20,7 +24,7 @@ class PatientDataVar:
 
 class PatientDataFields:
     def __init__(self, parent, x, y, height, width, patient_file, prim_session_number, reli_session_number,
-                 session_date, session_time, conditions, field_offset=50,
+                 session_date, session_time, conditions, ksf, field_offset=50,
                  header_font=('Purisa', 14), field_font=('Purisa', 12), debug=False):
         self.x, self.y = x, y
         self.conditions = conditions
@@ -30,7 +34,7 @@ class PatientDataFields:
         field_count = int(height / field_offset)
         if field_count < 13:
             field_count = int((height * 0.85) / field_offset)
-        frame_count = int(math.ceil(13 / field_count))
+        frame_count = int(math.ceil(13 / field_count)) + 1
         self.patient_frames = []
         self.next_button_image = PhotoImage(file='images/go_next.png')
         self.prev_button_image = PhotoImage(file='images/go_previous.png')
@@ -181,6 +185,25 @@ class PatientDataFields:
         self.patient_frames[self.current_patient_field].place(x=self.x, y=self.y)
         self.patient_entries[0].focus()
 
+        self.freq_bindings, self.dur_bindings, _ = open_keystroke_file(ksf)
+        self.bindings = []
+        self.bindings.extend(self.freq_bindings)
+        self.bindings.extend(self.dur_bindings)
+
+        dur_heading_dict = {"#0": ["Char", 'c', 50, NO, 'c']}
+        dur_column_dict = {"1": ["Tag", 'c', 1, YES, 'c']}
+        self.bind_treeview, self.bind_filescroll = build_treeview(self.patient_frames[-1],
+                                                                  x=width / 2, y=30,
+                                                                  height=height * 0.8, width=width - 30,
+                                                                  column_dict=dur_column_dict,
+                                                                  heading_dict=dur_heading_dict,
+                                                                  anchor=N,
+                                                                  fs_offset=(width / 2) - 7)
+        for i in range(0, len(self.bindings)):
+            bind = self.bindings[i]
+            self.bind_treeview.insert("", 'end', str(i), text=str(bind[0]),
+                                      values=(bind[1],),
+                                      tags=(treeview_bind_tags[i % 2]))
         if debug:
             self.patient_vars[PatientDataVar.SESS_LOC].set("Debug")
             self.patient_vars[PatientDataVar.ASSESS_NAME].set("Debug")
@@ -252,6 +275,9 @@ class PatientDataFields:
     def lock_session_fields(self):
         for entry in self.patient_entries:
             entry.config(state='disabled')
+        self.patient_frames[self.current_patient_field].place_forget()
+        self.current_patient_field = len(self.patient_frames)
+        self.patient_frames[-1].place(x=self.x, y=self.y)
 
     def get_session_fields(self):
         return {"Session Location": self.patient_vars[PatientDataVar.SESS_LOC].get(),
