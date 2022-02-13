@@ -28,9 +28,9 @@ class MenuBar(Frame):
         menu.add_cascade(label="Analyze", menu=edit_menu)
 
         help_menu = Menu(menu)
-        help_menu.add_command(label="Open documentation", command=self.open_docs)
-        help_menu.add_command(label="Open logs", command=self.open_logs)
-        help_menu.add_command(label="Open current directory", command=self.open_current_dir)
+        help_menu.add_command(label="Open Documentation", command=self.open_docs)
+        help_menu.add_command(label="Open Logs", command=self.open_logs)
+        help_menu.add_command(label="Open Current Directory", command=self.open_current_dir)
         menu.add_cascade(label="Help", menu=help_menu)
 
     def open_new_project(self):
