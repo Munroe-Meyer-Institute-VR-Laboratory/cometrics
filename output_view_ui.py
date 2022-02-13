@@ -194,6 +194,7 @@ class OutputViewPanel:
 class ViewVideo:
     def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60,
                  video_import_cb=None):
+        self.height, self.width = height, width
         self.event_history = []
         self.root = root
         self.video_loaded = False
@@ -218,19 +219,19 @@ class ViewVideo:
                                    width=button_size[0] * 2,
                                    anchor=W)
         #
-        self.play_image = PhotoImage(file='images/video-start.png')
-        self.pause_image = PhotoImage(file='images/video-pause.png')
-        self.forward_image = PhotoImage(file='images/skip_forward.png')
-        self.backward_image = PhotoImage(file='images/skip_backward.png')
+        # self.play_image = PhotoImage(file='images/video-start.png')
+        # self.pause_image = PhotoImage(file='images/video-pause.png')
+        # self.forward_image = PhotoImage(file='images/skip_forward.png')
+        # self.backward_image = PhotoImage(file='images/skip_backward.png')
+        # #
+        # self.play_button = Button(self.root, image=self.play_image)
+        # self.play_button.place(x=width / 2, y=self.video_height + 40, anchor=N)
         #
-        self.play_button = Button(self.root, image=self.play_image)
-        self.play_button.place(x=width / 2, y=self.video_height + 40, anchor=N)
-
-        self.forward_button = Button(self.root, image=self.forward_image)
-        self.forward_button.place(x=(width / 2) + 60, y=self.video_height + 40, anchor=N)
-
-        self.backward_button = Button(self.root, image=self.backward_image)
-        self.backward_button.place(x=(width / 2) - 60, y=self.video_height + 40, anchor=N)
+        # self.forward_button = Button(self.root, image=self.forward_image)
+        # self.forward_button.place(x=(width / 2) + 60, y=self.video_height + 40, anchor=N)
+        #
+        # self.backward_button = Button(self.root, image=self.backward_image)
+        # self.backward_button.place(x=(width / 2) - 60, y=self.video_height + 40, anchor=N)
 
         self.frame_var = IntVar(self.root)
         self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
@@ -242,8 +243,8 @@ class ViewVideo:
                              "2": ["Event Frame", 'w', 1, YES, 'w']}
         self.event_treeview_parents = []
         self.event_treeview, self.event_fs = build_treeview(self.root,
-                                                            x=20, y=self.video_height + 90,
-                                                            height=120,
+                                                            x=20, y=self.video_height + 40,
+                                                            height=self.height - self.video_height - 20,
                                                             width=width - 25,
                                                             heading_dict=event_header_dict,
                                                             column_dict=event_column_dict,
