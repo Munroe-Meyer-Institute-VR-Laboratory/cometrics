@@ -33,6 +33,7 @@ setup(name='cometrics',
           'matplotlib',
           'pyEmpatica',
           'openpyxl',
+          'logger-util'
       ],
       include_package_data=True,
       zip_safe=False

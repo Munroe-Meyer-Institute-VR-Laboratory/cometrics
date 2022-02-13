@@ -2,7 +2,7 @@ import datetime
 import json
 import os
 import pathlib
-from os import walk
+from os import walk, path
 from tkinter import *
 from tkinter import messagebox
 
@@ -10,9 +10,7 @@ from PIL import Image, ImageTk
 from pynput import keyboard
 
 # Custom library imports
-from tkvideoutils.tkvideoutils import cp_rename
-
-from logger_util import *
+from tkvideoutils import cp_rename
 from menu_bar import MenuBar
 from output_view_ui import OutputViewPanel
 from patient_data_fields import PatientDataFields

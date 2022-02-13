@@ -9,3 +9,4 @@ PyYAML~=6.0
 pyEmpatica~=0.5.7
 openpyxl~=3.0.9
 matplotlib==3.4.3
+logger-util~=0.2
