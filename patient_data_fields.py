@@ -276,7 +276,7 @@ class PatientDataFields:
         for entry in self.patient_entries:
             entry.config(state='disabled')
         self.patient_frames[self.current_patient_field].place_forget()
-        self.current_patient_field = len(self.patient_frames)
+        self.current_patient_field = len(self.patient_frames) - 1
         self.patient_frames[-1].place(x=self.x, y=self.y)
 
     def get_session_fields(self):
