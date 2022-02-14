@@ -1,6 +1,8 @@
 cometrics_version = "0.12.67"
 ui_title = f"cometrics v{cometrics_version}"
 
+cometrics_data_root = r'C:\cometrics'
+
 project_treeview_params = [40, 60, 400, 300]
 
 ksf_distance = 1.75

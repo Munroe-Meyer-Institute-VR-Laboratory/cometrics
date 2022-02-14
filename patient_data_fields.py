@@ -26,6 +26,7 @@ class PatientDataFields:
     def __init__(self, parent, x, y, height, width, patient_file, prim_session_number, reli_session_number,
                  session_date, session_time, conditions, ksf, field_offset=50,
                  header_font=('Purisa', 14), field_font=('Purisa', 12), debug=False):
+        # TODO: Load previous session data if data type and session number exist
         self.x, self.y = x, y
         self.conditions = conditions
         self.patient = PatientContainer(patient_file)
@@ -109,7 +110,6 @@ class PatientDataFields:
             [Label, self.label_texts[PatientDataVar.SESS_NUM], self.patient_vars[PatientDataVar.SESS_NUM]],
             [Entry, self.label_texts[PatientDataVar.SESS_NUM], self.patient_vars[PatientDataVar.SESS_NUM]],
         ]
-        # TODO: Create key viewer on a page appended at the end of the other pages
         info_count = 0
         frame_select = 0
         patient_y = 30

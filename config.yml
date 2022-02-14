@@ -3,14 +3,11 @@ data-folders:
 - Raw Data
 - KSF
 - Export
-first-time: false
+first-time: true
+logs-dir: C:\cometrics\logs
 patient-concerns: concerns.yml
 phases:
 - Assessment
 - Treatment
-recent-projects:
-- C:\Users\wsarc\Desktop\ExpDir\Test Project
-window-size:
-- 864
-- 1536
-logs-dir: D:\GitHub Repos\KeystrokeAnnotator\logs
+recent-projects: []
+window-size: []
