@@ -101,7 +101,6 @@ class SessionTimeFields:
         self.interval_thread = None
 
         self.time_thread = threading.Thread(target=self.time_update_thread)
-        self.time_thread.start()
 
     def video_control(self, nframes):
         self.play_button.place(x=self.width / 2,
@@ -110,6 +109,8 @@ class SessionTimeFields:
                                   y=self.start_y + ((self.field_offset / 2) * 12.0), anchor=N)
         self.backward_button.place(x=(self.width / 2) - 60,
                                    y=self.start_y + ((self.field_offset / 2) * 12.0), anchor=N)
+        self.forward_button.config(state='disabled')
+        self.backward_button.config(state='disabled')
         self.session_dur_selection.set(True)
         self.show_session_time()
         set_entry_text(self.session_dur_input, str(int(math.ceil(nframes))))
@@ -167,9 +168,14 @@ class SessionTimeFields:
                         if self.session_time >= self.session_duration:
                             self.caller.stop_session()
                 elif self.session_paused:
-                    self.break_time += 1
+                    if not self.caller.ovu.video_view.player:
+                        self.break_time += 1
                 self.break_time_label['text'] = str(datetime.timedelta(seconds=self.break_time))
                 self.session_time_label['text'] = str(datetime.timedelta(seconds=self.session_time))
+
+    def change_time(self, current_seconds):
+        self.session_time = current_seconds
+        self.session_time_label['text'] = str(datetime.timedelta(seconds=self.session_time))
 
     def start_session(self):
         self.session_started = True
@@ -183,7 +189,12 @@ class SessionTimeFields:
         if self.interval_selection.get():
             self.interval_thread = threading.Thread(target=self.beep_interval_thread)
             self.interval_thread.start()
-        self.video_playing = self.caller.ovu.video_view.toggle_video()
+        if self.caller.ovu.video_view.player:
+            self.video_playing = self.caller.ovu.video_view.play_video()
+            self.forward_button.config(state='active')
+            self.backward_button.config(state='active')
+        else:
+            self.time_thread.start()
         self.session_stopped_label.place_forget()
         self.session_start_label.place(x=self.width / 2, y=self.start_y + ((self.field_offset / 2) * 4), anchor=CENTER)
 

@@ -1,5 +1,6 @@
 import datetime
 import json
+import math
 import os
 import pathlib
 from os import walk, path
@@ -109,7 +110,8 @@ class SessionManagerWindow:
                                    ksf=self.keystroke_file,
                                    field_font=self.field_font,
                                    header_font=self.header_font,
-                                   video_import_cb=self.start_video_control)
+                                   video_import_cb=self.start_video_control,
+                                   slider_change_cb=self.change_time)
         self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root,
                                      x=5,
@@ -150,6 +152,11 @@ class SessionManagerWindow:
         root.state('zoomed')
         # Start the UI loop
         root.mainloop()
+
+    def change_time(self, frame):
+        if not self.ovu.video_view.player.playing:
+            self.ovu.video_view.player.load_frame(int(frame))
+        self.stf.change_time(int((float(frame) / self.ovu.video_view.player.fps) + 0.5))
 
     def start_video_control(self):
         self.ovu.video_view.load_video()
@@ -320,3 +327,4 @@ class SessionManagerWindow:
     def pause_session(self):
         if self.stf.session_started:
             self.stf.pause_session()
+

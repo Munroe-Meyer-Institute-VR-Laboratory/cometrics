@@ -29,7 +29,7 @@ class OutputViews:
 
 class OutputViewPanel:
     def __init__(self, parent, x, y, height, width, button_size, ksf,
-                 field_font, header_font, video_import_cb):
+                 field_font, header_font, video_import_cb, slider_change_cb):
         self.height, self.width = height, width
         self.x, self.y, self.button_size = x, y, button_size
         self.current_button = 0
@@ -90,7 +90,7 @@ class OutputViewPanel:
         self.video_view = ViewVideo(self.view_frames[OutputViews.VIDEO_VIEW],
                                     height=self.height - self.button_size[1], width=self.width,
                                     field_font=field_font, header_font=header_font, button_size=button_size,
-                                    video_import_cb=video_import_cb)
+                                    video_import_cb=video_import_cb, slider_change_cb=slider_change_cb)
         self.event_history = []
 
     def switch_key_frame(self):
@@ -128,6 +128,14 @@ class OutputViewPanel:
         self.e4_view.session_started = True
         if self.video_view.recorder:
             self.video_view.recorder.start_recording(output_path=recording_path)
+
+    def enable_video_slider(self):
+        if self.video_view.player:
+            self.video_view.video_slider.config(state='active')
+
+    def disable_video_slider(self):
+        if self.video_view.player:
+            self.video_view.video_slider.config(state='disabled')
 
     def stop_session(self):
         self.e4_view.session_started = False
@@ -193,7 +201,7 @@ class OutputViewPanel:
 
 class ViewVideo:
     def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60,
-                 video_import_cb=None):
+                 video_import_cb=None, slider_change_cb=None):
         self.height, self.width = height, width
         self.event_history = []
         self.root = root
@@ -220,7 +228,7 @@ class ViewVideo:
                                    anchor=W)
 
         self.frame_var = IntVar(self.root)
-        self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var)
+        self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var, command=slider_change_cb)
         self.video_slider.config(length=self.video_width)
         self.video_slider.place(x=5, y=self.video_height, anchor=NW)
         # Event treeview shows all events in relation to the video
@@ -258,10 +266,9 @@ class ViewVideo:
         if selection:
             selected_event = self.event_history[int(selection) - 1]
             if self.player:
-                # TODO: There's a short delay between the video pause and when it actually stops
-                if self.player.playing:
-                    self.pause_video()
-                self.player.load_frame(int(selected_event[0]))
+                # Only select event when paused
+                if not self.player.playing:
+                    self.player.load_frame(int(selected_event[0]))
 
     def delete_last_event(self):
         if self.event_history:
@@ -344,7 +351,9 @@ class ViewVideo:
                                               size=(self.video_width, self.video_height),
                                               keep_ratio=True,
                                               slider=self.video_slider,
-                                              slider_var=self.frame_var)
+                                              slider_var=self.frame_var,
+                                              override_slider=True
+                                              )
                     self.video_loaded = True
         except Exception as e:
             messagebox.showerror("Error", f"Error loading video:\n{str(e)}")
