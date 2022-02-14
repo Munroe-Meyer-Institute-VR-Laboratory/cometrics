@@ -5,7 +5,7 @@ import json
 import os
 import pathlib
 import traceback
-from os import walk
+from os import walk, path
 from shutil import copy2
 from tkinter import messagebox
 import openpyxl

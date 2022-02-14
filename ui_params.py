@@ -1,4 +1,4 @@
-cometrics_version = "0.12.66"
+cometrics_version = "0.12.67"
 ui_title = f"cometrics v{cometrics_version}"
 
 project_treeview_params = [40, 60, 400, 300]

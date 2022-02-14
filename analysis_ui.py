@@ -1,13 +1,8 @@
 import json
 import os
 import pathlib
-from os import walk, path
-import openpyxl
-import csv
-import datetime
 from tkinter import *
-from tkinter import filedialog, messagebox
-import traceback
+from tkinter import filedialog
 
 from ksf_utils import cal_acc
 from tkinter_utils import center

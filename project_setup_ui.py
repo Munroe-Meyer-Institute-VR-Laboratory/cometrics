@@ -9,7 +9,6 @@ import yaml
 from tkinter.ttk import Combobox
 
 from ksf_utils import import_ksf, create_new_ksf_revision, compare_keystrokes
-from logger_util import *
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
     NewKeyPopup, clear_treeview
 from ui_params import project_treeview_params as ptp, treeview_tags, window_ratio, large_field_font, medium_field_font, \
@@ -235,7 +234,7 @@ class ProjectSetupWindow:
             messagebox.showwarning("Warning", "No root filepath chosen! Please try again.")
             return
         else:
-            self.top_dir = path.normpath(self.top_dir)
+            self.top_dir = os.path.normpath(self.top_dir)
         EntryPopup(self, self.main_root, "Enter New Project Name", 0)
 
     def populate_recent_projects(self):
