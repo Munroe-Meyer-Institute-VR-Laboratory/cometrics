@@ -1,7 +1,7 @@
-cometrics_version = "0.12.67"
+cometrics_version = "0.12.69"
 ui_title = f"cometrics v{cometrics_version}"
 
-cometrics_data_root = r'C:\cometrics'
+cometrics_data_root = fr'C:\cometrics\{cometrics_version}'
 
 project_treeview_params = [40, 60, 400, 300]
 

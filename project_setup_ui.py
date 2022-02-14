@@ -30,6 +30,14 @@ class ProjectSetupWindow:
             config.set_screen_size(self.window_height, self.window_width)
             self.window_width = int(self.window_width * window_ratio)
             self.window_height = int(self.window_height * window_ratio)
+        # Check configuration
+        try:
+            print(f"INFO: {os.environ['IMAGEIO_FFMPEG_EXE']}")
+        except KeyError as ke:
+            messagebox.showwarning("Warning", "FFMPEG is not configured correctly on your system, please refer to "
+                                              "instructions for configuration if you need video features!")
+            print("WARNING: FFMPEG is not configured correctly on your system, please refer to "
+                  "instructions for configuration if you need video features!")
         if config.get_screen_size()[1] == 1920:
             self.header_font = large_treeview_font
             self.field_font = large_field_font
@@ -104,11 +112,11 @@ class ProjectSetupWindow:
         self.ksf_path = Label(self.main_root, text="Select Concern and Phase to Load",
                               font=(self.header_font[0], self.header_font[1], 'italic'),
                               bg='white', width=30, anchor='w')
-        self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1], anchor=NW, width=int(self.window_width*0.3))
+        self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1], anchor=NW, width=int(self.window_width * 0.3))
 
         self.ksf_import = Button(self.main_root, text="Import", font=self.field_font, width=10,
                                  command=self.import_concern_ksf)
-        self.ksf_import.place(x=self.window_width*0.77+self.button_size[0]+10, y=ptp[1],
+        self.ksf_import.place(x=self.window_width * 0.77 + self.button_size[0] + 10, y=ptp[1],
                               width=self.button_size[0], height=self.button_size[1], anchor=NW)
         self.ksf_import.config(state='disabled')
         # Define frequency and duration key headers
@@ -139,7 +147,7 @@ class ProjectSetupWindow:
         # Create KSF generation button
         self.generate_button = Button(self.main_root, text='Generate', width=12, command=self.generate_ksf,
                                       font=self.field_font)
-        self.generate_button.place(x=self.window_width*0.77+self.button_size[0]+10,
+        self.generate_button.place(x=self.window_width * 0.77 + self.button_size[0] + 10,
                                    y=ptp[1] + key_treeview_height + (self.window_height * 0.15) +
                                      (self.window_height * 0.2) + self.button_size[1] / 2,
                                    width=self.button_size[0], height=self.button_size[1])
@@ -147,7 +155,7 @@ class ProjectSetupWindow:
 
         self.continue_button = Button(self.main_root, text='Continue', width=12, command=self.continue_project,
                                       font=self.field_font)
-        self.continue_button.place(x=self.window_width*0.77,
+        self.continue_button.place(x=self.window_width * 0.77,
                                    y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
                                        self.window_height * 0.21),
                                    width=self.button_size[0], height=self.button_size[1])
@@ -155,9 +163,9 @@ class ProjectSetupWindow:
 
         self.cancel_button = Button(self.main_root, text='Cancel', width=12, command=self.cancel_project,
                                     font=self.field_font)
-        self.cancel_button.place(x=self.window_width*0.77+self.button_size[0]+10,
+        self.cancel_button.place(x=self.window_width * 0.77 + self.button_size[0] + 10,
                                  y=ptp[1] + int(self.window_height * 0.35) + int(self.window_height * 0.25) + int(
-                                       self.window_height * 0.21),
+                                     self.window_height * 0.21),
                                  width=self.button_size[0], height=self.button_size[1])
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))
@@ -211,6 +219,7 @@ class ProjectSetupWindow:
                 self.concern_treeview.insert("", 'end', str((int(self.concern_treeview_parents[-1]) + 1)), text=data,
                                              tags=treeview_tags[(int(self.concern_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.concern_treeview, self.concern_treeview_parents[-1])
+
     # endregion
 
     # region Project UI Controls
@@ -258,6 +267,7 @@ class ProjectSetupWindow:
         clear_treeview(self.patient_treeview)
         self.patient_treeview_parents = []
         self.populate_patients()
+
     # endregion
 
     # region Patient UI Controls
@@ -331,7 +341,8 @@ class ProjectSetupWindow:
                     self.phases_menu.config(state='active')
                     self.phases_menu['state'] = 'readonly'
                 except IndexError as e:
-                    print(f"ERROR: Error encountered when selecting concern: \n{str(e)}\n{traceback.print_exc()}\n{self.concerns}\n{selection}")
+                    print(
+                        f"ERROR: Error encountered when selecting concern: \n{str(e)}\n{traceback.print_exc()}\n{self.concerns}\n{selection}")
 
     def create_new_concern(self):
         EntryPopup(self, self.main_root, "Enter New Concern", 2)
@@ -347,6 +358,7 @@ class ProjectSetupWindow:
         with open(self.concern_file, 'w') as file:
             yaml.dump(self.concerns, file)
         self.read_concern_file()
+
     # endregion
 
     # region Phase UI Controls
@@ -367,6 +379,7 @@ class ProjectSetupWindow:
             data_folder = os.path.join(self.phase_dir, folder)
             if not os.path.exists(data_folder):
                 os.mkdir(data_folder)
+
     # endregion
 
     # region KSF UI Controls
@@ -434,7 +447,8 @@ class ProjectSetupWindow:
                 self.continue_button.config(state='active')
             except Exception as e:
                 messagebox.showerror("Error", f"Error encountered when processing tracker spreadsheet!\n{str(e)}")
-                print(f"ERROR: Error encountered when processing tracker spreadsheet\n{str(e)}\n{traceback.print_exc()}")
+                print(
+                    f"ERROR: Error encountered when processing tracker spreadsheet\n{str(e)}\n{traceback.print_exc()}")
         else:
             messagebox.showwarning("Warning", "No tracker file selected! Please try again.")
             print(f"WARNING: No tracker file selected")
@@ -508,6 +522,7 @@ class ProjectSetupWindow:
         clear_treeview(self.duration_key_treeview)
         self.populate_duration_treeview()
         self.generate_button.config(state='active')
+
     # endregion
 
     # region Exit UI Controls
