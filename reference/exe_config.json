@@ -19,7 +19,7 @@
   },
   {
    "optionDest": "icon_file",
-   "value": "D:/GitHub Repos/KeystrokeAnnotator/images/cometrics_icon.ico"
+   "value": "D:/GitHub Repos/KeystrokeAnnotator/images/icon.ico"
   },
   {
    "optionDest": "name",
@@ -42,6 +42,14 @@
    "value": false
   },
   {
+   "optionDest": "disable_windowed_traceback",
+   "value": false
+  },
+  {
+   "optionDest": "embed_manifest",
+   "value": true
+  },
+  {
    "optionDest": "uac_admin",
    "value": false
   },
@@ -59,10 +67,6 @@
   },
   {
    "optionDest": "bootloader_ignore_signals",
-   "value": false
-  },
-  {
-   "optionDest": "disable_windowed_traceback",
    "value": false
   },
   {

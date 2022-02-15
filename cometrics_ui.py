@@ -2,6 +2,8 @@ import datetime
 import os
 import sys
 # Custom library imports
+import imageio_ffmpeg
+
 from config_utils import ConfigUtils
 from session_manager_ui import SessionManagerWindow
 from logger_util import CreateLogger, log_startup
@@ -28,6 +30,7 @@ if __name__ == "__main__":
     if os.path.exists(ffmpeg_path):
         os.environ['IMAGEIO_FFMPEG_EXE'] = os.path.join(cwd, r'external_bin\ffmpeg\ffmpeg-win64-v4.2.2.exe')
     print(f"STARTUP: {cwd}")
+    print(f"INFO: imageio_ffmpeg exe location - {imageio_ffmpeg.get_ffmpeg_exe()}")
     # Load our configuration
     config = ConfigUtils()
     config.set_logs_dir(os.path.join(cometrics_data_root, 'logs'))
