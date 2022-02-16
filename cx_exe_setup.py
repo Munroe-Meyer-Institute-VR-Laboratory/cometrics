@@ -24,4 +24,4 @@ setup(name="cometrics",
       description='Clinical tool for coregistration of frequency and duration based behavior, physiological signals, '
                   'and video data. Session tracking features streamline multi-session clinical data recording.',
       options={"build_exe": buildOptions},
-      executables=[Executable("cometrics_ui.py", base=base, icon=r'images\icon.ico')])
+      executables=[Executable("cometrics.py", base=base, icon=r'images\icon.ico')])
