@@ -154,6 +154,7 @@ class SessionManagerWindow:
         root.mainloop()
 
     def change_time(self, frame):
+        # TODO: This throws an error when the webcam is recording and the slider is moved, slider should be disabled
         if not self.ovu.video_view.player.playing:
             self.ovu.video_view.player.load_frame(int(frame))
         self.stf.change_time(int((float(frame) / self.ovu.video_view.player.fps) + 0.5))

@@ -1,4 +1,4 @@
-cometrics_version = "0.12.71"
+cometrics_version = "0.12.72"
 ui_title = f"cometrics v{cometrics_version}"
 
 cometrics_data_root = fr'C:\cometrics'
