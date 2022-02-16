@@ -231,6 +231,7 @@ class ViewVideo:
         self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var, command=slider_change_cb)
         self.video_slider.config(length=self.video_width)
         self.video_slider.place(x=5, y=self.video_height, anchor=NW)
+        self.video_slider.config(state='disabled')
         # Event treeview shows all events in relation to the video
         event_header_dict = {"#0": ["Event Time", 'w', 1, YES, 'w']}
         event_column_dict = {"1": ["Event Tag", 'w', 1, YES, 'w'],
@@ -354,6 +355,7 @@ class ViewVideo:
                                               slider_var=self.frame_var,
                                               override_slider=True
                                               )
+                    self.video_slider.config(state='active')
                     self.video_loaded = True
         except Exception as e:
             messagebox.showerror("Error", f"Error loading video:\n{str(e)}")

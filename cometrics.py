@@ -8,7 +8,7 @@ from config_utils import ConfigUtils
 from session_manager_ui import SessionManagerWindow
 from logger_util import CreateLogger, log_startup
 from project_setup_ui import ProjectSetupWindow
-from ui_params import cometrics_data_root
+from ui_params import cometrics_data_root, cometrics_ver_root
 
 
 def main(config_file, first_time_user):
@@ -20,8 +20,10 @@ if __name__ == "__main__":
     # Check root dir
     if not os.path.exists(cometrics_data_root):
         os.mkdir(cometrics_data_root)
+    if not os.path.exists(cometrics_ver_root):
+        os.mkdir(cometrics_ver_root)
     # Reroute stdout and stderr
-    CreateLogger(os.path.join(cometrics_data_root, 'logs'))
+    CreateLogger(os.path.join(cometrics_ver_root, 'logs'))
     # Log computer information
     log_startup()
     # Setup environment variables
@@ -33,7 +35,7 @@ if __name__ == "__main__":
     print(f"INFO: imageio_ffmpeg exe location - {imageio_ffmpeg.get_ffmpeg_exe()}")
     # Load our configuration
     config = ConfigUtils()
-    config.set_logs_dir(os.path.join(cometrics_data_root, 'logs'))
+    config.set_logs_dir(os.path.join(cometrics_ver_root, 'logs'))
     first_time = config.get_first_time()
     while True:
         setup = ProjectSetupWindow(config, first_time)
