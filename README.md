@@ -22,18 +22,20 @@ cometrics has been designed to integrate directly into the workflow of the Sever
 ## License
 Distributed under the MIT License. See the [LICENSE](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/LICENSE) file for more information.
 
-## Getting Started
-TODO: Guide users through getting your code up and running on their own system. In this section you can talk about:
-1.	Installation process
-2.	Software dependencies
-3.	Latest releases
-4.	API references
-
-## Build and Test
-TODO: Describe and show how to build your code and run the tests. 
-
 ## Bug Reporting
-To report a bug, please open an issue in the main repository [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues).  It is recommended to include the log file associated with the session that prompted your report so it can be properly debugged.
+To report a bug, please open an issue in the main repository [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues).  Include your OS, method of installation, and a detailed report of reproducible steps to replicate the problem.  It is recommended to include the log file associated with the session that prompted your report so it can be properly debugged.  **Double check your log file to ensure no protected health information (PHI) is included in your log file.  Any log files that are found to contain PHI will be deleted without notice.**
+
+## Getting Started
+### Clinicians and Researchers
+The latest compiled binaries for the Windows platform can be found in the [Releases](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/releases) section of the repository.  To install the program on your system download the latest zip archive release to your system, unzip it in the directory of your choice, and double click `cometrics.exe` to start the program.  The logs directory will be created in your `C:` drive and the `config.yml` file will update with your system parameters.  To uninstall the program, simply delete the root folder of the software.  If you run into any issues, please make a report in the [Issues](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues) section of the repository and a maintainer will address the problem and help you get started.
+
+### Developers
+ * Clone the repo and install the module in developer mode
+```sh
+git clone https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics.git
+python ./cometrics/setup.py develop
+```
+The codebase is built using Python 3.8 and the IDE used is PyCharm.
 
 ## Contribute
 Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
@@ -46,5 +48,4 @@ Don't forget to give the project a star! Thanks again!
 3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
-
 
