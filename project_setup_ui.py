@@ -4,7 +4,7 @@ import pathlib
 import traceback
 from tkinter import *
 from tkinter import messagebox, filedialog
-
+from menu_bar import MenuBar
 import yaml
 from tkinter.ttk import Combobox
 
@@ -178,7 +178,10 @@ class ProjectSetupWindow:
         # self.main_root.overrideredirect(1)
         if first_time_user:
             # Display link to user guide
-            pass
+            response = messagebox.askyesno("Welcome to cometrics!",
+                                           "Would you like to open the user guide for cometrics?")
+            if response:
+                MenuBar.open_docs()
         self.main_root.mainloop()
 
     # region External Data Entry

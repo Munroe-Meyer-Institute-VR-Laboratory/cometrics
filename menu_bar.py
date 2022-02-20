@@ -42,7 +42,8 @@ class MenuBar(Frame):
     def open_logs(self):
         os.startfile(self.caller.config.get_logs_dir())
 
-    def open_docs(self):
+    @staticmethod
+    def open_docs():
         docs_url = 'https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics'
         webbrowser.open_new_tab(docs_url)
 
