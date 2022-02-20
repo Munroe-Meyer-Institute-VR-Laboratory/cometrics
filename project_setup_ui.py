@@ -220,7 +220,6 @@ class ProjectSetupWindow:
                                              tags=treeview_tags[(int(self.concern_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.concern_treeview, self.concern_treeview_parents[-1])
             self.load_concern(len(self.concerns))
-
     # endregion
 
     # region Project UI Controls
@@ -239,7 +238,6 @@ class ProjectSetupWindow:
     def create_new_project(self):
         self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
         print("INFO:", self.top_dir)
-        # TODO: Need to handle the case where they've configured a project but want to change the project
         if not self.top_dir:
             messagebox.showwarning("Warning", "No root filepath chosen! Please try again.")
             return
@@ -266,9 +264,10 @@ class ProjectSetupWindow:
             messagebox.showerror("Error", "Selected project cannot be found!")
             return
         clear_treeview(self.patient_treeview)
+        clear_treeview(self.concern_treeview)
+        self.reset_ksf()
         self.patient_treeview_parents = []
         self.populate_patients()
-
     # endregion
 
     # region Patient UI Controls
@@ -306,6 +305,9 @@ class ProjectSetupWindow:
         if self.config.get_patient_concerns():
             _concern_file = self.config.get_patient_concerns()
             self.concern_file = os.path.join(self.project_dir, directory, _concern_file)
+            # Reset variables to prevent errors
+            clear_treeview(self.concern_treeview)
+            self.reset_ksf()
             self.populate_patient_concerns()
             self.patient_data_file = os.path.normpath(
                 os.path.join(self.patient_dir, pathlib.Path(self.patient_dir).stem + '.json'))
@@ -316,7 +318,6 @@ class ProjectSetupWindow:
                         "MRN": ""
                     }
                     json.dump(x, f)
-
     # endregion
 
     # region Concern UI Controls
@@ -340,7 +341,7 @@ class ProjectSetupWindow:
 
     def load_concern(self, selection):
         try:
-            # TODO: There is a bug when concern file is created that it is not loaded correctly
+            self.reset_ksf()
             self.selected_concern = self.concerns[int(selection) - 1]
             self.phases_menu.config(state='active')
             self.phases_menu['state'] = 'readonly'
@@ -383,10 +384,18 @@ class ProjectSetupWindow:
             data_folder = os.path.join(self.phase_dir, folder)
             if not os.path.exists(data_folder):
                 os.mkdir(data_folder)
-
     # endregion
 
     # region KSF UI Controls
+    def reset_ksf(self):
+        self.phases_menu.config(state='disabled')
+        self.generate_button.config(state='disabled')
+        self.continue_button.config(state='disabled')
+        self.ksf_import.config(state='disabled')
+        clear_treeview(self.frequency_key_treeview)
+        clear_treeview(self.duration_key_treeview)
+        self.ksf_path['text'] = "Select Concern and Phase to Load"
+
     def load_ksf(self):
         ksf_dir = pathlib.Path(self.ksf_dir)
         ksf_pattern = r'*.json'
@@ -419,7 +428,6 @@ class ProjectSetupWindow:
             print("ERROR: Failed to update tracker spreadsheet")
 
     def key_popup_return(self, tag, key, caller):
-        print(tag, key, caller)
         if not tag or not key:
             messagebox.showwarning("Warning", "Invalid key entered! Please try again.")
             print(f"WARNING: Invalid key entered {tag} {key} {caller}")
