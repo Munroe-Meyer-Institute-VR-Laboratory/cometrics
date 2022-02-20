@@ -3,11 +3,16 @@ data-folders:
 - Raw Data
 - KSF
 - Export
-first-time: true
-logs-dir: C:\cometrics\0.12.69\logs
+first-time: false
+fps: 8
+logs-dir: C:\cometrics\1.0.0\logs
 patient-concerns: concerns.yml
 phases:
 - Assessment
 - Treatment
-recent-projects: []
-window-size: []
+recent-projects:
+- C:\Users\wsarc\Desktop\Project Directory\Example Project
+- C:\Users\wsarc\Desktop\Project Directory\Example Project 2
+window-size:
+- 864
+- 1536

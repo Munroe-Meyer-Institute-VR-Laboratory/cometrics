@@ -29,7 +29,7 @@ class OutputViews:
 
 class OutputViewPanel:
     def __init__(self, parent, x, y, height, width, button_size, ksf,
-                 field_font, header_font, video_import_cb, slider_change_cb):
+                 field_font, header_font, video_import_cb, slider_change_cb, fps):
         self.height, self.width = height, width
         self.x, self.y, self.button_size = x, y, button_size
         self.current_button = 0
@@ -90,7 +90,8 @@ class OutputViewPanel:
         self.video_view = ViewVideo(self.view_frames[OutputViews.VIDEO_VIEW],
                                     height=self.height - self.button_size[1], width=self.width,
                                     field_font=field_font, header_font=header_font, button_size=button_size,
-                                    video_import_cb=video_import_cb, slider_change_cb=slider_change_cb)
+                                    video_import_cb=video_import_cb, slider_change_cb=slider_change_cb,
+                                    fps=fps)
         self.event_history = []
 
     def switch_key_frame(self):
@@ -200,8 +201,9 @@ class OutputViewPanel:
 
 
 class ViewVideo:
-    def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60,
+    def __init__(self, root, height, width, field_font, header_font, button_size, fps, field_offset=60,
                  video_import_cb=None, slider_change_cb=None):
+        self.recording_fps = fps
         self.height, self.width = height, width
         self.event_history = []
         self.root = root
@@ -220,6 +222,7 @@ class ViewVideo:
         self.camera_str_var = StringVar()
         self.recorder = None
         self.player = None
+        self.deleted_event = None
         self.load_camera_box = Combobox(self.root, textvariable=self.camera_str_var, font=field_font)
         self.load_camera_box['state'] = 'readonly'
         self.load_camera_box.config(font=field_font)
@@ -248,7 +251,6 @@ class ViewVideo:
         load_cam_thread = threading.Thread(target=self.get_camera_sources)
         load_cam_thread.daemon = 1
         load_cam_thread.start()
-        # TODO: Implement session control by video import
 
     def get_camera_sources(self):
         self.camera_sources = VideoRecorder.get_sources()
@@ -330,7 +332,7 @@ class ViewVideo:
                     source = self.camera_sources[self.selectable_sources.index(self.camera_str_var.get())]
                     self.recorder = VideoRecorder(source=source,
                                                   path=None,
-                                                  fps=8,
+                                                  fps=self.recording_fps,
                                                   label=self.video_label,
                                                   size=(self.video_width, self.video_height),
                                                   keep_ratio=True)

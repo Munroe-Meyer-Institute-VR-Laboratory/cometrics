@@ -200,7 +200,7 @@ class ProjectSetupWindow:
             if not self.recent_projects:
                 self.recent_projects = []
             self.recent_projects.append(self.project_dir)
-            self.config.set_recent_projects(self.recent_projects)
+            self.config.set_recent_projects(self.recent_projects[-20:])
             # Load the project
             self.load_project(self.project_dir)
         elif caller == 1:
@@ -219,6 +219,7 @@ class ProjectSetupWindow:
                 self.concern_treeview.insert("", 'end', str((int(self.concern_treeview_parents[-1]) + 1)), text=data,
                                              tags=treeview_tags[(int(self.concern_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.concern_treeview, self.concern_treeview_parents[-1])
+            self.load_concern(len(self.concerns))
 
     # endregion
 
@@ -335,14 +336,17 @@ class ProjectSetupWindow:
             if selection == '0':
                 self.create_new_concern()
             else:
-                try:
-                    # TODO: There is a bug when concern file is created that it is not loaded correctly
-                    self.selected_concern = self.concerns[int(selection) - 1]
-                    self.phases_menu.config(state='active')
-                    self.phases_menu['state'] = 'readonly'
-                except IndexError as e:
-                    print(
-                        f"ERROR: Error encountered when selecting concern: \n{str(e)}\n{traceback.print_exc()}\n{self.concerns}\n{selection}")
+                self.load_concern(selection)
+
+    def load_concern(self, selection):
+        try:
+            # TODO: There is a bug when concern file is created that it is not loaded correctly
+            self.selected_concern = self.concerns[int(selection) - 1]
+            self.phases_menu.config(state='active')
+            self.phases_menu['state'] = 'readonly'
+        except IndexError as e:
+            print(
+                f"ERROR: Error encountered when selecting concern: \n{str(e)}\n{traceback.print_exc()}\n{self.concerns}\n{selection}")
 
     def create_new_concern(self):
         EntryPopup(self, self.main_root, "Enter New Concern", 2)

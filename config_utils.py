@@ -64,3 +64,17 @@ class ConfigUtils:
             else:
                 return False
 
+    def get_fps(self):
+        if self.config:
+            if self.config['fps']:
+                return float(self.config['fps'])
+
+    def set_fps(self, new_fps):
+        if self.config:
+            if self.config['fps']:
+                self.config['fps'] = new_fps
+                self.save_config()
+                return True
+            else:
+                return False
+
