@@ -24,6 +24,9 @@ Distributed under the MIT License. See the [LICENSE](https://github.com/Munroe-M
 
 ## Roadmap
 Starting from v1.0.0, we are looking to implement the following features in no particular order:
+- [ ] Loading in previously recorded session data for editing when the session number already exists
+- [ ] Flexible graphing of dependent variable changes over time within cometrics to transition away from keystroke files
+- [ ] Export of E4 data into some human readable format
 
 ## Bug Reporting
 To report a bug, please open an issue in the main repository [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues).  Include your OS, method of installation, and a detailed report of reproducible steps to replicate the problem.  It is recommended to include the log file associated with the session that prompted your report so it can be properly debugged.  **Double check your log file to ensure no protected health information (PHI) is included in your log file.  Any log files that are found to contain PHI will be deleted without notice.**
