@@ -3,15 +3,13 @@
   <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics">
     <img src="images/cometrics_logo.png" alt="Logo" width="572" height="100">
   </a>
-
-  <p align="center">
+	<p align="center">
     cometrics is a Windows-based computer program that allows for the real-time coregistration of frequency- and duration-based behavior metrics, physiological signals from an Empatica E4, and video data.
-    <br />
-    <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-	  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/releases/tag/v0.12.72/cometrics_v0.12.72.zip">Download cometrics</a>
-	  ·
+	  <br />
+	  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics"><strong>Explore the docs »</strong></a>
+
+[![Download cometrics](https://img.shields.io/badge/download-cometrics.msi-blue?style=for-the-badge)](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/releases/download/v0.12.72/cometrics_v0.12.72.zip)
+	  <br />
 	  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues">Report Bug</a>
 	  ·
 	  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues">Request Feature</a>
@@ -27,7 +25,8 @@
 		<img src="https://img.shields.io/github/forks/Munroe-Meyer-Institute-VR-Laboratory/cometrics.svg?style=flat-square" alt="Forks" />
 	</a>
 	<a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/stargazers">
-		<img src="https://img.shields.io/github/stars/Munroe-Meyer-Institute-VR-Laboratory/cometrics.svg?style=flat-squarem/huskeee/tkvideo/network/members" alt="Stargazers" />
+		<img src="https://img.shields.io/github/stars/Munroe-Meyer-Institute-VR-Laboratory/cometrics.svg?style=flat-squarem/huskeee/tkvideo/network/members" alt="Stargazers"
+		     />
 	</a>
 	<a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues">
 		<img src="https://img.shields.io/github/issues/Munroe-Meyer-Institute-VR-Laboratory/cometrics.svg?style=flat-square" alt="Issues" />
