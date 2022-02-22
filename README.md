@@ -16,6 +16,25 @@
   </p>
 </div>
 
+
+<p align = center>
+	<a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/graphs/contributors">
+		<img src="https://img.shields.io/github/contributors/Munroe-Meyer-Institute-VR-Laboratory/cometrics.svg?style=flat-square" alt="Contributors" />
+	</a>
+	<a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/network/members">
+		<img src="https://img.shields.io/github/forks/Munroe-Meyer-Institute-VR-Laboratory/cometrics.svg?style=flat-square" alt="Forks" />
+	</a>
+	<a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/stargazers">
+		<img src="https://img.shields.io/github/stars/Munroe-Meyer-Institute-VR-Laboratory/cometrics.svg?style=flat-squarem/huskeee/tkvideo/network/members" alt="Stargazers" />
+	</a>
+	<a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues">
+		<img src="https://img.shields.io/github/issues/Munroe-Meyer-Institute-VR-Laboratory/cometrics.svg?style=flat-square" alt="Issues" />
+	</a>
+	<a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/master/LICENSE">
+		<img src="https://img.shields.io/github/license/Munroe-Meyer-Institute-VR-Laboratory/cometrics.svg?style=flat-square" alt="MIT License" />
+	</a>
+</p>
+
 # Introduction 
 cometrics has been designed to integrate directly into the workflow of the Severe Behavior Clinic at the Munroe-Meyer Institute in the University of Nebraska Medical Center, while simplifying multiple manual steps into a few mouse clicks.  By using a tracker spreadsheet, an entire patient's history can be collected into a single document from the software with your own specified graphs and format within that spreadsheet.  You can find an example of a tracker spreadsheet [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/reference/Reference_Tracker.xlsx).  
 
