@@ -10,9 +10,11 @@
     <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues">Request Feature</a>
+	  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/releases/tag/v0.12.72/cometrics_v0.12.72.zip">Download cometrics</a>
+	  ·
+	  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues">Report Bug</a>
+	  ·
+	  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues">Request Feature</a>
   </p>
 </div>
 
