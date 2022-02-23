@@ -156,7 +156,8 @@ class SessionManagerWindow:
 
     def change_time(self, frame):
         if self.ovu.video_view.player:
-            self.ovu.video_view.player.load_frame(int(frame))
+            if not self.ovu.video_view.player.playing:
+                self.ovu.video_view.player.load_frame(int(frame))
         self.stf.change_time(int((float(frame) / self.ovu.video_view.player.fps) + 0.5))
 
     def start_video_control(self):
