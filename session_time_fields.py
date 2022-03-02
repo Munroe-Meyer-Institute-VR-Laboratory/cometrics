@@ -19,6 +19,7 @@ class SessionTimeFields:
         self.frame = Frame(parent, width=width, height=height)
         self.frame.place(x=x, y=y)
 
+        self.video_playing = False
         self.session_started = False
         self.session_paused = False
         self.timer_running = True
