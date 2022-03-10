@@ -104,19 +104,19 @@ def cal_acc(prim_filename, reli_filename, window_size, output_dir):
             for dur in dur_b:
                 dur_bindings.append(dur[1])
             prim_num, reli_num = int(prim_session["Session Number"]), int(reli_session["Session Number"])
+            warning = ""
             # Perform error checking before causing errors
             if prim_num != reli_num:
-                messagebox.showerror("Error", "Session numbers are not the same!")
-                print("ERROR: Session numbers are not the same")
-                return
+                warning += "Session numbers are not the same!\n"
+                print("WARNING: Session numbers are not the same")
             if prim_ksf != reli_ksf:
-                messagebox.showerror("Error", "Sessions do not use the same KSF file!")
-                print("ERROR: Sessions do not use the same KSF file")
-                return
+                warning += "Sessions do not use the same KSF file!\n"
+                print("WARNING: Sessions do not use the same KSF file")
             elif reli_type == "Primary":
-                messagebox.showerror("Error", "Selected reliability file is not a reliability collection!")
-                print("ERROR: Selected reliability file is not a reliability collection")
-                return
+                warning += "Selected reliability file is not a reliability collection!"
+                print("WARNING: Selected reliability file is not a reliability collection")
+            if warning:
+                messagebox.showwarning("Warning", warning)
             # Generate freq and dur windows
             prim_window_freq, prim_window_dur = get_keystroke_window(freq_bindings, dur_bindings,
                                                                      prim_session, int(window_size))
