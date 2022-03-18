@@ -36,8 +36,8 @@ if __name__ == "__main__":
     # Load our configuration
     config = ConfigUtils()
     config.set_logs_dir(os.path.join(cometrics_ver_root, 'logs'))
-    first_time = config.get_first_time()
     while True:
+        first_time = config.get_first_time()
         setup = ProjectSetupWindow(config, first_time)
         if setup.setup_complete:
             while True:

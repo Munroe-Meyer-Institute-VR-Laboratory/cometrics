@@ -523,6 +523,9 @@ def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
     data_wb = wb['Data']
     # Load in all of the sessions
     sessions = get_sessions(prim_session_dir)
+    if not sessions:
+        messagebox.showwarning("Warning", "No sessions exist for the patient! Cannot analyze sessions!")
+        return
     # If output folder doesn't exist, then make it
     if not path.exists(output_dir):
         os.mkdir(output_dir)
