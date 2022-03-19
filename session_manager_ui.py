@@ -183,6 +183,11 @@ class SessionManagerWindow:
         self.restart = True
 
     def on_closing(self):
+        if self.stf.session_started:
+            response = messagebox.askyesno("Session Running", "Attempting to close window without stopping session, "
+                                                              "continue? Unsaved data will be lost.")
+            if not response:
+                return
         self.stf.stop_timer()
         self.ovu.close()
         self.listener.stop()
