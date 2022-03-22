@@ -78,3 +78,11 @@ class ConfigUtils:
             else:
                 return False
 
+    def get_cwd(self):
+        if self.config:
+            return str(self.config['cwd'])
+
+    def set_cwd(self, cwd):
+        if self.config:
+            self.config['cwd'] = cwd
+            self.save_config()

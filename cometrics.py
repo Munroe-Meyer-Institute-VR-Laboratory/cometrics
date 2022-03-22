@@ -35,6 +35,7 @@ if __name__ == "__main__":
     print(f"INFO: imageio_ffmpeg exe location - {imageio_ffmpeg.get_ffmpeg_exe()}")
     # Load our configuration
     config = ConfigUtils()
+    config.set_cwd(cwd)
     config.set_logs_dir(os.path.join(cometrics_ver_root, 'logs'))
     while True:
         first_time = config.get_first_time()

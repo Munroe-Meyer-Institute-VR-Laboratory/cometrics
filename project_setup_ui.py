@@ -181,7 +181,7 @@ class ProjectSetupWindow:
             response = messagebox.askyesno("Welcome to cometrics!",
                                            "Would you like to open the user guide for cometrics?")
             if response:
-                MenuBar.open_docs()
+                MenuBar.open_user_guide()
         self.main_root.mainloop()
 
     # region External Data Entry

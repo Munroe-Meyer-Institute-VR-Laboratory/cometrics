@@ -2,6 +2,7 @@ import os
 import webbrowser
 from tkinter import *
 from analysis_ui import AccuracyPopup
+from config_utils import ConfigUtils
 from ksf_utils import export_columnwise_csv, populate_spreadsheet
 
 
@@ -28,7 +29,7 @@ class MenuBar(Frame):
         menu.add_cascade(label="Analyze", menu=edit_menu)
 
         help_menu = Menu(menu)
-        help_menu.add_command(label="Open Documentation", command=self.open_docs)
+        help_menu.add_command(label="Open Documentation", command=self.open_user_guide)
         help_menu.add_command(label="Open Logs", command=self.open_logs)
         help_menu.add_command(label="Open Current Directory", command=self.open_current_dir)
         menu.add_cascade(label="Help", menu=help_menu)
@@ -46,6 +47,13 @@ class MenuBar(Frame):
     def open_docs():
         docs_url = 'https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics'
         webbrowser.open_new_tab(docs_url)
+
+    @staticmethod
+    def open_user_guide():
+        config = ConfigUtils()
+        cwd = config.get_cwd()
+        user_guide_path = os.path.join(cwd, 'reference/Cometrics User Guide.pdf')
+        os.startfile(user_guide_path)
 
     def start_new_session(self):
         self.caller.create_new_session()
