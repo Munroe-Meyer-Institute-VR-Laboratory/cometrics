@@ -6,7 +6,7 @@ data-folders:
 - Export
 first-time: true
 fps: 8
-logs-dir: C:\cometrics\1.0.4\logs
+logs-dir: C:\cometrics\1.0.5\logs
 patient-concerns: concerns.yml
 phases:
 - Assessment

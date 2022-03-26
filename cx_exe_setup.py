@@ -47,9 +47,8 @@ build_exe_options = dict(
     packages=["os", "sys", "tkinter", 'logger_util'],
     includes=['pynput', 'pynput.keyboard._win32', 'pynput.mouse._win32', 'logger_util'],
     excludes=[],
-    include_files=['external_bin', 'images', 'reference', 'config.yml',
+    include_files=['external_bin', 'images', 'reference', 'config.yml', 'LICENSE',
                    (r'venv\Lib\site-packages\imageio', r'lib\imageio')],
-    path=sys.path + ["lib"],
 )
 
 bdist_msi_options = {
@@ -68,8 +67,7 @@ executable = [Executable("cometrics.py",
 
 setup(name="cometrics",
       version=cometrics_version,
-      description='Clinical tool for coregistration of frequency and duration based behavior, physiological signals, '
-                  'and video data. Session tracking features streamline multi-session clinical data recording.',
+      description='cometrics',
       options={"bdist_msi": bdist_msi_options,
                "build_exe": build_exe_options},
       executables=executable)
