@@ -43,9 +43,8 @@ cometrics has been designed to integrate directly into the workflow of the Sever
 Distributed under the MIT License. See the [LICENSE](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/LICENSE) file for more information.
 
 ## Roadmap
-Starting from v1.0.0, we are looking to implement the following features in no particular order:
+Starting from v1.0.5, we are looking to implement the following features in no particular order:
 - [ ] Loading in previously recorded session data for editing when the session number already exists
-- [ ] Flexible graphing of dependent variable changes over time within cometrics to transition away from keystroke files
 - [ ] Export of E4 data into some human readable format
 - [ ] Support of other research instruments such as a split belt treadmill
 
