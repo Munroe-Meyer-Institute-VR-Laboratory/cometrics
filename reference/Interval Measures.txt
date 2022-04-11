@@ -6,12 +6,12 @@ Frequency Keys Partial Interval Agreement Percentage (PIA)
 Frequency Keys Occurrence Interval Agreement Percentage (OIA)
 	Given that one observer scored 1 or more for an interval, agreement if both scored at least 1
 	If both observers recorded zero responses, the interval is excluded
-	Occurrence Interval Agreement  = agreements / (agreements + disagreements) * 100
+	Occurrence Interval Agreement = agreements / (agreements + disagreements) * 100
 
 Frequency Keys NonOccurrence Interval Agreement Percentage (NIA)
 	Given that one scored 0 for an interval, agreement if both scored 0
 	If both observers recorded at least one response in the interval, then the interval is excluded
-	NonOccurrence Interval Agreement  =  agreements / (agreements + disagreements) * 100
+	NonOccurrence Interval Agreement = agreements / (agreements + disagreements) * 100
 
 Frequency Keys Exact Agreement Percentage (EIA)
 	Agreement is scored if both primary and reli have same value for an interval.
@@ -19,7 +19,7 @@ Frequency Keys Exact Agreement Percentage (EIA)
 
 Frequency Keys Total Agreement Percentage (TIA)
 	Agreement = # of intervals where both scored zero or > 1
-	Total agreement =  number of agreements / total intervals * 100
+	Total agreement = number of agreements / total intervals * 100
 
 Duration Keys Partial Interval Agreement Percentage (PIA)
 	For each interval, x = smaller value / larger value

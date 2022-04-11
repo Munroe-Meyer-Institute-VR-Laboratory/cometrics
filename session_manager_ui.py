@@ -228,7 +228,11 @@ class SessionManagerWindow:
                 else:
                     print("INFO: Typing outside window")
         except AttributeError:
-            self.handle_global_press(key)
+            # Only process key input if the main window has focus, otherwise ignore
+            if self.root.focus_get():
+                self.handle_global_press(key)
+            else:
+                print("INFO: Typing outside window")
 
     def on_release(self, key):
         pass

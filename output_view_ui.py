@@ -344,6 +344,7 @@ class ViewVideo:
                     print(f"ERROR: Error loading camera:\n{str(e)}\n" + traceback.print_exc())
 
     def load_video(self):
+        # TODO: There is some kind of issue between frames 100-400 (closes issue #8)
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
         try:
             if video_file:
@@ -351,7 +352,7 @@ class ViewVideo:
                     self.load_video_button.place_forget()
                     self.load_camera_box.place_forget()
                     self.video_file = video_file
-                    self.player = VideoPlayer(video_file, self.video_label, loop=False,
+                    self.player = VideoPlayer(video_file, self.video_label,
                                               size=(self.video_width, self.video_height),
                                               keep_ratio=True,
                                               slider=self.video_slider,
@@ -909,11 +910,13 @@ class KeystrokeDataFields:
             self.deleted_event = None
 
     def delete_last_event(self):
+        # TODO: Need to delete events from frequency and duration listviews (close issue #9)
         if self.event_history:
-            self.sh_treeview.delete(self.sh_treeview_parents[len(self.event_history) - 1])
-            self.sh_treeview_parents.pop(len(self.event_history) - 1)
-            self.deleted_event = self.event_history[-1]
-            self.event_history.pop(len(self.event_history) - 1)
+            if not self.deleted_event:
+                self.sh_treeview.delete(self.sh_treeview_parents[len(self.event_history) - 1])
+                self.sh_treeview_parents.pop(len(self.event_history) - 1)
+                self.deleted_event = self.event_history[-1]
+                self.event_history.pop(len(self.event_history) - 1)
 
     def delete_dur_binding(self):
         if self.current_selection1:
@@ -946,6 +949,9 @@ class KeystrokeDataFields:
                     self.dur_sticky[i] = True
                     self.sticky_start[i] = start_time
         if return_bindings:
+            # Clear deleted event buffer when a new event is added
+            if self.deleted_event:
+                self.deleted_event = None
             return return_bindings
 
     def add_key_popup(self):
