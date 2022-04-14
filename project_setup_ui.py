@@ -474,6 +474,7 @@ class ProjectSetupWindow:
             print(f"WARNING: No tracker file selected")
 
     def populate_frequency_treeview(self):
+        self.clear_frequency_treeview()
         self.frequency_treeview_parents.append(
             self.frequency_key_treeview.insert("", 'end', str(0), text="Create New Frequency Key",
                                                tags=treeview_tags[2]))
@@ -493,6 +494,7 @@ class ProjectSetupWindow:
         self.duration_treeview_parents = []
 
     def populate_duration_treeview(self):
+        self.clear_duration_treeview()
         self.duration_treeview_parents.append(
             self.duration_key_treeview.insert("", 'end', str(0), text="Create New Duration Key",
                                               tags=treeview_tags[2]))

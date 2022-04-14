@@ -266,10 +266,13 @@ class PatientDataFields:
             return "Data recorder not set!"
         elif self.patient_vars[PatientDataVar.PRIM_DATA].get() == "":
             return "Data type not set!"
-        elif int(self.patient_vars[PatientDataVar.SESS_NUM].get()) < self.session_number and self.patient_vars[
-            PatientDataVar.PRIM_DATA].get() == "Primary":
-            return "Session number already exists!"
-        else:
+        try:
+            if int(self.patient_vars[PatientDataVar.SESS_NUM].get()) < self.session_number and self.patient_vars[
+                PatientDataVar.PRIM_DATA].get() == "Primary":
+                return "Session number already exists!"
+            else:
+                return False
+        except ValueError as e:
             return False
 
     def lock_session_fields(self):
