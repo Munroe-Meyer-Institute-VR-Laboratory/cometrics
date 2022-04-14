@@ -911,6 +911,10 @@ class KeystrokeDataFields:
 
     def undo_last_delete(self):
         if self.deleted_event:
+            if type(self.deleted_event[1]) is list:
+                self.update_dur_event(self.deleted_event[0], (self.deleted_event[1][1] - self.deleted_event[1][0]))
+            else:
+                self.update_freq_event(self.deleted_event[0], 1)
             self.add_session_event([self.deleted_event])
             self.deleted_event = None
 
@@ -922,6 +926,10 @@ class KeystrokeDataFields:
                 self.sh_treeview_parents.pop(len(self.event_history) - 1)
                 self.deleted_event = self.event_history[-1]
                 self.event_history.pop(len(self.event_history) - 1)
+                if type(self.deleted_event[1]) is list:
+                    self.update_dur_event(self.deleted_event[0], -(self.deleted_event[1][1] - self.deleted_event[1][0]))
+                else:
+                    self.update_freq_event(self.deleted_event[0], -1)
 
     def delete_dur_binding(self):
         if self.current_selection1:
@@ -931,6 +939,19 @@ class KeystrokeDataFields:
 
     def add_dur_popup(self):
         NewKeyPopup(self, self.frame, True)
+
+    def update_freq_event(self, key_char, change):
+        for i in range(0, len(self.bindings)):
+            if self.bindings[i][1] == key_char:
+                self.bindings_freq[i] += change
+                self.freq_treeview.set(str(i), column="1", value=self.bindings_freq[i])
+
+    def update_dur_event(self, key_char, change):
+        for i in range(0, len(self.dur_bindings)):
+            if self.dur_bindings[i][1] == key_char:
+                self.sticky_dur[i] += change
+                self.sticky_start[i] = 0
+                self.dur_treeview.set(str(i), column="2", value=self.sticky_dur[i])
 
     def check_key(self, key_char, start_time, current_frame, current_window):
         return_bindings = []
