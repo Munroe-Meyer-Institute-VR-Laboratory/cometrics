@@ -16,7 +16,7 @@ from menu_bar import MenuBar
 from output_view_ui import OutputViewPanel
 from patient_data_fields import PatientDataFields
 from session_time_fields import SessionTimeFields
-from tkinter_utils import get_treeview_style
+from tkinter_utils import get_treeview_style, get_slider_style
 from ui_params import large_header_font, large_field_font, large_field_offset, medium_header_font, medium_field_font, \
     medium_field_offset, small_header_font, small_field_font, small_field_offset, small_tab_size, medium_tab_size, \
     large_tab_size, ui_title
@@ -90,7 +90,8 @@ class SessionManagerWindow:
             Image.open('images/cometrics_logo.png').resize((self.logo_width, self.logo_height), Image.ANTIALIAS))
         self.logo_canvas.create_image(0, 0, anchor=NW, image=self.logo_img)
 
-        _ = get_treeview_style()
+        get_slider_style(root)
+        get_treeview_style()
 
         self.menu = MenuBar(root, self)
         self.stf = SessionTimeFields(self, root,
@@ -157,8 +158,8 @@ class SessionManagerWindow:
     def change_time(self, frame):
         if self.ovu.video_view.player:
             if not self.ovu.video_view.player.playing:
-                self.ovu.video_view.player.load_frame(int(frame))
-        self.stf.change_time(int((float(frame) / self.ovu.video_view.player.fps) + 0.5))
+                self.ovu.video_view.player.load_frame(frame)
+            self.stf.change_time(int((float(frame) / self.ovu.video_view.player.fps) + 0.5))
 
     def start_video_control(self):
         self.ovu.video_view.load_video()

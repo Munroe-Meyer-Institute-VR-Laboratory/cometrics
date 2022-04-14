@@ -1,5 +1,5 @@
 import tkinter
-from tkinter import TOP, W, N, NW, CENTER, messagebox, END
+from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk
 from tkinter.ttk import Style
 from tkinter.ttk import Treeview, Entry
 
@@ -31,6 +31,21 @@ def get_display_size():
     root.deiconify()
     root.focus_force()
     return root, height, width
+
+
+def get_slider_style(root):
+    fig_color = '#%02x%02x%02x' % (240, 240, 237)
+    style = ttk.Style(root)
+    style.theme_use('clam')
+    # self.style.element_create('Horizontal.Scale.trough', 'image', self.trough_img)
+    # create custom layout
+    style.layout('custom.Horizontal.TScale',
+                 [('Horizontal.Scale.trough',
+                   {'sticky': 'nswe',
+                    'children': [('custom.Horizontal.Scale.slider',
+                                  {'side': 'left', 'sticky': ''})]})])
+    style.configure('custom.Horizontal.TScale', background=fig_color)
+    return 'custom.Horizontal.TScale', style
 
 
 def get_treeview_style(name="mystyle.Treeview", font=('Calibri', 13), heading_font=('Calibri', 13, 'bold'),
@@ -66,7 +81,7 @@ def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, se
         treeview.bind("<Double-Button-1>", double_bind)
     if filescroll:
         file_scroll = tkinter.Scrollbar(root, orient="vertical", command=treeview.yview)
-        file_scroll.place(x=(x-fs_offset), y=y, height=height, anchor=anchor)
+        file_scroll.place(x=(x - fs_offset), y=y, height=height, anchor=anchor)
         treeview.configure(yscrollcommand=file_scroll.set)
     else:
         file_scroll = None

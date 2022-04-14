@@ -10,7 +10,7 @@ from tkinter.ttk import Combobox
 
 from ksf_utils import import_ksf, create_new_ksf_revision, compare_keystrokes
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
-    NewKeyPopup, clear_treeview
+    NewKeyPopup, clear_treeview, get_slider_style
 from ui_params import project_treeview_params as ptp, treeview_tags, window_ratio, large_field_font, medium_field_font, \
     small_field_font, large_treeview_font, \
     medium_treeview_font, small_treeview_font, large_treeview_rowheight, medium_treeview_rowheight, \
@@ -58,8 +58,9 @@ class ProjectSetupWindow:
         self.project_setup_label = Label(self.main_root, text="Project Setup", font=self.header_font)
         self.project_setup_label.place(x=ptp[0], y=ptp[1] / 2, anchor=W)
         # Create global style
-        _ = get_treeview_style(font=self.field_font, heading_font=self.header_font,
-                               rowheight=self.treeview_rowheight)
+        get_slider_style(self.main_root)
+        get_treeview_style(font=self.field_font, heading_font=self.header_font,
+                           rowheight=self.treeview_rowheight)
         # Define heading dicts
         project_heading_dict = {"#0": ["Recent Projects", 'w', 1, YES, 'w']}
         patient_heading_dict = {"#0": ["Existing Patients", 'w', 1, YES, 'w']}
@@ -223,6 +224,7 @@ class ProjectSetupWindow:
                                              tags=treeview_tags[(int(self.concern_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.concern_treeview, self.concern_treeview_parents[-1])
             self.load_concern(len(self.concerns))
+
     # endregion
 
     # region Project UI Controls
@@ -271,6 +273,7 @@ class ProjectSetupWindow:
         self.reset_ksf()
         self.patient_treeview_parents = []
         self.populate_patients()
+
     # endregion
 
     # region Patient UI Controls
@@ -321,6 +324,7 @@ class ProjectSetupWindow:
                         "MRN": ""
                     }
                     json.dump(x, f)
+
     # endregion
 
     # region Concern UI Controls
@@ -387,6 +391,7 @@ class ProjectSetupWindow:
             data_folder = os.path.join(self.phase_dir, folder)
             if not os.path.exists(data_folder):
                 os.mkdir(data_folder)
+
     # endregion
 
     # region KSF UI Controls

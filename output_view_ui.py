@@ -5,7 +5,7 @@ import threading
 import time
 import traceback
 from tkinter import *
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from tkinter.ttk import Combobox
 
 import matplotlib.animation as animation
@@ -17,6 +17,8 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 from matplotlib.figure import Figure
 from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient, EmpaticaServerConnectError
 # Custom library imports
+from ttkwidgets import TickScale
+
 from tkinter_utils import build_treeview, clear_treeview
 from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags
 
@@ -121,6 +123,8 @@ class OutputViewPanel:
     def close(self):
         self.e4_view.stop_plot()
         self.e4_view.disconnect_e4()
+        if self.video_view.player:
+            self.video_view.player.loading = False
         if self.video_view.recorder:
             self.video_view.recorder.stop_recording()
             self.video_view.recorder.stop_playback()
@@ -232,7 +236,8 @@ class ViewVideo:
                                    anchor=W)
 
         self.frame_var = IntVar(self.root)
-        self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var, command=slider_change_cb)
+        # self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var, command=slider_change_cb)
+        self.video_slider = TickScale(self.root, orient=HORIZONTAL, variable=self.frame_var, command=slider_change_cb)
         self.video_slider.config(length=self.video_width)
         self.video_slider.place(x=5, y=self.video_height, anchor=NW)
         self.video_slider.config(state='disabled')
@@ -352,7 +357,7 @@ class ViewVideo:
                     self.load_video_button.place_forget()
                     self.load_camera_box.place_forget()
                     self.video_file = video_file
-                    self.player = VideoPlayer(video_file, self.video_label,
+                    self.player = VideoPlayer(self.root, video_file, self.video_label,
                                               size=(self.video_width, self.video_height),
                                               keep_ratio=True,
                                               slider=self.video_slider,

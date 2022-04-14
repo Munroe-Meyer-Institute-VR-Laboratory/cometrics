@@ -67,7 +67,7 @@ executable = [Executable("cometrics.py",
 
 setup(name="cometrics",
       version=cometrics_version,
-      description='cometrics',
+      description=f'cometrics v{cometrics_version}',
       options={"bdist_msi": bdist_msi_options,
                "build_exe": build_exe_options},
       executables=executable)
