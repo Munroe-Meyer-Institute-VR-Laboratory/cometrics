@@ -114,6 +114,59 @@ def fixed_map(option):
             elm[:2] != ('!disabled', '!selected')]
 
 
+class ConfigPopup:
+    def __init__(self, root, config):
+        self.config = config
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x250")
+        popup_root.title("Configuration Settings")
+        fps_tag = tkinter.Label(popup_root, text="FPS", bg='white', font=('Purisa', 12))
+        fps_tag.place(x=10, y=10)
+        self.fps_entry = tkinter.Entry(popup_root, bd=2, width=5, font=('Purisa', 12))
+        self.fps_entry.insert(0, int(self.config.get_fps()))
+        self.fps_entry.place(x=60, y=10)
+        self.e4_var = tkinter.BooleanVar(popup_root, value=self.config.get_e4())
+        e4_checkbutton = tkinter.Checkbutton(popup_root, text="E4 Enabled", bg='white', variable=self.e4_var,
+                                             font=('Purisa', 12))
+        e4_checkbutton.place(x=10, y=50)
+        self.woodway_var = tkinter.BooleanVar(popup_root, value=self.config.get_woodway())
+        woodway_checkbutton = tkinter.Checkbutton(popup_root, text="Woodway Enabled", bg='white',
+                                                  variable=self.woodway_var, font=('Purisa', 12))
+        woodway_checkbutton.place(x=10, y=90)
+        self.ble_var = tkinter.BooleanVar(popup_root, value=self.config.get_ble())
+        ble_checkbutton = tkinter.Checkbutton(popup_root, text="BLE Enabled", bg='white',
+                                              variable=self.ble_var, font=('Purisa', 12))
+        ble_checkbutton.place(x=10, y=130)
+        clear_projects = tkinter.Button(popup_root, text="Clear Recent Projects",
+                                        font=('Purisa', 12), command=self.clear_projects)
+        clear_projects.place(x=10, y=170)
+        ok_button = tkinter.Button(popup_root, text="OK", command=self.on_closing, font=('Purisa', 12))
+        ok_button.place(x=150, y=210, anchor=N)
+
+    def on_closing(self):
+        self.update_fps()
+        self.update_e4()
+        self.update_woodway()
+        self.update_ble()
+        self.popup_root.destroy()
+
+    def update_fps(self):
+        self.config.set_fps(int(self.fps_entry.get()))
+
+    def update_e4(self):
+        self.config.set_e4(self.e4_var.get())
+
+    def update_ble(self):
+        self.config.set_ble(self.ble_var.get())
+
+    def update_woodway(self):
+        self.config.set_woodway(self.woodway_var.get())
+
+    def clear_projects(self):
+        self.config.set_recent_projects([])
+
+
 class EntryPopup:
     def __init__(self, top, root, name, popup_call):
         assert top.popup_return

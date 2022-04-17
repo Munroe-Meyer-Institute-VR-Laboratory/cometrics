@@ -23,15 +23,13 @@ from tkinter_utils import build_treeview, clear_treeview
 from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags
 
 
-class OutputViews:
-    KEY_VIEW = 0
-    E4_VIEW = 1
-    VIDEO_VIEW = 2
-
-
 class OutputViewPanel:
     def __init__(self, parent, x, y, height, width, button_size, ksf,
-                 field_font, header_font, video_import_cb, slider_change_cb, fps):
+                 field_font, header_font, video_import_cb, slider_change_cb, config):
+        self.KEY_VIEW = 0
+        self.E4_VIEW = 1
+        self.VIDEO_VIEW = 2
+        self.config = config
         self.height, self.width = height, width
         self.x, self.y, self.button_size = x, y, button_size
         self.current_button = 0
@@ -63,50 +61,56 @@ class OutputViewPanel:
         key_button = Button(self.frame, text="Key Bindings", command=self.switch_key_frame, width=12,
                             font=field_font)
         self.view_buttons.append(key_button)
-        self.view_buttons[OutputViews.KEY_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
-                                                      width=button_size[0], height=button_size[1])
-        self.view_buttons[OutputViews.KEY_VIEW].config(relief=SUNKEN)
+        self.KEY_VIEW = len(self.view_buttons) - 1
+        self.view_buttons[self.KEY_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                               width=button_size[0], height=button_size[1])
+        self.view_buttons[self.KEY_VIEW].config(relief=SUNKEN)
+        self.key_view = KeystrokeDataFields(self.view_frames[self.KEY_VIEW], ksf,
+                                            height=self.height - self.button_size[1], width=self.width,
+                                            field_font=field_font, header_font=header_font, button_size=button_size)
 
-        e4_output_button = Button(self.frame, text="E4 Streams", command=self.switch_e4_frame, width=12,
-                                  font=field_font)
-        self.view_buttons.append(e4_output_button)
-        self.view_buttons[OutputViews.E4_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
-                                                     width=button_size[0], height=button_size[1])
+        if self.config.get_e4():
+            e4_output_button = Button(self.frame, text="E4 Streams", command=self.switch_e4_frame, width=12,
+                                      font=field_font)
+            self.view_buttons.append(e4_output_button)
+            self.E4_VIEW = len(self.view_buttons) - 1
+            self.view_buttons[self.E4_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                  width=button_size[0], height=button_size[1])
+            self.e4_view = ViewE4(self.view_frames[self.E4_VIEW],
+                                  height=self.height - self.button_size[1], width=self.width,
+                                  field_font=field_font, header_font=header_font, button_size=button_size)
+        else:
+            self.e4_view = None
 
         video_button = Button(self.frame, text="Video View", command=self.switch_video_frame, width=12,
                               font=field_font)
         self.view_buttons.append(video_button)
-        self.view_buttons[OutputViews.VIDEO_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
-                                                        width=button_size[0], height=button_size[1])
+        self.VIDEO_VIEW = len(self.view_buttons) - 1
+        self.view_buttons[self.VIDEO_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                 width=button_size[0], height=button_size[1])
+        self.video_view = ViewVideo(self.view_frames[self.VIDEO_VIEW],
+                                    height=self.height - self.button_size[1], width=self.width,
+                                    field_font=field_font, header_font=header_font, button_size=button_size,
+                                    video_import_cb=video_import_cb, slider_change_cb=slider_change_cb,
+                                    fps=self.config.get_fps())
 
         # tactor_view_button = Button(self.frame, text="Tactor View", command=self.switch_tactor_frame, width=12)
         # self.view_buttons.append(tactor_view_button)
         # self.view_buttons[3].place(x=276, y=0)
 
-        self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW],
-                              height=self.height - self.button_size[1], width=self.width,
-                              field_font=field_font, header_font=header_font, button_size=button_size)
-        self.key_view = KeystrokeDataFields(self.view_frames[OutputViews.KEY_VIEW], ksf,
-                                            height=self.height - self.button_size[1], width=self.width,
-                                            field_font=field_font, header_font=header_font, button_size=button_size)
-        self.video_view = ViewVideo(self.view_frames[OutputViews.VIDEO_VIEW],
-                                    height=self.height - self.button_size[1], width=self.width,
-                                    field_font=field_font, header_font=header_font, button_size=button_size,
-                                    video_import_cb=video_import_cb, slider_change_cb=slider_change_cb,
-                                    fps=fps)
         self.event_history = []
 
     def switch_key_frame(self):
-        self.switch_frame(OutputViews.KEY_VIEW)
+        self.switch_frame(self.KEY_VIEW)
 
     def switch_tactor_frame(self):
-        self.switch_frame(OutputViews.TACTOR_VIEW)
+        self.switch_frame(self.TACTOR_VIEW)
 
     def switch_e4_frame(self):
-        self.switch_frame(OutputViews.E4_VIEW)
+        self.switch_frame(self.E4_VIEW)
 
     def switch_video_frame(self):
-        self.switch_frame(OutputViews.VIDEO_VIEW)
+        self.switch_frame(self.VIDEO_VIEW)
 
     def switch_frame(self, view):
         """
@@ -121,8 +125,9 @@ class OutputViewPanel:
         self.view_frames[view].place(x=self.x, y=self.y + self.button_size[1])
 
     def close(self):
-        self.e4_view.stop_plot()
-        self.e4_view.disconnect_e4()
+        if self.e4_view:
+            self.e4_view.stop_plot()
+            self.e4_view.disconnect_e4()
         if self.video_view.player:
             self.video_view.player.loading = False
         if self.video_view.recorder:
@@ -252,11 +257,18 @@ class ViewVideo:
                                                             width=width - 25,
                                                             heading_dict=event_header_dict,
                                                             column_dict=event_column_dict,
-                                                            button_1_bind=self.select_event)
+                                                            button_1_bind=self.select_event,
+                                                            double_bind=self.edit_event)
         # Must be pushed to a thread otherwise the session timer thread will crash
         load_cam_thread = threading.Thread(target=self.get_camera_sources)
         load_cam_thread.daemon = 1
         load_cam_thread.start()
+
+    def edit_event(self, event):
+        selection = self.event_treeview.identify_row(event.y)
+        if selection:
+            selected_event = self.event_history[int(selection) - 1]
+            print(selected_event)
 
     def get_camera_sources(self):
         self.camera_sources = VideoRecorder.get_sources()

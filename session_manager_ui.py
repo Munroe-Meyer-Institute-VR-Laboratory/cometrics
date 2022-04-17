@@ -113,7 +113,7 @@ class SessionManagerWindow:
                                    header_font=self.header_font,
                                    video_import_cb=self.start_video_control,
                                    slider_change_cb=self.change_time,
-                                   fps=self.config.get_fps())
+                                   config=self.config)
         self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root,
                                      x=5,

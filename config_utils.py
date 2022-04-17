@@ -86,3 +86,30 @@ class ConfigUtils:
         if self.config:
             self.config['cwd'] = cwd
             self.save_config()
+
+    def get_e4(self):
+        if self.config:
+            return bool(self.config['enable-e4'])
+
+    def set_e4(self, set_e4):
+        if self.config:
+            self.config['enable-e4'] = set_e4
+            self.save_config()
+
+    def get_woodway(self):
+        if self.config:
+            return bool(self.config['enable-woodway'])
+
+    def set_woodway(self, set_woodway):
+        if self.config:
+            self.config['enable-woodway'] = set_woodway
+            self.save_config()
+
+    def get_ble(self):
+        if self.config:
+            return bool(self.config['enable-ble'])
+
+    def set_ble(self, set_ble):
+        if self.config:
+            self.config['enable-ble'] = set_ble
+            self.save_config()
