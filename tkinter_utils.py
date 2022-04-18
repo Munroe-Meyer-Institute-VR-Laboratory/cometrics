@@ -48,7 +48,7 @@ def get_slider_style(root):
     return 'custom.Horizontal.TScale', style
 
 
-def get_treeview_style(name="mystyle.Treeview", font=('Calibri', 13), heading_font=('Calibri', 13, 'bold'),
+def get_treeview_style(name="mystyle.Treeview", font=('Purisa', 12), heading_font=('Purisa', 12, 'bold'),
                        rowheight=25, h_thickness=0, bd=0):
     style = Style()
     style.configure(name, highlightthickness=h_thickness, bd=bd, font=font)  # Modify the font of the body

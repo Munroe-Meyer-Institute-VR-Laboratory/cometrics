@@ -26,9 +26,7 @@ from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags
 class OutputViewPanel:
     def __init__(self, parent, x, y, height, width, button_size, ksf,
                  field_font, header_font, video_import_cb, slider_change_cb, config):
-        self.KEY_VIEW = 0
-        self.E4_VIEW = 1
-        self.VIDEO_VIEW = 2
+        self.KEY_VIEW, self.E4_VIEW, self.VIDEO_VIEW, self.WOODWAY_VIEW, self.BLE_VIEW = 0, 1, 2, 3, 4
         self.config = config
         self.height, self.width = height, width
         self.x, self.y, self.button_size = x, y, button_size
@@ -83,7 +81,13 @@ class OutputViewPanel:
             self.e4_view = None
 
         if self.config.get_ble():
-            pass
+            ble_output_button = Button(self.frame, text="E4 Streams", command=self.switch_e4_frame, width=12,
+                                       font=field_font)
+            self.view_buttons.append(ble_output_button)
+            self.BLE_VIEW = len(self.view_buttons) - 1
+            self.view_buttons[self.BLE_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                   width=button_size[0], height=button_size[1])
+            self.ble_view = ViewBLE()
         else:
             self.ble_view = None
 
@@ -103,18 +107,16 @@ class OutputViewPanel:
                                     field_font=field_font, header_font=header_font, button_size=button_size,
                                     video_import_cb=video_import_cb, slider_change_cb=slider_change_cb,
                                     fps=self.config.get_fps())
-
-        # tactor_view_button = Button(self.frame, text="Tactor View", command=self.switch_tactor_frame, width=12)
-        # self.view_buttons.append(tactor_view_button)
-        # self.view_buttons[3].place(x=276, y=0)
-
         self.event_history = []
 
     def switch_key_frame(self):
         self.switch_frame(self.KEY_VIEW)
 
-    def switch_tactor_frame(self):
-        self.switch_frame(self.TACTOR_VIEW)
+    def switch_ble_frame(self):
+        self.switch_frame(self.BLE_VIEW)
+
+    def switch_woodway_frame(self):
+        self.switch_frame(self.WOODWAY_VIEW)
 
     def switch_e4_frame(self):
         self.switch_frame(self.E4_VIEW)
@@ -220,6 +222,16 @@ class OutputViewPanel:
                 with open(filename, 'wb') as f:
                     pickle.dump(self.e4_view.windowed_readings, f)
                 print(f"ERROR: Exception encountered:\n{str(e)}\n" + traceback.print_exc())
+
+
+class ViewWoodway:
+    def __init__(self):
+        pass
+
+
+class ViewBLE:
+    def __init__(self):
+        pass
 
 
 class ViewVideo:

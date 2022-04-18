@@ -19,7 +19,8 @@ from session_time_fields import SessionTimeFields
 from tkinter_utils import get_treeview_style, get_slider_style
 from ui_params import large_header_font, large_field_font, large_field_offset, medium_header_font, medium_field_font, \
     medium_field_offset, small_header_font, small_field_font, small_field_offset, small_tab_size, medium_tab_size, \
-    large_tab_size, ui_title
+    large_tab_size, ui_title, large_treeview_rowheight, medium_treeview_rowheight, small_treeview_rowheight, \
+    large_treeview_font, medium_treeview_font, small_treeview_font
 
 
 class SessionManagerWindow:
@@ -59,20 +60,26 @@ class SessionManagerWindow:
         # region User Interface Setup
         self.window_height, self.window_width = config.get_screen_size()[0], config.get_screen_size()[1]
         if self.window_width == 1920:
+            self.treeview_header = large_treeview_font
             self.header_font = large_header_font
             self.field_font = large_field_font
             self.field_offset = large_field_offset
             self.button_size = large_tab_size
+            self.treeview_rowheight = large_treeview_rowheight
         elif 1920 > self.window_width > 1280:
+            self.treeview_header = medium_treeview_font
             self.header_font = medium_header_font
             self.field_font = medium_field_font
             self.field_offset = medium_field_offset
             self.button_size = medium_tab_size
+            self.treeview_rowheight = medium_treeview_rowheight
         else:
+            self.treeview_header = small_treeview_font
             self.header_font = small_header_font
             self.field_font = small_field_font
             self.field_offset = small_field_offset
             self.button_size = small_tab_size
+            self.treeview_rowheight = small_treeview_rowheight
         print("INFO:", self.header_font, self.field_font, self.field_offset, self.window_width, self.window_height)
 
         root = self.root = Tk()
@@ -93,7 +100,8 @@ class SessionManagerWindow:
         self.logo_canvas.create_image(0, 0, anchor=NW, image=self.logo_img)
 
         get_slider_style(root)
-        get_treeview_style()
+        get_treeview_style(font=self.field_font, heading_font=self.treeview_header,
+                           rowheight=self.treeview_rowheight)
 
         self.menu = MenuBar(root, self)
         self.stf = SessionTimeFields(self, root,
