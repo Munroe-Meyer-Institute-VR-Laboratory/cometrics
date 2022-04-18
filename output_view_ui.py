@@ -82,6 +82,16 @@ class OutputViewPanel:
         else:
             self.e4_view = None
 
+        if self.config.get_ble():
+            pass
+        else:
+            self.ble_view = None
+
+        if self.config.get_woodway():
+            pass
+        else:
+            self.woodway_view = None
+
         video_button = Button(self.frame, text="Video View", command=self.switch_video_frame, width=12,
                               font=field_font)
         self.view_buttons.append(video_button)
