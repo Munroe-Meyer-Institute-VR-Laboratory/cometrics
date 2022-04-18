@@ -27,6 +27,8 @@ class SessionManagerWindow:
         # region Project File Setup
         # Get the project files
         self.config = config
+        self.button_input_handler = None
+        self.ext_raw, self.ext_dur_val, self.ext_freq_val = None, None, None
         self.patient_file = project_setup.patient_data_file
         self.keystroke_file = project_setup.ksf_file
         self.session_dir = project_setup.phase_dir
@@ -218,6 +220,12 @@ class SessionManagerWindow:
 
     def on_press(self, key):
         try:
+            if self.ext_raw:
+                if key == self.ext_raw:
+                    if self.ext_freq_val:
+                        key = keyboard.KeyCode.from_char(self.ext_freq_val)
+                    elif self.ext_dur_val:
+                        key = keyboard.KeyCode.from_char(self.ext_dur_val)
             key_char = key.char
             # Only process key input if session has started
             if self.stf.session_started:
@@ -242,6 +250,8 @@ class SessionManagerWindow:
         pass
 
     def handle_global_press(self, key_char):
+        if self.button_input_handler:
+            self.button_input_handler.set_value(key_char)
         for key in self.global_commands:
             if self.global_commands[key] == key_char:
                 if key == "Toggle Session":

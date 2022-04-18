@@ -4,7 +4,7 @@ from tkinter import *
 from analysis_ui import AccuracyPopup
 from config_utils import ConfigUtils
 from ksf_utils import export_columnwise_csv, populate_spreadsheet
-from tkinter_utils import ConfigPopup
+from tkinter_utils import ConfigPopup, ExternalButtonPopup
 
 
 class MenuBar(Frame):
@@ -41,7 +41,7 @@ class MenuBar(Frame):
         ConfigPopup(self.parent, self.caller.config)
 
     def connect_external_input(self):
-        pass
+        self.caller.button_input_handler = ExternalButtonPopup(self.parent, self.caller)
 
     def open_new_project(self):
         self.caller.restart_program()

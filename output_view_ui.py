@@ -135,7 +135,8 @@ class OutputViewPanel:
             self.video_view.recorder.stop_playback()
 
     def start_session(self, recording_path=None):
-        self.e4_view.session_started = True
+        if self.e4_view:
+            self.e4_view.session_started = True
         if self.video_view.recorder:
             self.video_view.recorder.start_recording(output_path=recording_path)
 
@@ -165,11 +166,12 @@ class OutputViewPanel:
                 current_frame = self.video_view.recorder.current_frame
             current_window = None
             # Add the frame and key to the latest E4 window reading if streaming
-            if self.e4_view.windowed_readings:
-                if current_frame:
-                    self.e4_view.windowed_readings[-1][-1].append(current_frame)
-                self.e4_view.windowed_readings[-1][-2].append(key_char)
-                current_window = len(self.e4_view.windowed_readings) - 1
+            if self.e4_view:
+                if self.e4_view.windowed_readings:
+                    if current_frame:
+                        self.e4_view.windowed_readings[-1][-1].append(current_frame)
+                    self.e4_view.windowed_readings[-1][-2].append(key_char)
+                    current_window = len(self.e4_view.windowed_readings) - 1
             # Get the appropriate key event
             key_events = self.key_view.check_key(key_char, start_time, current_frame, current_window)
             # Add to session history

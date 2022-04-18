@@ -1,6 +1,6 @@
 import tkinter
 from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk
-from tkinter.ttk import Style
+from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview, Entry
 
 from ui_params import treeview_default_tag_dict
@@ -112,6 +112,60 @@ def fixed_map(option):
     style = Style()
     return [elm for elm in style.map('Treeview', query_opt=option) if
             elm[:2] != ('!disabled', '!selected')]
+
+
+class ExternalButtonPopup:
+    def __init__(self, root, caller, field_font=('Purisa', 12)):
+        self.caller = caller
+        self.key = None
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x200")
+        popup_root.title("External Button Setup")
+        key_tag = tkinter.Label(popup_root, text="Key", bg='white', font=('Purisa', 12))
+        key_tag.place(x=50, y=20)
+        self.key_entry = tkinter.Entry(popup_root, bd=2, width=17, font=('Purisa', 12))
+        self.key_entry.place(x=90, y=20)
+
+        freq_label = tkinter.Label(popup_root, font=field_font, text="Frequency Key Association", bg='white')
+        freq_label.place(x=50, y=50)
+        self.freq_var = tkinter.StringVar(popup_root)
+        freq_box = Combobox(popup_root, textvariable=self.freq_var, font=field_font)
+        freq_box['values'] = ['None'] + self.caller.ovu.key_view.bindings
+        freq_box['state'] = 'readonly'
+        freq_box.config(font=field_font)
+        freq_box.place(x=50, y=75, width=200)
+        freq_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        dur_label = tkinter.Label(popup_root, font=field_font, text="Duration Key Association", bg='white')
+        dur_label.place(x=50, y=100)
+        self.dur_var = tkinter.StringVar(popup_root)
+        dur_box = Combobox(popup_root, textvariable=self.dur_var, font=field_font)
+        dur_box['values'] = ['None'] + self.caller.ovu.key_view.dur_bindings
+        dur_box['state'] = 'readonly'
+        dur_box.config(font=field_font)
+        dur_box.place(x=50, y=125, width=200)
+        dur_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        ok_button = tkinter.Button(popup_root, text="OK", command=self.on_closing, font=('Purisa', 12))
+        ok_button.place(x=150, y=160, anchor=N)
+
+    def set_value(self, key):
+        self.key = key
+        self.key_entry.delete(0, END)
+        self.key_entry.insert(0, str(key))
+
+    def on_closing(self):
+        if self.key:
+            self.caller.ext_raw = self.key
+            if self.dur_var.get():
+                if self.dur_var.get() != 'None':
+                    self.caller.ext_dur_val = self.dur_var.get()[0]
+            if self.freq_var.get():
+                if self.freq_var.get() != 'None':
+                    self.caller.ext_freq_val = self.freq_var.get()[0]
+        self.caller.button_input_handler = None
+        self.popup_root.destroy()
 
 
 class ConfigPopup:
