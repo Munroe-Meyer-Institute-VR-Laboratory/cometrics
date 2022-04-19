@@ -166,8 +166,9 @@ class OutputViewPanel:
             self.video_view.video_slider.config(state='disabled')
 
     def stop_session(self):
-        self.e4_view.session_started = False
-        self.e4_view.streaming = False
+        if self.e4_view:
+            self.e4_view.session_started = False
+            self.e4_view.streaming = False
         if self.video_view.recorder:
             self.video_view.recorder.stop_recording()
             self.video_view.recorder.stop_playback()
@@ -210,23 +211,24 @@ class OutputViewPanel:
         return self.key_view.event_history, self.e4_view.windowed_readings, self.video_view.video_file
 
     def save_session(self, filename, keystrokes):
-        if self.e4_view.windowed_readings:
-            try:
-                for keystroke in keystrokes:
-                    try:
-                        if type(keystroke[1]) is tuple:
-                            self.e4_view.windowed_readings[int(keystroke[1][0]) - 1][-1].append(keystroke[0])
-                            self.e4_view.windowed_readings[int(keystroke[1][1]) - 1][-1].append(keystroke[0])
-                        else:
-                            self.e4_view.windowed_readings[int(keystroke[1]) - 1][-1].append(keystroke[0])
-                    except Exception as e:
-                        print(f"ERROR: Exception encountered:\n{str(e)}\n" + traceback.print_exc())
-                with open(filename, 'wb') as f:
-                    pickle.dump(self.e4_view.windowed_readings, f)
-            except TypeError as e:
-                with open(filename, 'wb') as f:
-                    pickle.dump(self.e4_view.windowed_readings, f)
-                print(f"ERROR: Exception encountered:\n{str(e)}\n" + traceback.print_exc())
+        if self.e4_view:
+            if self.e4_view.windowed_readings:
+                try:
+                    for keystroke in keystrokes:
+                        try:
+                            if type(keystroke[1]) is tuple:
+                                self.e4_view.windowed_readings[int(keystroke[1][0]) - 1][-1].append(keystroke[0])
+                                self.e4_view.windowed_readings[int(keystroke[1][1]) - 1][-1].append(keystroke[0])
+                            else:
+                                self.e4_view.windowed_readings[int(keystroke[1]) - 1][-1].append(keystroke[0])
+                        except Exception as e:
+                            print(f"ERROR: Exception encountered:\n{str(e)}\n" + traceback.print_exc())
+                    with open(filename, 'wb') as f:
+                        pickle.dump(self.e4_view.windowed_readings, f)
+                except TypeError as e:
+                    with open(filename, 'wb') as f:
+                        pickle.dump(self.e4_view.windowed_readings, f)
+                    print(f"ERROR: Exception encountered:\n{str(e)}\n" + traceback.print_exc())
 
 
 class ViewWoodway:

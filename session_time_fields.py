@@ -187,7 +187,6 @@ class SessionTimeFields:
                     self.kdf.dur_treeview.set(str(i), column="1",
                                               value=self.session_time - self.kdf.sticky_start[i])
 
-
     def start_session(self):
         self.session_started = True
         self.session_toggle_button['text'] = "Stop Session"
