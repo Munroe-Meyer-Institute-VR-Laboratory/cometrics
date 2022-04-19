@@ -1,7 +1,7 @@
 setuptools~=60.8.2
 opencv-python~=4.5.5.62
 pynput~=1.7.6
-tkvideoutils~=0.5.26
+tkvideoutils~=0.5.28
 pillow~=9.0.1
 numpy~=1.22.2
 WMI~=1.5.1
