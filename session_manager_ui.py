@@ -327,6 +327,11 @@ class SessionManagerWindow:
         with open(output_session_file, 'w') as f:
             json.dump(session_fields, f)
         print(f"INFO: Saved session file to: {output_session_file}")
+        response = messagebox.askyesno("Session Data Saved", f"Session data has been saved to: "
+                                                             f"\n\n{output_session_file}\n\n"
+                                                             f"Do you want to view the file?")
+        if response:
+            os.startfile(pathlib.Path(output_session_file).parent)
 
     def start_session(self):
         response = self.pdf.check_session_fields()
@@ -360,4 +365,3 @@ class SessionManagerWindow:
     def pause_session(self):
         if self.stf.session_started:
             self.stf.pause_session()
-

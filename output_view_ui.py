@@ -208,7 +208,13 @@ class OutputViewPanel:
         self.video_view.undo_last_delete()
 
     def get_session_data(self):
-        return self.key_view.event_history, self.e4_view.windowed_readings, self.video_view.video_file
+        video_data = None
+        if self.video_view:
+            video_data = self.video_view.video_file
+        e4_data = None
+        if self.e4_view:
+            e4_data = self.e4_view.windowed_readings
+        return self.key_view.event_history, e4_data, video_data
 
     def save_session(self, filename, keystrokes):
         if self.e4_view:
