@@ -19,7 +19,8 @@ from session_time_fields import SessionTimeFields
 from tkinter_utils import get_treeview_style, get_slider_style
 from ui_params import large_header_font, large_field_font, large_field_offset, medium_header_font, medium_field_font, \
     medium_field_offset, small_header_font, small_field_font, small_field_offset, small_tab_size, medium_tab_size, \
-    large_tab_size, ui_title
+    large_tab_size, ui_title, large_treeview_rowheight, medium_treeview_rowheight, small_treeview_rowheight, \
+    large_treeview_font, medium_treeview_font, small_treeview_font
 
 
 class SessionManagerWindow:
@@ -27,6 +28,8 @@ class SessionManagerWindow:
         # region Project File Setup
         # Get the project files
         self.config = config
+        self.button_input_handler = None
+        self.ext_raw, self.ext_dur_val, self.ext_freq_val = None, None, None
         self.patient_file = project_setup.patient_data_file
         self.keystroke_file = project_setup.ksf_file
         self.session_dir = project_setup.phase_dir
@@ -57,20 +60,26 @@ class SessionManagerWindow:
         # region User Interface Setup
         self.window_height, self.window_width = config.get_screen_size()[0], config.get_screen_size()[1]
         if self.window_width == 1920:
+            self.treeview_header = large_treeview_font
             self.header_font = large_header_font
             self.field_font = large_field_font
             self.field_offset = large_field_offset
             self.button_size = large_tab_size
+            self.treeview_rowheight = large_treeview_rowheight
         elif 1920 > self.window_width > 1280:
+            self.treeview_header = medium_treeview_font
             self.header_font = medium_header_font
             self.field_font = medium_field_font
             self.field_offset = medium_field_offset
             self.button_size = medium_tab_size
+            self.treeview_rowheight = medium_treeview_rowheight
         else:
+            self.treeview_header = small_treeview_font
             self.header_font = small_header_font
             self.field_font = small_field_font
             self.field_offset = small_field_offset
             self.button_size = small_tab_size
+            self.treeview_rowheight = small_treeview_rowheight
         print("INFO:", self.header_font, self.field_font, self.field_offset, self.window_width, self.window_height)
 
         root = self.root = Tk()
@@ -91,7 +100,8 @@ class SessionManagerWindow:
         self.logo_canvas.create_image(0, 0, anchor=NW, image=self.logo_img)
 
         get_slider_style(root)
-        get_treeview_style()
+        get_treeview_style(font=self.field_font, heading_font=self.treeview_header,
+                           rowheight=self.treeview_rowheight)
 
         self.menu = MenuBar(root, self)
         self.stf = SessionTimeFields(self, root,
@@ -113,7 +123,7 @@ class SessionManagerWindow:
                                    header_font=self.header_font,
                                    video_import_cb=self.start_video_control,
                                    slider_change_cb=self.change_time,
-                                   fps=self.config.get_fps())
+                                   config=self.config)
         self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root,
                                      x=5,
@@ -218,6 +228,12 @@ class SessionManagerWindow:
 
     def on_press(self, key):
         try:
+            if self.ext_raw:
+                if key == self.ext_raw:
+                    if self.ext_freq_val:
+                        key = keyboard.KeyCode.from_char(self.ext_freq_val)
+                    elif self.ext_dur_val:
+                        key = keyboard.KeyCode.from_char(self.ext_dur_val)
             key_char = key.char
             # Only process key input if session has started
             if self.stf.session_started:
@@ -242,6 +258,8 @@ class SessionManagerWindow:
         pass
 
     def handle_global_press(self, key_char):
+        if self.button_input_handler:
+            self.button_input_handler.set_value(key_char)
         for key in self.global_commands:
             if self.global_commands[key] == key_char:
                 if key == "Toggle Session":
@@ -309,6 +327,11 @@ class SessionManagerWindow:
         with open(output_session_file, 'w') as f:
             json.dump(session_fields, f)
         print(f"INFO: Saved session file to: {output_session_file}")
+        response = messagebox.askyesno("Session Data Saved", f"Session data has been saved to: "
+                                                             f"\n\n{output_session_file}\n\n"
+                                                             f"Do you want to view the file?")
+        if response:
+            os.startfile(pathlib.Path(output_session_file).parent)
 
     def start_session(self):
         response = self.pdf.check_session_fields()
@@ -342,4 +365,3 @@ class SessionManagerWindow:
     def pause_session(self):
         if self.stf.session_started:
             self.stf.pause_session()
-

@@ -20,18 +20,14 @@ from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClien
 from ttkwidgets import TickScale
 
 from tkinter_utils import build_treeview, clear_treeview
-from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags
-
-
-class OutputViews:
-    KEY_VIEW = 0
-    E4_VIEW = 1
-    VIDEO_VIEW = 2
+from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags, crossmark, checkmark
 
 
 class OutputViewPanel:
     def __init__(self, parent, x, y, height, width, button_size, ksf,
-                 field_font, header_font, video_import_cb, slider_change_cb, fps):
+                 field_font, header_font, video_import_cb, slider_change_cb, config):
+        self.KEY_VIEW, self.E4_VIEW, self.VIDEO_VIEW, self.WOODWAY_VIEW, self.BLE_VIEW = 0, 1, 2, 3, 4
+        self.config = config
         self.height, self.width = height, width
         self.x, self.y, self.button_size = x, y, button_size
         self.current_button = 0
@@ -49,64 +45,89 @@ class OutputViewPanel:
         key_frame.place(x=x, y=y + self.button_size[1])
         self.view_frames.append(key_frame)
 
-        e4_frame = Frame(parent, width=width, height=height)
-        self.view_frames.append(e4_frame)
-
         video_frame = Frame(parent, width=width, height=height)
         self.view_frames.append(video_frame)
-
-        # tactor_frame = Frame(parent, width=700, height=(parent.winfo_screenheight() - 280))
-        # test_label = Label(tactor_frame, text="Tactor Frame")
-        # test_label.place(x=200, y=200)
-        # self.view_frames.append(tactor_frame)
 
         key_button = Button(self.frame, text="Key Bindings", command=self.switch_key_frame, width=12,
                             font=field_font)
         self.view_buttons.append(key_button)
-        self.view_buttons[OutputViews.KEY_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
-                                                      width=button_size[0], height=button_size[1])
-        self.view_buttons[OutputViews.KEY_VIEW].config(relief=SUNKEN)
+        self.KEY_VIEW = len(self.view_buttons) - 1
+        self.view_buttons[self.KEY_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                               width=button_size[0], height=button_size[1])
+        self.view_buttons[self.KEY_VIEW].config(relief=SUNKEN)
+        self.key_view = KeystrokeDataFields(self.view_frames[self.KEY_VIEW], ksf,
+                                            height=self.height - self.button_size[1], width=self.width,
+                                            field_font=field_font, header_font=header_font, button_size=button_size)
 
-        e4_output_button = Button(self.frame, text="E4 Streams", command=self.switch_e4_frame, width=12,
-                                  font=field_font)
-        self.view_buttons.append(e4_output_button)
-        self.view_buttons[OutputViews.E4_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
-                                                     width=button_size[0], height=button_size[1])
+        if self.config.get_e4():
+            e4_output_button = Button(self.frame, text="E4 Streams", command=self.switch_e4_frame, width=12,
+                                      font=field_font)
+            self.view_buttons.append(e4_output_button)
+            self.E4_VIEW = len(self.view_buttons) - 1
+            self.view_buttons[self.E4_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                  width=button_size[0], height=button_size[1])
+            self.e4_view = ViewE4(self.view_frames[self.E4_VIEW],
+                                  height=self.height - self.button_size[1], width=self.width,
+                                  field_font=field_font, header_font=header_font, button_size=button_size,
+                                  e4_button=e4_output_button)
+            e4_frame = Frame(parent, width=width, height=height)
+            self.view_frames.append(e4_frame)
+        else:
+            self.e4_view = None
+
+        if self.config.get_ble():
+            ble_output_button = Button(self.frame, text="BLE Input", command=self.switch_ble_frame, width=12,
+                                       font=field_font)
+            self.view_buttons.append(ble_output_button)
+            self.BLE_VIEW = len(self.view_buttons) - 1
+            self.view_buttons[self.BLE_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                   width=button_size[0], height=button_size[1])
+            self.ble_view = ViewBLE()
+            ble_frame = Frame(parent, width=width, height=height)
+            self.view_frames.append(ble_frame)
+        else:
+            self.ble_view = None
+
+        if self.config.get_woodway():
+            woodway_output_button = Button(self.frame, text="Woodway", command=self.switch_woodway_frame, width=12,
+                                           font=field_font)
+            self.view_buttons.append(woodway_output_button)
+            self.WOODWAY_VIEW = len(self.view_buttons) - 1
+            self.view_buttons[self.WOODWAY_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                       width=button_size[0], height=button_size[1])
+            self.woodway_view = ViewWoodway(self.view_frames[self.WOODWAY_VIEW])
+            woodway_frame = Frame(parent, width=width, height=height)
+            self.view_frames.append(woodway_frame)
+        else:
+            self.woodway_view = None
 
         video_button = Button(self.frame, text="Video View", command=self.switch_video_frame, width=12,
                               font=field_font)
         self.view_buttons.append(video_button)
-        self.view_buttons[OutputViews.VIDEO_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
-                                                        width=button_size[0], height=button_size[1])
-
-        # tactor_view_button = Button(self.frame, text="Tactor View", command=self.switch_tactor_frame, width=12)
-        # self.view_buttons.append(tactor_view_button)
-        # self.view_buttons[3].place(x=276, y=0)
-
-        self.e4_view = ViewE4(self.view_frames[OutputViews.E4_VIEW],
-                              height=self.height - self.button_size[1], width=self.width,
-                              field_font=field_font, header_font=header_font, button_size=button_size)
-        self.key_view = KeystrokeDataFields(self.view_frames[OutputViews.KEY_VIEW], ksf,
-                                            height=self.height - self.button_size[1], width=self.width,
-                                            field_font=field_font, header_font=header_font, button_size=button_size)
-        self.video_view = ViewVideo(self.view_frames[OutputViews.VIDEO_VIEW],
+        self.VIDEO_VIEW = len(self.view_buttons) - 1
+        self.view_buttons[self.VIDEO_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                 width=button_size[0], height=button_size[1])
+        self.video_view = ViewVideo(self.view_frames[self.VIDEO_VIEW],
                                     height=self.height - self.button_size[1], width=self.width,
                                     field_font=field_font, header_font=header_font, button_size=button_size,
                                     video_import_cb=video_import_cb, slider_change_cb=slider_change_cb,
-                                    fps=fps)
+                                    fps=self.config.get_fps())
         self.event_history = []
 
     def switch_key_frame(self):
-        self.switch_frame(OutputViews.KEY_VIEW)
+        self.switch_frame(self.KEY_VIEW)
 
-    def switch_tactor_frame(self):
-        self.switch_frame(OutputViews.TACTOR_VIEW)
+    def switch_ble_frame(self):
+        self.switch_frame(self.BLE_VIEW)
+
+    def switch_woodway_frame(self):
+        self.switch_frame(self.WOODWAY_VIEW)
 
     def switch_e4_frame(self):
-        self.switch_frame(OutputViews.E4_VIEW)
+        self.switch_frame(self.E4_VIEW)
 
     def switch_video_frame(self):
-        self.switch_frame(OutputViews.VIDEO_VIEW)
+        self.switch_frame(self.VIDEO_VIEW)
 
     def switch_frame(self, view):
         """
@@ -121,8 +142,9 @@ class OutputViewPanel:
         self.view_frames[view].place(x=self.x, y=self.y + self.button_size[1])
 
     def close(self):
-        self.e4_view.stop_plot()
-        self.e4_view.disconnect_e4()
+        if self.e4_view:
+            self.e4_view.stop_plot()
+            self.e4_view.disconnect_e4()
         if self.video_view.player:
             self.video_view.player.loading = False
         if self.video_view.recorder:
@@ -130,7 +152,8 @@ class OutputViewPanel:
             self.video_view.recorder.stop_playback()
 
     def start_session(self, recording_path=None):
-        self.e4_view.session_started = True
+        if self.e4_view:
+            self.e4_view.session_started = True
         if self.video_view.recorder:
             self.video_view.recorder.start_recording(output_path=recording_path)
 
@@ -143,8 +166,9 @@ class OutputViewPanel:
             self.video_view.video_slider.config(state='disabled')
 
     def stop_session(self):
-        self.e4_view.session_started = False
-        self.e4_view.streaming = False
+        if self.e4_view:
+            self.e4_view.session_started = False
+            self.e4_view.streaming = False
         if self.video_view.recorder:
             self.video_view.recorder.stop_recording()
             self.video_view.recorder.stop_playback()
@@ -160,11 +184,12 @@ class OutputViewPanel:
                 current_frame = self.video_view.recorder.current_frame
             current_window = None
             # Add the frame and key to the latest E4 window reading if streaming
-            if self.e4_view.windowed_readings:
-                if current_frame:
-                    self.e4_view.windowed_readings[-1][-1].append(current_frame)
-                self.e4_view.windowed_readings[-1][-2].append(key_char)
-                current_window = len(self.e4_view.windowed_readings) - 1
+            if self.e4_view:
+                if self.e4_view.windowed_readings:
+                    if current_frame:
+                        self.e4_view.windowed_readings[-1][-1].append(current_frame)
+                    self.e4_view.windowed_readings[-1][-2].append(key_char)
+                    current_window = len(self.e4_view.windowed_readings) - 1
             # Get the appropriate key event
             key_events = self.key_view.check_key(key_char, start_time, current_frame, current_window)
             # Add to session history
@@ -183,31 +208,83 @@ class OutputViewPanel:
         self.video_view.undo_last_delete()
 
     def get_session_data(self):
-        return self.key_view.event_history, self.e4_view.windowed_readings, self.video_view.video_file
+        video_data = None
+        if self.video_view:
+            video_data = self.video_view.video_file
+        e4_data = None
+        if self.e4_view:
+            e4_data = self.e4_view.windowed_readings
+        return self.key_view.event_history, e4_data, video_data
 
     def save_session(self, filename, keystrokes):
-        if self.e4_view.windowed_readings:
-            try:
-                for keystroke in keystrokes:
-                    try:
-                        if type(keystroke[1]) is tuple:
-                            self.e4_view.windowed_readings[int(keystroke[1][0]) - 1][-1].append(keystroke[0])
-                            self.e4_view.windowed_readings[int(keystroke[1][1]) - 1][-1].append(keystroke[0])
-                        else:
-                            self.e4_view.windowed_readings[int(keystroke[1]) - 1][-1].append(keystroke[0])
-                    except Exception as e:
-                        print(f"ERROR: Exception encountered:\n{str(e)}\n" + traceback.print_exc())
-                with open(filename, 'wb') as f:
-                    pickle.dump(self.e4_view.windowed_readings, f)
-            except TypeError as e:
-                with open(filename, 'wb') as f:
-                    pickle.dump(self.e4_view.windowed_readings, f)
-                print(f"ERROR: Exception encountered:\n{str(e)}\n" + traceback.print_exc())
+        if self.e4_view:
+            if self.e4_view.windowed_readings:
+                try:
+                    for keystroke in keystrokes:
+                        try:
+                            if type(keystroke[1]) is tuple:
+                                self.e4_view.windowed_readings[int(keystroke[1][0]) - 1][-1].append(keystroke[0])
+                                self.e4_view.windowed_readings[int(keystroke[1][1]) - 1][-1].append(keystroke[0])
+                            else:
+                                self.e4_view.windowed_readings[int(keystroke[1]) - 1][-1].append(keystroke[0])
+                        except Exception as e:
+                            print(f"ERROR: Exception encountered:\n{str(e)}\n" + traceback.print_exc())
+                    with open(filename, 'wb') as f:
+                        pickle.dump(self.e4_view.windowed_readings, f)
+                except TypeError as e:
+                    with open(filename, 'wb') as f:
+                        pickle.dump(self.e4_view.windowed_readings, f)
+                    print(f"ERROR: Exception encountered:\n{str(e)}\n" + traceback.print_exc())
+
+
+class ViewWoodway:
+    def __init__(self, parent):
+        # Vertical sliders speed and inclination for each treadmill
+        self.belt_speed_l_var = IntVar(parent)
+        self.belt_speed_l = Scale(parent, orient="vertical", variable=self.belt_speed_l_var,
+                                  command=self.__write_l_speed)
+        self.belt_incline_l_var = IntVar(parent)
+        self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var,
+                                    command=self.__write_l_incline)
+        self.belt_speed_r_var = IntVar(parent)
+        self.belt_speed_r = Scale(parent, orient="vertical", variable=self.belt_speed_r_var,
+                                  command=self.__write_r_speed)
+        self.belt_incline_r_var = IntVar(parent)
+        self.belt_incline_r = Scale(parent, orient="vertical", variable=self.belt_incline_r_var,
+                                    command=self.__write_r_incline)
+        # Treeview for the changes to treadmill operation with timing delays between each step, import export json
+        # Connect button and assignment of COM ports to each treadmill
+        # Start treadmill button?
+        pass
+
+    def __write_speed(self, side, speed):
+        pass
+
+    def __write_l_speed(self, speed):
+        pass
+
+    def __write_r_speed(self, speed):
+        pass
+
+    def __write_incline(self, side, incline):
+        pass
+
+    def __write_l_incline(self, incline):
+        pass
+
+    def __write_r_incline(self, incline):
+        pass
+
+
+class ViewBLE:
+    def __init__(self):
+        pass
 
 
 class ViewVideo:
     def __init__(self, root, height, width, field_font, header_font, button_size, fps, field_offset=60,
                  video_import_cb=None, slider_change_cb=None):
+        # TODO: incorporate checkmark and crossmark
         self.recording_fps = fps
         self.height, self.width = height, width
         self.event_history = []
@@ -252,11 +329,18 @@ class ViewVideo:
                                                             width=width - 25,
                                                             heading_dict=event_header_dict,
                                                             column_dict=event_column_dict,
-                                                            button_1_bind=self.select_event)
+                                                            button_1_bind=self.select_event,
+                                                            double_bind=self.edit_event)
         # Must be pushed to a thread otherwise the session timer thread will crash
         load_cam_thread = threading.Thread(target=self.get_camera_sources)
         load_cam_thread.daemon = 1
         load_cam_thread.start()
+
+    def edit_event(self, event):
+        selection = self.event_treeview.identify_row(event.y)
+        if selection:
+            selected_event = self.event_history[int(selection) - 1]
+            print(selected_event)
 
     def get_camera_sources(self):
         self.camera_sources = VideoRecorder.get_sources()
@@ -349,7 +433,6 @@ class ViewVideo:
                     print(f"ERROR: Error loading camera:\n{str(e)}\n" + traceback.print_exc())
 
     def load_video(self):
-        # TODO: There is some kind of issue between frames 100-400 (closes issue #8)
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
         try:
             if video_file:
@@ -407,8 +490,9 @@ class ViewVideo:
 
 
 class ViewE4:
-    def __init__(self, root, height, width, field_font, header_font, button_size, field_offset=60):
+    def __init__(self, root, height, width, field_font, header_font, button_size, e4_button, field_offset=60):
         self.root = root
+        self.tab_button = e4_button
         self.session_started = False
         self.height, self.width = height, width
 
@@ -589,6 +673,7 @@ class ViewE4:
                     self.streaming_label.config(image=self.nostreaming_image)
                     self.e4_client = None
                     self.emp_client = None
+                    self.tab_button['text'] = "E4 Streams" + crossmark
                 else:
                     try:
                         self.e4_client = EmpaticaE4(self.e4_address)
@@ -618,6 +703,7 @@ class ViewE4:
                         self.e4_client.start_streaming()
                         self.start_plot(self.e4_client)
                         self.streaming_label.config(image=self.streaming_image)
+                        self.tab_button['text'] = "E4 Streams" + checkmark
                     except Exception as e:
                         messagebox.showerror("Exception Encountered",
                                              "Encountered an error when connecting to E4:\n" + str(e))
@@ -807,6 +893,7 @@ class ViewE4:
 class KeystrokeDataFields:
     def __init__(self, parent, keystroke_file, height, width,
                  field_font, header_font, button_size):
+        # TODO: Add editing of event history by double clicking event
         separation_distance = 30
         fs_offset = 10 + ((width * 0.25) * 0.5)
         t_width = width * 0.25
@@ -919,7 +1006,6 @@ class KeystrokeDataFields:
             self.deleted_event = None
 
     def delete_last_event(self):
-        # TODO: Need to delete events from frequency and duration listviews (close issue #9)
         if self.event_history:
             if not self.deleted_event:
                 self.sh_treeview.delete(self.sh_treeview_parents[len(self.event_history) - 1])
@@ -1157,7 +1243,3 @@ class Popup:
             else:
                 self.caller.update_durbind(self.entry.get(), self.tag)
             self.popup_root.destroy()
-
-
-class ViewTactor:
-    pass

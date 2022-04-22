@@ -1,6 +1,6 @@
 import tkinter
 from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk
-from tkinter.ttk import Style
+from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview, Entry
 
 from ui_params import treeview_default_tag_dict
@@ -48,7 +48,7 @@ def get_slider_style(root):
     return 'custom.Horizontal.TScale', style
 
 
-def get_treeview_style(name="mystyle.Treeview", font=('Calibri', 13), heading_font=('Calibri', 13, 'bold'),
+def get_treeview_style(name="mystyle.Treeview", font=('Purisa', 12), heading_font=('Purisa', 12, 'bold'),
                        rowheight=25, h_thickness=0, bd=0):
     style = Style()
     style.configure(name, highlightthickness=h_thickness, bd=bd, font=font)  # Modify the font of the body
@@ -112,6 +112,113 @@ def fixed_map(option):
     style = Style()
     return [elm for elm in style.map('Treeview', query_opt=option) if
             elm[:2] != ('!disabled', '!selected')]
+
+
+class ExternalButtonPopup:
+    def __init__(self, root, caller, field_font=('Purisa', 12)):
+        self.caller = caller
+        self.key = None
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x200")
+        popup_root.title("External Button Setup")
+        key_tag = tkinter.Label(popup_root, text="Key", bg='white', font=('Purisa', 12))
+        key_tag.place(x=50, y=20)
+        self.key_entry = tkinter.Entry(popup_root, bd=2, width=17, font=('Purisa', 12))
+        self.key_entry.place(x=90, y=20)
+
+        freq_label = tkinter.Label(popup_root, font=field_font, text="Frequency Key Association", bg='white')
+        freq_label.place(x=50, y=50)
+        self.freq_var = tkinter.StringVar(popup_root)
+        freq_box = Combobox(popup_root, textvariable=self.freq_var, font=field_font)
+        freq_box['values'] = ['None'] + self.caller.ovu.key_view.bindings
+        freq_box['state'] = 'readonly'
+        freq_box.config(font=field_font)
+        freq_box.place(x=50, y=75, width=200)
+        freq_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        dur_label = tkinter.Label(popup_root, font=field_font, text="Duration Key Association", bg='white')
+        dur_label.place(x=50, y=100)
+        self.dur_var = tkinter.StringVar(popup_root)
+        dur_box = Combobox(popup_root, textvariable=self.dur_var, font=field_font)
+        dur_box['values'] = ['None'] + self.caller.ovu.key_view.dur_bindings
+        dur_box['state'] = 'readonly'
+        dur_box.config(font=field_font)
+        dur_box.place(x=50, y=125, width=200)
+        dur_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        ok_button = tkinter.Button(popup_root, text="OK", command=self.on_closing, font=('Purisa', 12))
+        ok_button.place(x=150, y=160, anchor=N)
+
+    def set_value(self, key):
+        self.key = key
+        self.key_entry.delete(0, END)
+        self.key_entry.insert(0, str(key))
+
+    def on_closing(self):
+        if self.key:
+            self.caller.ext_raw = self.key
+            if self.dur_var.get():
+                if self.dur_var.get() != 'None':
+                    self.caller.ext_dur_val = self.dur_var.get()[0]
+            if self.freq_var.get():
+                if self.freq_var.get() != 'None':
+                    self.caller.ext_freq_val = self.freq_var.get()[0]
+        self.caller.button_input_handler = None
+        self.popup_root.destroy()
+
+
+class ConfigPopup:
+    def __init__(self, root, config):
+        self.config = config
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x250")
+        popup_root.title("Configuration Settings")
+        fps_tag = tkinter.Label(popup_root, text="FPS", bg='white', font=('Purisa', 12))
+        fps_tag.place(x=10, y=10)
+        self.fps_entry = tkinter.Entry(popup_root, bd=2, width=5, font=('Purisa', 12))
+        self.fps_entry.insert(0, int(self.config.get_fps()))
+        self.fps_entry.place(x=60, y=10)
+        self.e4_var = tkinter.BooleanVar(popup_root, value=self.config.get_e4())
+        e4_checkbutton = tkinter.Checkbutton(popup_root, text="E4 Enabled", bg='white', variable=self.e4_var,
+                                             font=('Purisa', 12))
+        e4_checkbutton.place(x=10, y=50)
+        self.woodway_var = tkinter.BooleanVar(popup_root, value=self.config.get_woodway())
+        woodway_checkbutton = tkinter.Checkbutton(popup_root, text="Woodway Enabled", bg='white',
+                                                  variable=self.woodway_var, font=('Purisa', 12))
+        woodway_checkbutton.place(x=10, y=90)
+        self.ble_var = tkinter.BooleanVar(popup_root, value=self.config.get_ble())
+        ble_checkbutton = tkinter.Checkbutton(popup_root, text="BLE Enabled", bg='white',
+                                              variable=self.ble_var, font=('Purisa', 12))
+        ble_checkbutton.place(x=10, y=130)
+        clear_projects = tkinter.Button(popup_root, text="Clear Recent Projects",
+                                        font=('Purisa', 12), command=self.clear_projects)
+        clear_projects.place(x=10, y=170)
+        ok_button = tkinter.Button(popup_root, text="OK", command=self.on_closing, font=('Purisa', 12))
+        ok_button.place(x=150, y=210, anchor=N)
+
+    def on_closing(self):
+        self.update_fps()
+        self.update_e4()
+        self.update_woodway()
+        self.update_ble()
+        self.popup_root.destroy()
+
+    def update_fps(self):
+        self.config.set_fps(int(self.fps_entry.get()))
+
+    def update_e4(self):
+        self.config.set_e4(self.e4_var.get())
+
+    def update_ble(self):
+        self.config.set_ble(self.ble_var.get())
+
+    def update_woodway(self):
+        self.config.set_woodway(self.woodway_var.get())
+
+    def clear_projects(self):
+        self.config.set_recent_projects([])
 
 
 class EntryPopup:

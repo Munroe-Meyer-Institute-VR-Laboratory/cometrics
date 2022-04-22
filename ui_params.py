@@ -1,4 +1,4 @@
-cometrics_version = "1.0.10"
+cometrics_version = "1.0.13"
 ui_title = f"cometrics v{cometrics_version}"
 
 cometrics_data_root = fr'C:\cometrics'
@@ -15,7 +15,7 @@ large_treeview_rowheight = 30
 large_field_font = ('Purisa', 14)
 large_field_offset = 70
 large_button_size = (120, 35)
-large_tab_size = (120, 35)
+large_tab_size = (140, 35)
 
 medium_header_font = ('Purisa', 14)
 medium_treeview_font = ('Purisa', 14, 'bold')
@@ -23,7 +23,7 @@ medium_treeview_rowheight = 25
 medium_field_font = ('Purisa', 12)
 medium_field_offset = 60
 medium_button_size = (100, 30)
-medium_tab_size = (100, 30)
+medium_tab_size = (120, 30)
 
 small_header_font = ('Purisa', 12)
 small_treeview_font = ('Purisa', 12, 'bold')
@@ -31,7 +31,7 @@ small_treeview_rowheight = 20
 small_field_font = ('Purisa', 10)
 small_field_offset = 50
 small_button_size = (80, 25)
-small_tab_size = (90, 25)
+small_tab_size = (110, 25)
 
 treeview_tags = ['odd', 'even', 'header']
 treeview_default_tag_dict = {
@@ -45,3 +45,7 @@ treeview_bind_tag_dict = {
     'even': '#DFDFDF',
     'toggle': 'red'
 }
+
+# https://unicode-table.com/en/#274E
+checkmark = '\u2705'
+crossmark = '\u274E'

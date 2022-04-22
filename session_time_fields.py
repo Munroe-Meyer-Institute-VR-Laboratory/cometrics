@@ -6,6 +6,7 @@ import winsound
 from tkinter import *
 
 from tkinter_utils import set_entry_text
+from ui_params import treeview_bind_tags
 
 
 class SessionTimeFields:
@@ -177,6 +178,14 @@ class SessionTimeFields:
     def change_time(self, current_seconds):
         self.session_time = current_seconds
         self.session_time_label['text'] = str(datetime.timedelta(seconds=self.session_time))
+        for i in range(0, len(self.kdf.dur_sticky)):
+            if self.kdf.dur_sticky[i]:
+                if self.session_time < self.kdf.sticky_start[i]:
+                    self.kdf.dur_sticky[i] = False
+                    self.kdf.dur_treeview.item(str(i), tags=treeview_bind_tags[i % 2])
+                else:
+                    self.kdf.dur_treeview.set(str(i), column="1",
+                                              value=self.session_time - self.kdf.sticky_start[i])
 
     def start_session(self):
         self.session_started = True

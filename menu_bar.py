@@ -4,6 +4,7 @@ from tkinter import *
 from analysis_ui import AccuracyPopup
 from config_utils import ConfigUtils
 from ksf_utils import export_columnwise_csv, populate_spreadsheet
+from tkinter_utils import ConfigPopup, ExternalButtonPopup
 
 
 class MenuBar(Frame):
@@ -17,6 +18,8 @@ class MenuBar(Frame):
         file_menu = Menu(menu)
         file_menu.add_command(label="Start New Session", command=self.start_new_session)
         file_menu.add_command(label="Open New Project", command=self.open_new_project)
+        file_menu.add_command(label="Connect External Input", command=self.connect_external_input)
+        file_menu.add_command(label="Edit Config File", command=self.config_popup)
         menu.add_cascade(label="File", menu=file_menu)
 
         export_menu = Menu(menu)
@@ -33,6 +36,12 @@ class MenuBar(Frame):
         help_menu.add_command(label="Open Logs", command=self.open_logs)
         help_menu.add_command(label="Open Current Directory", command=self.open_current_dir)
         menu.add_cascade(label="Help", menu=help_menu)
+
+    def config_popup(self):
+        ConfigPopup(self.parent, self.caller.config)
+
+    def connect_external_input(self):
+        self.caller.button_input_handler = ExternalButtonPopup(self.parent, self.caller)
 
     def open_new_project(self):
         self.caller.restart_program()
