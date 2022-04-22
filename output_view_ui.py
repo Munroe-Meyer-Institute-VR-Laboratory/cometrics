@@ -95,7 +95,7 @@ class OutputViewPanel:
             self.WOODWAY_VIEW = len(self.view_buttons) - 1
             self.view_buttons[self.WOODWAY_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
                                                        width=button_size[0], height=button_size[1])
-            self.woodway_view = ViewWoodway()
+            self.woodway_view = ViewWoodway(self.view_frames[self.WOODWAY_VIEW])
             woodway_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(woodway_frame)
         else:
@@ -238,11 +238,41 @@ class OutputViewPanel:
 
 
 class ViewWoodway:
-    def __init__(self):
+    def __init__(self, parent):
         # Vertical sliders speed and inclination for each treadmill
+        self.belt_speed_l_var = IntVar(parent)
+        self.belt_speed_l = Scale(parent, orient="vertical", variable=self.belt_speed_l_var,
+                                  command=self.__write_l_speed)
+        self.belt_incline_l_var = IntVar(parent)
+        self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var,
+                                    command=self.__write_l_incline)
+        self.belt_speed_r_var = IntVar(parent)
+        self.belt_speed_r = Scale(parent, orient="vertical", variable=self.belt_speed_r_var,
+                                  command=self.__write_r_speed)
+        self.belt_incline_r_var = IntVar(parent)
+        self.belt_incline_r = Scale(parent, orient="vertical", variable=self.belt_incline_r_var,
+                                    command=self.__write_r_incline)
         # Treeview for the changes to treadmill operation with timing delays between each step, import export json
         # Connect button and assignment of COM ports to each treadmill
         # Start treadmill button?
+        pass
+
+    def __write_speed(self, side, speed):
+        pass
+
+    def __write_l_speed(self, speed):
+        pass
+
+    def __write_r_speed(self, speed):
+        pass
+
+    def __write_incline(self, side, incline):
+        pass
+
+    def __write_l_incline(self, incline):
+        pass
+
+    def __write_r_incline(self, incline):
         pass
 
 
@@ -403,7 +433,6 @@ class ViewVideo:
                     print(f"ERROR: Error loading camera:\n{str(e)}\n" + traceback.print_exc())
 
     def load_video(self):
-        # TODO: There is some kind of issue between frames 100-400 (closes issue #8)
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
         try:
             if video_file:
@@ -462,7 +491,6 @@ class ViewVideo:
 
 class ViewE4:
     def __init__(self, root, height, width, field_font, header_font, button_size, e4_button, field_offset=60):
-        # TODO: Incorporate checkmark and crossmark
         self.root = root
         self.tab_button = e4_button
         self.session_started = False
