@@ -49,9 +49,7 @@ Starting from v1.0.5, we are looking to implement the following features in no p
 - [ ] Support of other research instruments such as a split belt treadmill
 
 ## Bug Reporting
-When cometrics encounters an error, it is automatically logged and sent to us via Bugsnag.  To report a bug manually, please open an issue in the main repository [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues) and follow the instructions in the [user guide](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/reference/Cometrics%20User%20Guide.pdf).
-
-[<img alt="Bugsnag Logo" src="gui_images/bugsnag.png" />](https://www.bugsnag.com)
+To report a bug, please open an issue in the main repository [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues) and follow the instructions in the [user guide](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/reference/Cometrics%20User%20Guide.pdf).
 
 ## Getting Started
 ### Clinicians and Researchers
