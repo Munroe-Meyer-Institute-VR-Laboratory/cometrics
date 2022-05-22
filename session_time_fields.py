@@ -9,16 +9,36 @@ from tkinter_utils import set_entry_text
 from ui_params import treeview_bind_tags
 
 
+# TODO: Create a wrapper on this like the output view ui to create the 'Session' mode and 'Review' mode
+# TODO: Either the panel is switched by clicking a tab or it can be automatically created when a session with existing data is loaded?
+# TODO: It would seem potentially confusing to not have some kind of obvious UI change, so maybe some kind of header tab?
+# TODO: No, because you need to be able to switch back and forth, if you're reviewing a session and need to change something,
+# TODO: the 'Session' mode can be used to do that
 class SessionTimeFields:
-    def __init__(self, caller, parent, x, y, height, width,
+    def __init__(self, caller, parent, x, y, height, width, button_size,
                  header_font=('Purisa', 14), field_font=('Purisa', 11),
                  field_offset=60, kdf=None):
+        self.SESSION_VIEW, self.REVIEW_VIEW = 0, 1
+        self.x, self.y = x, y
+        self.button_size = button_size
         self.width, self.height = width, height
         self.field_offset = field_offset
         self.kdf = kdf
         self.caller = caller
+
         self.frame = Frame(parent, width=width, height=height)
         self.frame.place(x=x, y=y)
+
+        clean_view = Frame(self.frame, width=width,
+                           height=button_size[1], bg='white')
+        clean_view.place(x=0, y=0)
+
+        self.session_frame = Frame(parent, width=width, height=height)
+        self.session_frame.place(x=x, y=y + self.button_size[1])
+
+        self.review_frame = Frame(parent, width=width, height=height)
+        self.view_frames = [self.session_frame, self.review_frame]
+        self.view_buttons = []
 
         self.video_playing = False
         self.session_started = False
@@ -29,62 +49,64 @@ class SessionTimeFields:
         self.start_y = 15
         self.session_time = 0
         self.break_time = 0
-        session_time_label = Label(self.frame, text="Session Time", font=(header_font[0], header_font[1], 'bold'))
+
+        self.current_button = 0
+        session_time_label = Label(self.session_frame, text="Session Time", font=(header_font[0], header_font[1], 'bold'))
         session_time_label.place(x=width / 2, y=self.start_y, anchor=CENTER)
 
-        self.session_time_label = Label(self.frame, text="0:00:00",
+        self.session_time_label = Label(self.session_frame, text="0:00:00",
                                         font=header_font)
         self.session_time_label.place(x=width / 2, y=self.start_y + (field_offset / 2), anchor=CENTER)
 
-        break_time_label = Label(self.frame, text='Break Time', font=(header_font[0], header_font[1], 'bold'))
+        break_time_label = Label(self.session_frame, text='Break Time', font=(header_font[0], header_font[1], 'bold'))
         break_time_label.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 2), anchor=CENTER)
 
-        self.break_time_label = Label(self.frame, text="0:00:00",
+        self.break_time_label = Label(self.session_frame, text="0:00:00",
                                       font=header_font)
         self.break_time_label.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 3), anchor=CENTER)
 
-        self.session_start_label = Label(self.frame, text="Session Started", fg='green',
+        self.session_start_label = Label(self.session_frame, text="Session Started", fg='green',
                                          font=header_font)
-        self.session_paused_label = Label(self.frame, text="Session Paused", fg='yellow',
+        self.session_paused_label = Label(self.session_frame, text="Session Paused", fg='yellow',
                                           font=header_font)
-        self.session_stopped_label = Label(self.frame, text="Session Stopped", fg='red',
+        self.session_stopped_label = Label(self.session_frame, text="Session Stopped", fg='red',
                                            font=header_font)
         self.session_stopped_label.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 4), anchor=CENTER)
 
         self.interval_selection = BooleanVar()
-        self.interval_checkbutton = Checkbutton(self.frame, text="Reminder Beep (Seconds)",
+        self.interval_checkbutton = Checkbutton(self.session_frame, text="Reminder Beep (Seconds)",
                                                 variable=self.interval_selection,
                                                 font=header_font, command=self.show_beep_interval)
         self.interval_checkbutton.place(x=10, y=self.start_y + ((field_offset / 2) * 6), anchor=W)
         self.interval_input_var = StringVar()
 
-        interval_cmd = self.frame.register(self.validate_number)
-        self.interval_input = Entry(self.frame, validate='all', validatecommand=(interval_cmd, '%P'),
+        interval_cmd = self.session_frame.register(self.validate_number)
+        self.interval_input = Entry(self.session_frame, validate='all', validatecommand=(interval_cmd, '%P'),
                                     font=header_font, width=6)
 
-        session_cmd = self.frame.register(self.validate_number)
-        self.session_dur_input = Entry(self.frame, validate='all', validatecommand=(session_cmd, '%P'),
+        session_cmd = self.session_frame.register(self.validate_number)
+        self.session_dur_input = Entry(self.session_frame, validate='all', validatecommand=(session_cmd, '%P'),
                                        font=header_font, width=6)
 
         self.session_dur_selection = BooleanVar()
-        self.session_dur_checkbutton = Checkbutton(self.frame, text="Session Duration (Seconds)",
+        self.session_dur_checkbutton = Checkbutton(self.session_frame, text="Session Duration (Seconds)",
                                                    variable=self.session_dur_selection,
                                                    font=header_font,
                                                    command=self.show_session_time)
         self.session_dur_checkbutton.place(x=10, y=self.start_y + ((field_offset / 2) * 7), anchor=W)
 
-        self.session_toggle_button = Button(self.frame, text="Start Session", bg='#4abb5f',
+        self.session_toggle_button = Button(self.session_frame, text="Start Session", bg='#4abb5f',
                                             font=field_font, width=13,
                                             command=self.caller.start_session)
         self.session_toggle_button.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 9), anchor=CENTER)
-        self.key_explanation = Label(self.frame, text="Esc Key", font=field_font,
+        self.key_explanation = Label(self.session_frame, text="Esc Key", font=field_font,
                                      justify=LEFT)
         self.key_explanation.place(x=width * 0.75, y=self.start_y + ((field_offset / 2) * 9), anchor=W)
 
-        self.session_pause_button = Button(self.frame, text="Pause Session", width=13,
+        self.session_pause_button = Button(self.session_frame, text="Pause Session", width=13,
                                            font=field_font, command=self.caller.pause_session)
         self.session_pause_button.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 10.5), anchor=CENTER)
-        self.key_explanation = Label(self.frame, text="Left Ctrl", font=field_font,
+        self.key_explanation = Label(self.session_frame, text="Left Ctrl", font=field_font,
                                      justify=LEFT)
         self.key_explanation.place(x=width * 0.75, y=self.start_y + ((field_offset / 2) * 10.5), anchor=W)
 
@@ -93,16 +115,44 @@ class SessionTimeFields:
         self.forward_image = PhotoImage(file='images/skip_forward.png')
         self.backward_image = PhotoImage(file='images/skip_backward.png')
         #
-        self.play_button = Button(self.frame, image=self.play_image,
+        self.play_button = Button(self.session_frame, image=self.play_image,
                                   command=self.caller.start_session)
-        self.forward_button = Button(self.frame, image=self.forward_image)
-        self.backward_button = Button(self.frame, image=self.backward_image)
+        self.forward_button = Button(self.session_frame, image=self.forward_image)
+        self.backward_button = Button(self.session_frame, image=self.backward_image)
 
         self.session_duration = None
         self.beep_th = None
         self.interval_thread = None
 
+        session_button = Button(self.frame, text="Session", command=self.switch_session_frame, width=12,
+                                font=field_font)
+        self.view_buttons.append(session_button)
+        self.SESSION_VIEW = len(self.view_buttons) - 1
+        self.view_buttons[self.SESSION_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                   width=button_size[0], height=button_size[1])
+        self.view_buttons[self.SESSION_VIEW].config(relief=SUNKEN)
+
+        review_button = Button(self.frame, text="Review", command=self.switch_review_frame, width=12,
+                               font=field_font)
+        self.view_buttons.append(review_button)
+        self.REVIEW_VIEW = len(self.view_buttons) - 1
+        self.view_buttons[self.REVIEW_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+                                                  width=button_size[0], height=button_size[1])
+
         self.time_thread = threading.Thread(target=self.time_update_thread)
+
+    def switch_session_frame(self):
+        self.switch_frame(self.SESSION_VIEW)
+
+    def switch_frame(self, view):
+        self.view_buttons[self.current_button].config(relief=RAISED)
+        self.view_frames[self.current_button].place_forget()
+        self.current_button = view
+        self.view_buttons[view].config(relief=SUNKEN)
+        self.view_frames[view].place(x=self.x, y=self.y + self.button_size[1])
+
+    def switch_review_frame(self):
+        self.switch_frame(self.REVIEW_VIEW)
 
     def video_control(self, nframes):
         self.play_button.place(x=self.width / 2,

@@ -95,7 +95,9 @@ class OutputViewPanel:
             self.WOODWAY_VIEW = len(self.view_buttons) - 1
             self.view_buttons[self.WOODWAY_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
                                                        width=button_size[0], height=button_size[1])
-            self.woodway_view = ViewWoodway(self.view_frames[self.WOODWAY_VIEW])
+            self.woodway_view = ViewWoodway(self.view_frames[self.WOODWAY_VIEW],
+                                            height=self.height - self.button_size[1], width=self.width,
+                                            field_font=field_font, header_font=header_font, button_size=button_size)
             woodway_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(woodway_frame)
         else:
@@ -238,42 +240,126 @@ class OutputViewPanel:
 
 
 class ViewWoodway:
-    def __init__(self, parent):
+    def __init__(self, parent, height, width, field_font, header_font, button_size):
+        # region EXPERIMENTAL PROTOCOL
+        element_height_adj = 120
+        self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
+        self.exp_prot_label.place(x=int(width * 0.25)+18, y=10, anchor=N)
+        self.prot_treeview_parents = []
+        prot_heading_dict = {"#0": ["Duration", 'w', 20, YES, 'w']}
+        prot_column_dict = {"1": ["LS", 'c', 1, YES, 'c'],
+                            "2": ["RS", 'c', 1, YES, 'c'],
+                            "3": ["LI", 'c', 1, YES, 'c'],
+                            "4": ["RI", 'c', 1, YES, 'c']}
+        self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=int(width * 0.05), y=40,
+                                                                  height=height - element_height_adj - 40,
+                                                                  heading_dict=prot_heading_dict,
+                                                                  column_dict=prot_column_dict,
+                                                                  width=(int(width * 0.5) - int(width * 0.05)))
+        self.prot_add_button = Button(parent, text="Add", font=field_font, command=self.__add_protocol_step,
+                                      width=12)
+        self.prot_add_button.place(x=int(width*0.05) + 18, y=(height - element_height_adj - 40)+40)
+
+        self.prot_del_button = Button(parent, text="Delete", font=field_font,
+                                      command=self.__delete_protocol_step, width=12)
+        self.prot_del_button.place(x=int(width*0.285), y=(height - element_height_adj - 40)+40, anchor=N)
+
+        self.prot_save_button = Button(parent, text="Save To File", font=field_font,
+                                       command=self.__save_protocol_to_file, width=12)
+        self.prot_save_button.place(x=int(width*0.5), y=(height - element_height_adj - 40)+40, anchor=NE)
+
+        self.woodway_connect_button = Button(parent, text="Connect", font=field_font,
+                                             command=self.__connect_to_woodway, width=12, bg='#4abb5f')
+        self.woodway_connect_button.place(x=int(width*0.05) + 18, y=(height - element_height_adj - 40)+80)
+
+        self.woodway_disconnect_button = Button(parent, text="Disconnect", font=field_font,
+                                                command=self.disconnect_woodway, width=12, bg='red')
+        self.woodway_disconnect_button.place(x=int(width*0.5), y=(height - element_height_adj - 40)+80, anchor=NE)
+        # endregion
+
+        # region BELT CONTROL
         # Vertical sliders speed and inclination for each treadmill
+        slider_height_adj = element_height_adj
+        self.belt_speed_label = Label(parent, text="Belt Speeds", font=header_font, anchor=CENTER)
+        self.belt_speed_label.place(x=int(width * 0.625), y=10, anchor=N)
+
+        self.belt_speed_l_label = Label(parent, text='Left', font=field_font, anchor=CENTER)
+        self.belt_speed_l_label.place(x=int(width * 0.55), y=40, anchor=NW)
+
+        self.belt_speed_r_label = Label(parent, text='Right', font=field_font, anchor=CENTER)
+        self.belt_speed_r_label.place(x=int(width * 0.7), y=40, anchor=NE)
+
         self.belt_speed_l_var = IntVar(parent)
         self.belt_speed_l = Scale(parent, orient="vertical", variable=self.belt_speed_l_var,
-                                  command=self.__write_l_speed)
-        self.belt_incline_l_var = IntVar(parent)
-        self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var,
-                                    command=self.__write_l_incline)
+                                  command=self.__write_l_speed, length=height - slider_height_adj, from_=100, to=0)
+        self.belt_speed_l.place(x=int(width * 0.56), y=70, anchor=N)
+        self.belt_speed_l_value = Label(parent, text="0 m/s", anchor=CENTER, font=field_font)
+        self.belt_speed_l_value.place(x=int(width * 0.55), y=80 + height - slider_height_adj, anchor=NW)
+
         self.belt_speed_r_var = IntVar(parent)
         self.belt_speed_r = Scale(parent, orient="vertical", variable=self.belt_speed_r_var,
-                                  command=self.__write_r_speed)
+                                  command=self.__write_r_speed, length=height - slider_height_adj, from_=100, to=0)
+        self.belt_speed_r.place(x=int(width * 0.7), y=70, anchor=NE)
+        self.belt_speed_r_value = Label(parent, text="0 m/s", anchor=CENTER, font=field_font)
+        self.belt_speed_r_value.place(x=int(width * 0.7), y=80 + height - slider_height_adj, anchor=NE)
+
+        # This section gets 25% of the panel
+        self.belt_incline_label = Label(parent, text="Belt Incline", font=header_font, anchor=CENTER)
+        self.belt_incline_label.place(x=int(width * 0.875), y=10, anchor=N)
+
+        self.belt_incline_l_label = Label(parent, text='Left', font=field_font, anchor=CENTER)
+        self.belt_incline_l_label.place(x=int(width * 0.8), y=40, anchor=NW)
+
+        self.belt_incline_l_var = IntVar(parent)
+        self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var,
+                                    command=self.__write_l_incline, length=height - slider_height_adj, from_=100, to=0)
+        self.belt_incline_l.place(x=int(width * 0.81), y=70, anchor=N)
+        self.belt_incline_l_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
+        self.belt_incline_l_value.place(x=int(width * 0.8), y=80 + height - slider_height_adj, anchor=NW)
+
+        self.belt_incline_r_label = Label(parent, text='Right', font=field_font, anchor=CENTER)
+        self.belt_incline_r_label.place(x=int(width * 0.95), y=40, anchor=NE)
+
         self.belt_incline_r_var = IntVar(parent)
         self.belt_incline_r = Scale(parent, orient="vertical", variable=self.belt_incline_r_var,
-                                    command=self.__write_r_incline)
-        # Treeview for the changes to treadmill operation with timing delays between each step, import export json
-        # Connect button and assignment of COM ports to each treadmill
-        # Start treadmill button?
+                                    command=self.__write_r_incline, length=height - slider_height_adj, from_=100, to=0)
+        self.belt_incline_r.place(x=int(width * 0.95), y=70, anchor=NE)
+        self.belt_incline_r_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
+        self.belt_incline_r_value.place(x=int(width * 0.95), y=80 + height - slider_height_adj, anchor=NE)
+        # endregion
+
+    def __save_protocol_to_file(self):
+        pass
+
+    def __add_protocol_step(self):
+        pass
+
+    def __delete_protocol_step(self):
+        pass
+
+    def __connect_to_woodway(self):
+        pass
+
+    def disconnect_woodway(self):
         pass
 
     def __write_speed(self, side, speed):
         pass
 
     def __write_l_speed(self, speed):
-        pass
+        self.belt_speed_l_value.config(text=f"{int(speed)} m/s")
 
     def __write_r_speed(self, speed):
-        pass
+        self.belt_speed_r_value.config(text=f"{int(speed)} m/s")
 
     def __write_incline(self, side, incline):
         pass
 
     def __write_l_incline(self, incline):
-        pass
+        self.belt_incline_l_value.config(text=f"{int(incline)}\u00b0")
 
     def __write_r_incline(self, incline):
-        pass
+        self.belt_incline_r_value.config(text=f"{int(incline)}\u00b0")
 
 
 class ViewBLE:

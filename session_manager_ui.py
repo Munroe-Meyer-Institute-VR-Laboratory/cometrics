@@ -106,12 +106,13 @@ class SessionManagerWindow:
         self.menu = MenuBar(root, self)
         self.stf = SessionTimeFields(self, root,
                                      x=self.logo_width + 10,
-                                     y=self.logo_height + 10,
+                                     y=(self.logo_height + 10) - self.button_size[1],
                                      height=self.patient_field_height,
                                      width=self.field_width,
                                      header_font=self.header_font,
                                      field_font=self.field_font,
-                                     field_offset=self.field_offset)
+                                     field_offset=self.field_offset,
+                                     button_size=self.button_size)
         self.ovu = OutputViewPanel(root,
                                    x=(self.logo_width * 2) + 20,
                                    y=(self.logo_height + 10) - self.button_size[1],
