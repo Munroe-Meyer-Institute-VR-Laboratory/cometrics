@@ -4,12 +4,12 @@ data-folders:
 - Raw Data
 - KSF
 - Export
-enable-ble: false
+enable-ble: true
 enable-e4: true
 enable-woodway: true
 first-time: false
 fps: 8
-logs-dir: C:\cometrics\1.0.13\logs
+logs-dir: C:\cometrics\1.0.14\logs
 patient-concerns: concerns.yml
 phases:
 - Assessment
