@@ -18,7 +18,7 @@ from matplotlib.figure import Figure
 from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient, EmpaticaServerConnectError
 # Custom library imports
 from ttkwidgets import TickScale
-
+from pywoodway.treadmill import SplitBelt, find_treadmills
 from tkinter_utils import build_treeview, clear_treeview
 from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags, crossmark, checkmark
 
@@ -99,7 +99,8 @@ class OutputViewPanel:
                                                        width=button_size[0], height=button_size[1])
             self.woodway_view = ViewWoodway(self.view_frames[self.WOODWAY_VIEW],
                                             height=self.height - self.button_size[1], width=self.width,
-                                            field_font=field_font, header_font=header_font, button_size=button_size)
+                                            field_font=field_font, header_font=header_font, button_size=button_size,
+                                            config=config)
             woodway_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(woodway_frame)
         else:
@@ -242,9 +243,9 @@ class OutputViewPanel:
 
 
 class ViewWoodway:
-    def __init__(self, parent, height, width, field_font, header_font, button_size):
-        self.woodway_belt_a, self.woodway_belt_b = None, None
-
+    def __init__(self, parent, height, width, field_font, header_font, button_size, config):
+        self.woodway = None
+        self.config = config
         # region EXPERIMENTAL PROTOCOL
         element_height_adj = 120
         self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
@@ -253,8 +254,7 @@ class ViewWoodway:
         prot_heading_dict = {"#0": ["Duration", 'w', 20, YES, 'w']}
         prot_column_dict = {"1": ["LS", 'c', 1, YES, 'c'],
                             "2": ["RS", 'c', 1, YES, 'c'],
-                            "3": ["LI", 'c', 1, YES, 'c'],
-                            "4": ["RI", 'c', 1, YES, 'c']}
+                            "3": ["Incline", 'c', 1, YES, 'c']}
         self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=int(width * 0.05), y=40,
                                                                   height=height - element_height_adj - 40,
                                                                   heading_dict=prot_heading_dict,
@@ -320,26 +320,37 @@ class ViewWoodway:
         self.belt_incline_label = Label(parent, text="Belt Incline", font=header_font, anchor=CENTER)
         self.belt_incline_label.place(x=int(width * 0.875), y=10, anchor=N)
 
-        self.belt_incline_l_label = Label(parent, text='Left', font=field_font, anchor=CENTER)
-        self.belt_incline_l_label.place(x=int(width * 0.8), y=40, anchor=NW)
+        # self.belt_incline_l_label = Label(parent, text='Left', font=field_font, anchor=CENTER)
+        # self.belt_incline_l_label.place(x=int(width * 0.875), y=40, anchor=N)
 
         self.belt_incline_l_var = IntVar(parent)
         self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var,
                                     command=self.__write_l_incline, length=height - slider_height_adj, from_=100, to=0)
-        self.belt_incline_l.place(x=int(width * 0.81), y=70, anchor=N)
+        self.belt_incline_l.place(x=int(width * 0.885), y=70, anchor=NE)
         self.belt_incline_l_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
-        self.belt_incline_l_value.place(x=int(width * 0.8), y=80 + height - slider_height_adj, anchor=NW)
+        self.belt_incline_l_value.place(x=int(width * 0.875), y=80 + height - slider_height_adj, anchor=N)
 
-        self.belt_incline_r_label = Label(parent, text='Right', font=field_font, anchor=CENTER)
-        self.belt_incline_r_label.place(x=int(width * 0.95), y=40, anchor=NE)
-
-        self.belt_incline_r_var = IntVar(parent)
-        self.belt_incline_r = Scale(parent, orient="vertical", variable=self.belt_incline_r_var,
-                                    command=self.__write_r_incline, length=height - slider_height_adj, from_=100, to=0)
-        self.belt_incline_r.place(x=int(width * 0.95), y=70, anchor=NE)
-        self.belt_incline_r_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
-        self.belt_incline_r_value.place(x=int(width * 0.95), y=80 + height - slider_height_adj, anchor=NE)
+        # self.belt_incline_r_label = Label(parent, text='Right', font=field_font, anchor=CENTER)
+        # self.belt_incline_r_label.place(x=int(width * 0.95), y=40, anchor=NE)
+        #
+        # self.belt_incline_r_var = IntVar(parent)
+        # self.belt_incline_r = Scale(parent, orient="vertical", variable=self.belt_incline_r_var,
+        #                             command=self.__write_r_incline, length=height - slider_height_adj, from_=100, to=0)
+        # self.belt_incline_r.place(x=int(width * 0.95), y=70, anchor=NE)
+        # self.belt_incline_r_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
+        # self.belt_incline_r_value.place(x=int(width * 0.95), y=80 + height - slider_height_adj, anchor=NE)
+        self.belt_incline_l.config(state='disabled')
+        self.belt_speed_l.config(state='disabled')
+        self.belt_speed_r.config(state='disabled')
+        self.woodway_disconnect_button.config(state='disabled')
         # endregion
+
+    def __enable_ui_elements(self):
+        self.belt_incline_l.config(state='active')
+        self.belt_speed_l.config(state='active')
+        self.belt_speed_r.config(state='active')
+        self.woodway_disconnect_button.config(state='active')
+        self.woodway_connect_button.config(state='disabled')
 
     def __load_protocol_from_file(self):
         pass
@@ -354,28 +365,33 @@ class ViewWoodway:
         pass
 
     def __connect_to_woodway(self):
-        pass
+        a_port, b_port = find_treadmills(self.config.get_woodway_a(), self.config.get_woodway_b())
+        if a_port and b_port:
+            self.woodway = SplitBelt(a_port, b_port)
+            self.woodway.start_belts(True, False, True, False)
+            self.__enable_ui_elements()
+        else:
+            messagebox.showerror("Error", "No treadmills found! Check serial numbers and connections!")
 
     def disconnect_woodway(self):
-        pass
-
-    def __write_speed(self, side, speed):
-        pass
+        if self.woodway:
+            self.woodway.stop_belts()
+            self.woodway.set_elevations(0)
+            self.woodway.close()
+        else:
+            messagebox.showinfo("Info", "Connect to Woodway first!")
 
     def __write_l_speed(self, speed):
         self.belt_speed_l_value.config(text=f"{int(speed)} m/s")
+        self.woodway.belt_a.set_speed(speed)
 
     def __write_r_speed(self, speed):
         self.belt_speed_r_value.config(text=f"{int(speed)} m/s")
-
-    def __write_incline(self, side, incline):
-        pass
+        self.woodway.belt_b.set_speed(speed)
 
     def __write_l_incline(self, incline):
         self.belt_incline_l_value.config(text=f"{int(incline)}\u00b0")
-
-    def __write_r_incline(self, incline):
-        self.belt_incline_r_value.config(text=f"{int(incline)}\u00b0")
+        self.woodway.set_elevations(incline)
 
 
 class ViewBLE:
