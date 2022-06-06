@@ -243,6 +243,8 @@ class OutputViewPanel:
 
 class ViewWoodway:
     def __init__(self, parent, height, width, field_font, header_font, button_size):
+        self.woodway_belt_a, self.woodway_belt_b = None, None
+
         # region EXPERIMENTAL PROTOCOL
         element_height_adj = 120
         self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
@@ -259,32 +261,32 @@ class ViewWoodway:
                                                                   column_dict=prot_column_dict,
                                                                   width=(int(width * 0.5) - int(width * 0.05)))
         self.prot_add_button = Button(parent, text="Add", font=field_font, command=self.__add_protocol_step)
-        self.prot_add_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj - 40) + 40,
+        self.prot_add_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj),
                                    width=button_size[0], height=button_size[1])
 
         self.prot_del_button = Button(parent, text="Delete", font=field_font,
                                       command=self.__delete_protocol_step)
-        self.prot_del_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj - 40) + 40, anchor=NE,
+        self.prot_del_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj), anchor=NE,
                                    width=button_size[0], height=button_size[1])
 
         self.prot_save_button = Button(parent, text="Save To File", font=field_font,
                                        command=self.__save_protocol_to_file)
-        self.prot_save_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj - 40) + 70, anchor=NE,
+        self.prot_save_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1], anchor=NE,
                                     width=button_size[0], height=button_size[1])
 
         self.prot_load_button = Button(parent, text="Load File", font=field_font,
                                        command=self.__load_protocol_from_file)
-        self.prot_load_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj - 40) + 70, anchor=NW,
+        self.prot_load_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1], anchor=NW,
                                     width=button_size[0], height=button_size[1])
 
         self.woodway_connect_button = Button(parent, text="Connect", font=field_font,
                                              command=self.__connect_to_woodway, bg='#4abb5f')
-        self.woodway_connect_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj - 40) + 100,
+        self.woodway_connect_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1]*2,
                                           width=button_size[0], height=button_size[1])
 
         self.woodway_disconnect_button = Button(parent, text="Disconnect", font=field_font,
                                                 command=self.disconnect_woodway, bg='red')
-        self.woodway_disconnect_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj - 40) + 100, anchor=NE,
+        self.woodway_disconnect_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1]*2, anchor=NE,
                                              width=button_size[0], height=button_size[1])
         # endregion
 
@@ -393,34 +395,35 @@ class ViewBLE:
                                                                   heading_dict=prot_heading_dict,
                                                                   column_dict=prot_column_dict,
                                                                   width=(int(width * 0.5) - int(width * 0.05)))
+
         self.prot_add_button = Button(parent, text="Add", font=field_font, command=self.__add_protocol_step)
-        self.prot_add_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj - 40) + 40,
+        self.prot_add_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj),
                                    width=button_size[0], height=button_size[1])
 
         self.prot_del_button = Button(parent, text="Delete", font=field_font,
                                       command=self.__delete_protocol_step)
-        self.prot_del_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj - 40) + 40, anchor=NE,
-                                   width=button_size[0], height=button_size[1])
+        self.prot_del_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj),
+                                   anchor=NE, width=button_size[0], height=button_size[1])
 
         self.prot_save_button = Button(parent, text="Save To File", font=field_font,
                                        command=self.__save_protocol_to_file)
-        self.prot_save_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj - 40) + 70, anchor=NE,
-                                    width=button_size[0], height=button_size[1])
+        self.prot_save_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1],
+                                    anchor=NE, width=button_size[0], height=button_size[1])
 
         self.prot_save_button = Button(parent, text="Load File", font=field_font,
                                        command=self.__load_protocol_to_file)
-        self.prot_save_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj - 40) + 70, anchor=NW,
-                                    width=button_size[0], height=button_size[1])
+        self.prot_save_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1],
+                                    anchor=NW, width=button_size[0], height=button_size[1])
 
         self.ble_connect_button = Button(parent, text="Connect", font=field_font,
                                          command=self.__connect_to_ble, bg='#4abb5f')
-        self.ble_connect_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj - 40) + 100,
+        self.ble_connect_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1]*2,
                                       width=button_size[0], height=button_size[1])
 
         self.ble_disconnect_button = Button(parent, text="Disconnect", font=field_font,
                                             command=self.disconnect_ble, bg='red')
-        self.ble_disconnect_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj - 40) + 100, anchor=NE,
-                                         width=button_size[0], height=button_size[1])
+        self.ble_disconnect_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1]*2,
+                                         anchor=NE, width=button_size[0], height=button_size[1])
         # endregion
 
         # region VIBROTACTOR SLIDERS

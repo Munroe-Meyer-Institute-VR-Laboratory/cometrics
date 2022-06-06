@@ -173,7 +173,7 @@ class ConfigPopup:
         self.config = config
         self.popup_root = popup_root = tkinter.Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x250")
+        popup_root.geometry("300x340")
         popup_root.title("Configuration Settings")
         fps_tag = tkinter.Label(popup_root, text="FPS", bg='white', font=('Purisa', 12))
         fps_tag.place(x=10, y=10)
@@ -192,11 +192,26 @@ class ConfigPopup:
         ble_checkbutton = tkinter.Checkbutton(popup_root, text="BLE Enabled", bg='white',
                                               variable=self.ble_var, font=('Purisa', 12))
         ble_checkbutton.place(x=10, y=130)
+
+        a_tag = tkinter.Label(popup_root, text="A", bg='white', font=('Purisa', 12))
+        a_tag.place(x=10, y=170)
+
+        self.a_entry = tkinter.Entry(popup_root, bd=2, width=12, font=('Purisa', 12))
+        self.a_entry.insert(0, str(self.config.get_woodway_a()))
+        self.a_entry.place(x=60, y=170)
+
+        b_tag = tkinter.Label(popup_root, text="B", bg='white', font=('Purisa', 12))
+        b_tag.place(x=10, y=210)
+
+        self.b_entry = tkinter.Entry(popup_root, bd=2, width=12, font=('Purisa', 12))
+        self.b_entry.insert(0, str(self.config.get_woodway_b()))
+        self.b_entry.place(x=60, y=210)
+
         clear_projects = tkinter.Button(popup_root, text="Clear Recent Projects",
                                         font=('Purisa', 12), command=self.clear_projects)
-        clear_projects.place(x=10, y=170)
+        clear_projects.place(x=10, y=250)
         ok_button = tkinter.Button(popup_root, text="OK", command=self.on_closing, font=('Purisa', 12))
-        ok_button.place(x=150, y=210, anchor=N)
+        ok_button.place(x=150, y=290, anchor=N)
 
     def on_closing(self):
         self.update_fps()
