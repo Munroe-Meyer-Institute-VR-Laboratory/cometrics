@@ -320,9 +320,6 @@ class ViewWoodway:
         self.belt_incline_label = Label(parent, text="Belt Incline", font=header_font, anchor=CENTER)
         self.belt_incline_label.place(x=int(width * 0.875), y=10, anchor=N)
 
-        # self.belt_incline_l_label = Label(parent, text='Left', font=field_font, anchor=CENTER)
-        # self.belt_incline_l_label.place(x=int(width * 0.875), y=40, anchor=N)
-
         self.belt_incline_l_var = IntVar(parent)
         self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var,
                                     command=self.__write_l_incline, length=height - slider_height_adj, from_=100, to=0)
@@ -330,20 +327,14 @@ class ViewWoodway:
         self.belt_incline_l_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
         self.belt_incline_l_value.place(x=int(width * 0.875), y=80 + height - slider_height_adj, anchor=N)
 
-        # self.belt_incline_r_label = Label(parent, text='Right', font=field_font, anchor=CENTER)
-        # self.belt_incline_r_label.place(x=int(width * 0.95), y=40, anchor=NE)
-        #
-        # self.belt_incline_r_var = IntVar(parent)
-        # self.belt_incline_r = Scale(parent, orient="vertical", variable=self.belt_incline_r_var,
-        #                             command=self.__write_r_incline, length=height - slider_height_adj, from_=100, to=0)
-        # self.belt_incline_r.place(x=int(width * 0.95), y=70, anchor=NE)
-        # self.belt_incline_r_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
-        # self.belt_incline_r_value.place(x=int(width * 0.95), y=80 + height - slider_height_adj, anchor=NE)
+        self.__disable_ui_elements()
+        # endregion
+
+    def __disable_ui_elements(self):
         self.belt_incline_l.config(state='disabled')
         self.belt_speed_l.config(state='disabled')
         self.belt_speed_r.config(state='disabled')
         self.woodway_disconnect_button.config(state='disabled')
-        # endregion
 
     def __enable_ui_elements(self):
         self.belt_incline_l.config(state='active')
@@ -378,20 +369,25 @@ class ViewWoodway:
             self.woodway.stop_belts()
             self.woodway.set_elevations(0)
             self.woodway.close()
+            self.woodway = None
+            self.__disable_ui_elements()
         else:
             messagebox.showinfo("Info", "Connect to Woodway first!")
 
     def __write_l_speed(self, speed):
-        self.belt_speed_l_value.config(text=f"{int(speed)} m/s")
-        self.woodway.belt_a.set_speed(speed)
+        if self.woodway:
+            self.belt_speed_l_value.config(text=f"{int(speed)} m/s")
+            self.woodway.belt_a.set_speed(speed)
 
     def __write_r_speed(self, speed):
-        self.belt_speed_r_value.config(text=f"{int(speed)} m/s")
-        self.woodway.belt_b.set_speed(speed)
+        if self.woodway:
+            self.belt_speed_r_value.config(text=f"{int(speed)} m/s")
+            self.woodway.belt_b.set_speed(speed)
 
     def __write_l_incline(self, incline):
-        self.belt_incline_l_value.config(text=f"{int(incline)}\u00b0")
-        self.woodway.set_elevations(incline)
+        if self.woodway:
+            self.belt_incline_l_value.config(text=f"{int(incline)}\u00b0")
+            self.woodway.set_elevations(incline)
 
 
 class ViewBLE:
