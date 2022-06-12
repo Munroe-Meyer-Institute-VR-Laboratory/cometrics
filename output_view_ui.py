@@ -7,7 +7,6 @@ import traceback
 from tkinter import *
 from tkinter import filedialog, messagebox, ttk
 from tkinter.ttk import Combobox
-
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,12 +14,13 @@ from tkvideoutils import VideoRecorder, VideoPlayer
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 # Implement the default Matplotlib key bindings.
 from matplotlib.figure import Figure
-from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient, EmpaticaServerConnectError
 # Custom library imports
 from ttkwidgets import TickScale
 from pywoodway.treadmill import SplitBelt, find_treadmills
 from tkinter_utils import build_treeview, clear_treeview
 from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags, crossmark, checkmark
+from pytactor import VibrotactorArray
+from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient, EmpaticaServerConnectError
 
 
 class OutputViewPanel:
@@ -372,7 +372,7 @@ class ViewWoodway:
             self.woodway = None
             self.__disable_ui_elements()
         else:
-            messagebox.showinfo("Info", "Connect to Woodway first!")
+            messagebox.showwarning("Warning", "Connect to Woodway first!")
 
     def __write_l_speed(self, speed):
         if self.woodway:
@@ -392,6 +392,9 @@ class ViewWoodway:
 
 class ViewBLE:
     def __init__(self, parent, height, width, field_font, header_font, button_size):
+        self.ble_instance = VibrotactorArray.get_ble_instance()
+        self.left_vta, self.right_vta = None, None
+        self.ble_connect_thread = None
         # region EXPERIMENTAL PROTOCOL
         element_height_adj = 120
         self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
@@ -477,6 +480,12 @@ class ViewBLE:
         slider.place(x=int(width * 0.52), y=slider_separation_h + 20)
         # endregion
 
+    def __enable_ui_elements(self):
+        pass
+
+    def __disable_ui_elements(self):
+        pass
+
     def __load_protocol_to_file(self):
         pass
 
@@ -490,52 +499,89 @@ class ViewBLE:
         pass
 
     def disconnect_ble(self):
-        pass
+        self.right_vta, self.left_vta = None, None
+        self.__disable_ui_elements()
 
     def __connect_to_ble(self):
-        pass
+        self.ble_connect_thread = threading.Thread(target=self.__connect_ble_thread)
+        self.ble_connect_thread.daemon = 1
+        self.ble_connect_thread.start()
 
-    def get_side(self, side):
+    def __connect_ble_thread(self):
+        try:
+            self.left_vta = VibrotactorArray(self.ble_instance)
+            self.right_vta = VibrotactorArray(self.ble_instance)
+            self.__enable_ui_elements()
+        except Exception as ex:
+            messagebox.showerror("Error", f"Exception encountered:\n{str(ex)}")
+
+    def get_side(self, vta):
         pass
 
     def update_frequency(self, value):
-        pass
+        if self.right_vta and self.left_vta:
+            self.right_vta.set_motor_frequency(int(value))
+            self.left_vta.set_motor_frequency(int(value))
 
     def update_ble_1(self, value):
-        print(f"1: {value}")
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(0, int(value))
+            self.left_vta.write_motor_level(0, int(value))
 
     def update_ble_2(self, value):
-        print(f"2: {value}")
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(1, int(value))
+            self.left_vta.write_motor_level(1, int(value))
 
     def update_ble_3(self, value):
-        print(f"3: {value}")
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(2, int(value))
+            self.left_vta.write_motor_level(2, int(value))
 
     def update_ble_4(self, value):
-        print(f"4: {value}")
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(3, int(value))
+            self.left_vta.write_motor_level(3, int(value))
 
     def update_ble_5(self, value):
-        print(f"5: {value}")
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(4, int(value))
+            self.left_vta.write_motor_level(4, int(value))
 
     def update_ble_6(self, value):
-        print(f"6: {value}")
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(5, int(value))
+            self.left_vta.write_motor_level(5, int(value))
 
     def update_ble_7(self, value):
-        pass
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(6, int(value))
+            self.left_vta.write_motor_level(6, int(value))
 
     def update_ble_8(self, value):
-        pass
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(7, int(value))
+            self.left_vta.write_motor_level(7, int(value))
 
     def update_ble_9(self, value):
-        pass
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(8, int(value))
+            self.left_vta.write_motor_level(8, int(value))
 
     def update_ble_10(self, value):
-        pass
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(9, int(value))
+            self.left_vta.write_motor_level(9, int(value))
 
     def update_ble_11(self, value):
-        pass
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(10, int(value))
+            self.left_vta.write_motor_level(10, int(value))
 
     def update_ble_12(self, value):
-        pass
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(11, int(value))
+            self.left_vta.write_motor_level(11, int(value))
 
 
 class ViewVideo:
