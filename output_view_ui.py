@@ -1,4 +1,6 @@
+import glob
 import json
+import os
 import pathlib
 import pickle
 import threading
@@ -17,7 +19,7 @@ from matplotlib.figure import Figure
 # Custom library imports
 from ttkwidgets import TickScale
 from pywoodway.treadmill import SplitBelt, find_treadmills
-from tkinter_utils import build_treeview, clear_treeview
+from tkinter_utils import build_treeview, clear_treeview, AddWoodwayProtocolStep, AddBleProtocolStep
 from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags, crossmark, checkmark
 from pytactor import VibrotactorArray
 from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient, EmpaticaServerConnectError
@@ -25,7 +27,7 @@ from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClien
 
 class OutputViewPanel:
     def __init__(self, parent, x, y, height, width, button_size, ksf,
-                 field_font, header_font, video_import_cb, slider_change_cb, config):
+                 field_font, header_font, video_import_cb, slider_change_cb, config, session_dir):
         self.KEY_VIEW, self.E4_VIEW, self.VIDEO_VIEW, self.WOODWAY_VIEW, self.BLE_VIEW = 0, 1, 2, 3, 4
         self.config = config
         self.height, self.width = height, width
@@ -84,7 +86,8 @@ class OutputViewPanel:
                                                    width=button_size[0], height=button_size[1])
             self.ble_view = ViewBLE(self.view_frames[self.BLE_VIEW],
                                     height=self.height - self.button_size[1], width=self.width,
-                                    field_font=field_font, header_font=header_font, button_size=button_size)
+                                    field_font=field_font, header_font=header_font, button_size=button_size,
+                                    session_dir=session_dir)
             ble_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(ble_frame)
         else:
@@ -100,7 +103,7 @@ class OutputViewPanel:
             self.woodway_view = ViewWoodway(self.view_frames[self.WOODWAY_VIEW],
                                             height=self.height - self.button_size[1], width=self.width,
                                             field_font=field_font, header_font=header_font, button_size=button_size,
-                                            config=config)
+                                            config=config, session_dir=session_dir)
             woodway_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(woodway_frame)
         else:
@@ -243,9 +246,15 @@ class OutputViewPanel:
 
 
 class ViewWoodway:
-    def __init__(self, parent, height, width, field_font, header_font, button_size, config):
+    def __init__(self, parent, height, width, field_font, header_font, button_size, config, session_dir):
         self.woodway = None
+        self.session_dir = session_dir
         self.config = config
+        self.root = parent
+        self.protocol_steps = []
+        self.selected_step = None
+        self.load_protocol_thread = None
+        self.prot_file = None
         # region EXPERIMENTAL PROTOCOL
         element_height_adj = 120
         self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
@@ -259,7 +268,8 @@ class ViewWoodway:
                                                                   height=height - element_height_adj - 40,
                                                                   heading_dict=prot_heading_dict,
                                                                   column_dict=prot_column_dict,
-                                                                  width=(int(width * 0.5) - int(width * 0.05)))
+                                                                  width=(int(width * 0.5) - int(width * 0.05)),
+                                                                  double_bind=self.select_protocol_step)
         self.prot_add_button = Button(parent, text="Add", font=field_font, command=self.__add_protocol_step)
         self.prot_add_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj),
                                    width=button_size[0], height=button_size[1])
@@ -271,22 +281,26 @@ class ViewWoodway:
 
         self.prot_save_button = Button(parent, text="Save To File", font=field_font,
                                        command=self.__save_protocol_to_file)
-        self.prot_save_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1], anchor=NE,
+        self.prot_save_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1],
+                                    anchor=NE,
                                     width=button_size[0], height=button_size[1])
 
         self.prot_load_button = Button(parent, text="Load File", font=field_font,
                                        command=self.__load_protocol_from_file)
-        self.prot_load_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1], anchor=NW,
+        self.prot_load_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1],
+                                    anchor=NW,
                                     width=button_size[0], height=button_size[1])
 
         self.woodway_connect_button = Button(parent, text="Connect", font=field_font,
                                              command=self.__connect_to_woodway, bg='#4abb5f')
-        self.woodway_connect_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1]*2,
+        self.woodway_connect_button.place(x=int(width * 0.05) + 18,
+                                          y=(height - element_height_adj) + button_size[1] * 2,
                                           width=button_size[0], height=button_size[1])
 
         self.woodway_disconnect_button = Button(parent, text="Disconnect", font=field_font,
                                                 command=self.disconnect_woodway, bg='red')
-        self.woodway_disconnect_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1]*2, anchor=NE,
+        self.woodway_disconnect_button.place(x=int(width * 0.45) + 18,
+                                             y=(height - element_height_adj) + button_size[1] * 2, anchor=NE,
                                              width=button_size[0], height=button_size[1])
         # endregion
 
@@ -330,6 +344,11 @@ class ViewWoodway:
         self.__disable_ui_elements()
         # endregion
 
+        self.woodway_dir = os.path.join(self.session_dir, "Woodway")
+        if os.path.exists(self.woodway_dir):
+            latest_protocol = max(pathlib.Path(self.woodway_dir).glob("*.json"), key=lambda f: f.stat().st_ctime)
+            self.__load_protocol_from_file(latest_protocol)
+
     def __disable_ui_elements(self):
         self.belt_incline_l.config(state='disabled')
         self.belt_speed_l.config(state='disabled')
@@ -343,26 +362,102 @@ class ViewWoodway:
         self.woodway_disconnect_button.config(state='active')
         self.woodway_connect_button.config(state='disabled')
 
-    def __load_protocol_from_file(self):
-        pass
+    def select_protocol_step(self, event):
+        selection = self.prot_treeview.identify_row(event.y)
+        if selection:
+            self.selected_step = int(selection)
+
+    def populate_protocol_steps(self):
+        if self.protocol_steps:
+            for i in range(0, len(self.protocol_steps)):
+                self.prot_treeview_parents.append(
+                    self.prot_treeview.insert("", 'end', str(i + 1), text=str(self.protocol_steps[i][0]),
+                                              values=(self.protocol_steps[i][1], self.protocol_steps[i][2],
+                                                      self.protocol_steps[i][3]),
+                                              tags=(treeview_tags[(i + 1) % 2])))
+
+    def __load_protocol_from_file(self, selected_file=None):
+        try:
+            if selected_file:
+                self.prot_file = selected_file
+                with open(self.prot_file, 'r') as f:
+                    self.protocol_steps = json.load(f)['Steps']
+                self.repopulate_treeview()
+            else:
+                selected_file = filedialog.askopenfilename(filetypes=(("JSON Files", "*.json"),))
+                if selected_file:
+                    self.prot_file = selected_file
+                    with open(self.prot_file, 'r') as f:
+                        self.protocol_steps = json.load(f)['Steps']
+                    self.repopulate_treeview()
+                else:
+                    messagebox.showwarning("Warning", "No file selected, please try again!")
+        except Exception as ex:
+            messagebox.showerror("Exception Encountered", f"Error encountered when loading protocol file!\n{str(ex)}")
 
     def __save_protocol_to_file(self):
-        pass
+        try:
+            if self.prot_file:
+                file_dir = os.path.join(self.session_dir, "Woodway")
+                file_count = len(glob.glob1(file_dir, "*.json"))
+                if file_count > 1:
+                    new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                            pathlib.Path(self.prot_file).stem[:-3] + f"_V{file_count}.json")
+                else:
+                    new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                            pathlib.Path(self.prot_file).stem + f"_V{file_count}.json")
+                with open(new_file, 'w') as f:
+                    x = {"Steps": self.protocol_steps}
+                    json.dump(x, f)
+                self.__load_protocol_from_file(selected_file=new_file)
+                messagebox.showinfo("Success", "Protocol file saved!")
+            else:
+                file_dir = os.path.join(self.session_dir, "Woodway")
+                if not os.path.exists(file_dir):
+                    os.mkdir(file_dir)
+                new_file = os.path.join(file_dir, "woodway_protocol.json")
+                if new_file:
+                    self.prot_file = new_file
+                    with open(self.prot_file, 'w') as f:
+                        x = {"Steps": self.protocol_steps}
+                        json.dump(x, f)
+                    messagebox.showinfo("Success", "Protocol file saved!")
+                else:
+                    messagebox.showwarning("Warning", "No filename supplied! Can't save, please try again!")
+        except Exception as ex:
+            messagebox.showerror("Exception Encountered", f"Error encountered when saving protocol file!\n{str(ex)}")
+
+    def popup_return(self, new_step):
+        self.protocol_steps.append(new_step)
+        self.repopulate_treeview()
+
+    def repopulate_treeview(self):
+        clear_treeview(self.prot_treeview)
+        self.prot_treeview_parents = []
+        self.populate_protocol_steps()
 
     def __add_protocol_step(self):
-        pass
+        AddWoodwayProtocolStep(self, self.root)
 
     def __delete_protocol_step(self):
-        pass
+        if self.selected_step:
+            self.protocol_steps.pop(self.selected_step - 1)
+            self.repopulate_treeview()
 
     def __connect_to_woodway(self):
-        a_port, b_port = find_treadmills(self.config.get_woodway_a(), self.config.get_woodway_b())
-        if a_port and b_port:
-            self.woodway = SplitBelt(a_port, b_port)
-            self.woodway.start_belts(True, False, True, False)
-            self.__enable_ui_elements()
-        else:
-            messagebox.showerror("Error", "No treadmills found! Check serial numbers and connections!")
+        try:
+            ports = find_treadmills(self.config.get_woodway_a(), self.config.get_woodway_b())
+            if ports:
+                a_port = ports[0]
+                b_port = ports[1]
+                if a_port and b_port:
+                    self.woodway = SplitBelt(a_port, b_port)
+                    self.woodway.start_belts(True, False, True, False)
+                    self.__enable_ui_elements()
+            else:
+                messagebox.showerror("Error", "No treadmills found! Check serial numbers and connections!")
+        except Exception as ex:
+            messagebox.showerror("Exception Encountered", f"Encountered exception when connecting to Woodway!\n{str(ex)}")
 
     def disconnect_woodway(self):
         if self.woodway:
@@ -391,10 +486,15 @@ class ViewWoodway:
 
 
 class ViewBLE:
-    def __init__(self, parent, height, width, field_font, header_font, button_size):
+    def __init__(self, parent, height, width, field_font, header_font, button_size, session_dir):
+        self.root = parent
+        self.session_dir = session_dir
         self.ble_instance = VibrotactorArray.get_ble_instance()
         self.left_vta, self.right_vta = None, None
         self.ble_connect_thread = None
+        self.protocol_steps = []
+        self.selected_step = None
+        self.prot_file = None
         # region EXPERIMENTAL PROTOCOL
         element_height_adj = 120
         self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
@@ -409,7 +509,8 @@ class ViewBLE:
                                                                   height=height - element_height_adj - 40,
                                                                   heading_dict=prot_heading_dict,
                                                                   column_dict=prot_column_dict,
-                                                                  width=(int(width * 0.5) - int(width * 0.05)))
+                                                                  width=(int(width * 0.5) - int(width * 0.05)),
+                                                                  double_bind=self.select_protocol_step)
 
         self.prot_add_button = Button(parent, text="Add", font=field_font, command=self.__add_protocol_step)
         self.prot_add_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj),
@@ -426,18 +527,18 @@ class ViewBLE:
                                     anchor=NE, width=button_size[0], height=button_size[1])
 
         self.prot_save_button = Button(parent, text="Load File", font=field_font,
-                                       command=self.__load_protocol_to_file)
+                                       command=self.__load_protocol_from_file)
         self.prot_save_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1],
                                     anchor=NW, width=button_size[0], height=button_size[1])
 
         self.ble_connect_button = Button(parent, text="Connect", font=field_font,
                                          command=self.__connect_to_ble, bg='#4abb5f')
-        self.ble_connect_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1]*2,
+        self.ble_connect_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1] * 2,
                                       width=button_size[0], height=button_size[1])
 
         self.ble_disconnect_button = Button(parent, text="Disconnect", font=field_font,
                                             command=self.disconnect_ble, bg='red')
-        self.ble_disconnect_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1]*2,
+        self.ble_disconnect_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1] * 2,
                                          anchor=NE, width=button_size[0], height=button_size[1])
         # endregion
 
@@ -457,6 +558,7 @@ class ViewBLE:
             (self.update_ble_12, IntVar(parent)),
             (self.update_frequency, IntVar(parent))
         ]
+        self.slider_objects = []
         label = Label(parent, text="Vibrotactor Levels", font=header_font, anchor=CENTER)
         label.place(x=int(width * 0.8), y=10, anchor=N)
         slider_separation = int((width * 0.4) / 6)
@@ -468,35 +570,123 @@ class ViewBLE:
                 slider_separation_h += int(height * 0.45)
             label = Label(parent, text=f"{i + 1}", font=field_font, anchor=E, width=4)
             label.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h)
-            slider = Scale(parent, orient="vertical", variable=slider_vars[i][1],
-                           command=slider_vars[i][0], length=int(height * 0.4), from_=100, to=0)
-            slider.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h+20)
+            temp_slider = Scale(parent, orient="vertical", variable=slider_vars[i][1],
+                                command=slider_vars[i][0], length=int(height * 0.4), from_=100, to=0)
+            temp_slider.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h + 20)
+            self.slider_objects.append(temp_slider)
             slider_count += 1
         slider_separation_h = 40
         label = Label(parent, text="Freq", font=field_font, anchor=CENTER, width=6)
         label.place(x=int(width * 0.52), y=slider_separation_h)
-        slider = Scale(parent, orient="vertical", variable=slider_vars[12][1],
-                       command=slider_vars[12][0], length=int(height * 0.85), from_=100, to=0)
-        slider.place(x=int(width * 0.52), y=slider_separation_h + 20)
+        self.freq_slider = Scale(parent, orient="vertical", variable=slider_vars[12][1],
+                                 command=slider_vars[12][0], length=int(height * 0.85), from_=100, to=0)
+        self.freq_slider.place(x=int(width * 0.52), y=slider_separation_h + 20)
+        self.__disable_ui_elements()
+        self.ble_dir = os.path.join(self.session_dir, "BLE")
+        if os.path.exists(self.ble_dir):
+            latest_protocol = max(pathlib.Path(self.ble_dir).glob("*.json"), key=lambda f: f.stat().st_ctime)
+            self.__load_protocol_from_file(latest_protocol)
         # endregion
 
     def __enable_ui_elements(self):
-        pass
+        self.ble_connect_button.config(state='disabled')
+        self.ble_disconnect_button.config(state='active')
+        self.freq_slider.config(state='active')
+        for slider in self.slider_objects:
+            slider.config(state='active')
 
     def __disable_ui_elements(self):
-        pass
+        self.ble_connect_button.config(state='active')
+        self.ble_disconnect_button.config(state='disabled')
+        self.freq_slider.config(state='disabled')
+        for slider in self.slider_objects:
+            slider.config(state='disabled')
 
-    def __load_protocol_to_file(self):
-        pass
+    def select_protocol_step(self, event):
+        selection = self.prot_treeview.identify_row(event.y)
+        if selection:
+            self.selected_step = int(selection)
+
+    def populate_protocol_steps(self):
+        if self.protocol_steps:
+            for i in range(0, len(self.protocol_steps)):
+                self.prot_treeview_parents.append(
+                    self.prot_treeview.insert("", 'end', str(i + 1), text=str(self.protocol_steps[i][0]),
+                                              values=(self.protocol_steps[i][1], self.protocol_steps[i][2],
+                                                      self.protocol_steps[i][3], self.protocol_steps[i][4]),
+                                              tags=(treeview_tags[(i + 1) % 2])))
+
+    def __load_protocol_from_file(self, selected_file=None):
+        try:
+            if selected_file:
+                self.prot_file = selected_file
+                with open(self.prot_file, 'r') as f:
+                    self.protocol_steps = json.load(f)['Steps']
+                self.repopulate_treeview()
+            else:
+                selected_file = filedialog.askopenfilename(filetypes=(("JSON Files", "*.json"),))
+                if selected_file:
+                    self.prot_file = selected_file
+                    with open(self.prot_file, 'r') as f:
+                        self.protocol_steps = json.load(f)['Steps']
+                    self.repopulate_treeview()
+                else:
+                    messagebox.showwarning("Warning", "No file selected, please try again!")
+        except Exception as ex:
+            messagebox.showerror("Exception Encountered", f"Error encountered when loading protocol file!\n{str(ex)}")
+
+    def __load_protocol(self, file):
+            self.prot_file = file
+            self.protocol_steps = json.loads(self.prot_file)
+
+    def popup_return(self, new_step):
+        self.protocol_steps.append(new_step)
+        self.repopulate_treeview()
+
+    def repopulate_treeview(self):
+        clear_treeview(self.prot_treeview)
+        self.prot_treeview_parents = []
+        self.populate_protocol_steps()
 
     def __add_protocol_step(self):
-        pass
+        AddBleProtocolStep(self, self.root)
 
     def __delete_protocol_step(self):
-        pass
+        if self.selected_step:
+            self.protocol_steps.pop(self.selected_step - 1)
+            self.repopulate_treeview()
 
     def __save_protocol_to_file(self):
-        pass
+        try:
+            if self.prot_file:
+                file_dir = os.path.join(self.session_dir, "BLE")
+                file_count = len(glob.glob1(file_dir, "*.json"))
+                if file_count > 1:
+                    new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                            pathlib.Path(self.prot_file).stem[:-3] + f"_V{file_count}.json")
+                else:
+                    new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                            pathlib.Path(self.prot_file).stem + f"_V{file_count}.json")
+                with open(new_file, 'w') as f:
+                    x = {"Steps": self.protocol_steps}
+                    json.dump(x, f)
+                self.__load_protocol_from_file(selected_file=new_file)
+                messagebox.showinfo("Success", "Protocol file saved!")
+            else:
+                file_dir = os.path.join(self.session_dir, "BLE")
+                if not os.path.exists(file_dir):
+                    os.mkdir(file_dir)
+                new_file = os.path.join(file_dir, "ble_protocol.json")
+                if new_file:
+                    self.prot_file = new_file
+                    with open(self.prot_file, 'w') as f:
+                        x = {"Steps": self.protocol_steps}
+                        json.dump(x, f)
+                    messagebox.showinfo("Success", "Protocol file saved!")
+                else:
+                    messagebox.showwarning("Warning", "No filename supplied! Can't save, please try again!")
+        except Exception as ex:
+            messagebox.showerror("Exception Encountered", f"Error encountered when saving protocol file!\n{str(ex)}")
 
     def disconnect_ble(self):
         self.right_vta, self.left_vta = None, None
@@ -516,7 +706,7 @@ class ViewBLE:
             messagebox.showerror("Error", f"Exception encountered:\n{str(ex)}")
 
     def get_side(self, vta):
-        pass
+        return vta.get_side()
 
     def update_frequency(self, value):
         if self.right_vta and self.left_vta:

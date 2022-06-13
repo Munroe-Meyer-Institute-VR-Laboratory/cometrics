@@ -124,7 +124,8 @@ class SessionManagerWindow:
                                    header_font=self.header_font,
                                    video_import_cb=self.start_video_control,
                                    slider_change_cb=self.change_time,
-                                   config=self.config)
+                                   config=self.config,
+                                   session_dir=self.session_dir)
         self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root,
                                      x=5,
