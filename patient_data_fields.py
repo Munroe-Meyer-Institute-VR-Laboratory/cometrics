@@ -85,6 +85,20 @@ class PatientDataFields:
             self.patient_name = self.patient.name
         if self.patient.medical_record_number:
             self.patient_vars[PatientDataVar.MRN].set(self.patient.medical_record_number)
+        if self.patient.data_recorder:
+            self.patient_vars[PatientDataVar.DATA_REC].set(self.patient.data_recorder)
+        if self.patient.session_therapist:
+            self.patient_vars[PatientDataVar.SESS_THER].set(self.patient.session_therapist)
+        if self.patient.case_manager:
+            self.patient_vars[PatientDataVar.CASE_MGR].set(self.patient.case_manager)
+        if self.patient.primary_therapist:
+            self.patient_vars[PatientDataVar.PRIM_THER].set(self.patient.primary_therapist)
+        # if self.patient.condition_name:
+        #     self.patient_vars[PatientDataVar.COND_NAME].set(self.patient.condition_name)
+        if self.patient.assessment_name:
+            self.patient_vars[PatientDataVar.ASSESS_NAME].set(self.patient.assessment_name)
+        if self.patient.session_location:
+            self.patient_vars[PatientDataVar.SESS_LOC].set(self.patient.session_location)
         self.session_number = prim_session_number
         self.patient_entries, self.patient_labels = [], []
 
@@ -247,7 +261,14 @@ class PatientDataFields:
 
     def save_patient_fields(self):
         self.patient.save_patient(self.patient_vars[PatientDataVar.PATIENT_NAME].get(),
-                                  self.patient_vars[PatientDataVar.MRN].get())
+                                  self.patient_vars[PatientDataVar.MRN].get(),
+                                  self.patient_vars[PatientDataVar.SESS_LOC].get(),
+                                  self.patient_vars[PatientDataVar.ASSESS_NAME].get(),
+                                  self.patient_vars[PatientDataVar.COND_NAME].get(),
+                                  self.patient_vars[PatientDataVar.PRIM_THER].get(),
+                                  self.patient_vars[PatientDataVar.CASE_MGR].get(),
+                                  self.patient_vars[PatientDataVar.SESS_THER].get(),
+                                  self.patient_vars[PatientDataVar.DATA_REC].get())
 
     def check_session_fields(self):
         if self.patient_vars[PatientDataVar.SESS_LOC].get() == "":
@@ -302,19 +323,67 @@ class PatientContainer:
         self.patient_path = None
         self.name = None
         self.medical_record_number = None
+        self.medical_record_number = None
+        self.session_location = None
+        self.assessment_name = None
+        self.condition_name = None
+        self.primary_therapist = None
+        self.case_manager = None
+        self.session_therapist = None
+        self.data_recorder = None
         if patient_file:
-            self.update_fields(patient_file)
+            try:
+                self.update_fields(patient_file)
+            except KeyError:
+                self.populate_defaults()
 
     def update_fields(self, filepath):
         f = open(filepath)
         self.patient_json = json.load(f)
         self.name = self.patient_json["Name"]
         self.medical_record_number = self.patient_json["MRN"]
+        self.session_location = self.patient_json["Session Location"]
+        self.assessment_name = self.patient_json["Assessment Name"]
+        self.condition_name = self.patient_json["Condition Name"]
+        self.primary_therapist = self.patient_json["Primary Therapist"]
+        self.case_manager = self.patient_json["Case Manager"]
+        self.session_therapist = self.patient_json["Session Therapist"]
+        self.data_recorder = self.patient_json["Data Recorder"]
 
-    def save_patient(self, name, mrn):
+    def populate_defaults(self):
+        if not self.name:
+            self.name = ""
+        if not self.medical_record_number:
+            self.medical_record_number = ""
+        if not self.session_location:
+            self.session_location = ""
+        if not self.assessment_name:
+            self.assessment_name = ""
+        if not self.condition_name:
+            self.condition_name = ""
+        if not self.primary_therapist:
+            self.primary_therapist = ""
+        if not self.case_manager:
+            self.case_manager = ""
+        if not self.session_therapist:
+            self.session_therapist = ""
+        if not self.data_recorder:
+            self.data_recorder = ""
+        self.save_patient(self.name, self.medical_record_number, self.session_location,
+                          self.assessment_name, self.condition_name, self.primary_therapist,
+                          self.case_manager, self.session_therapist, self.data_recorder)
+
+    def save_patient(self, name, mrn, sess_loc, assess_name, cond_name, prim_ther, case_mgr, sess_ther, data_rec):
         with open(self.source_file, 'w') as f:
             x = {
                 "Name": name,
-                "MRN": mrn
+                "MRN": mrn,
+                "Session Location": sess_loc,
+                "Assessment Name": assess_name,
+                "Condition Name": cond_name,
+                "Primary Therapist": prim_ther,
+                "Case Manager": case_mgr,
+                "Session Therapist": sess_ther,
+                "Data Recorder": data_rec
             }
             json.dump(x, f)

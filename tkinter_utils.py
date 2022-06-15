@@ -321,12 +321,14 @@ def set_entry_text(widget: tkinter.Entry, text):
 
 
 class AddWoodwayProtocolStep:
-    def __init__(self, top, root):
+    def __init__(self, top, root, edit=False, dur=None, rs=None, ls=None, incl=None):
         assert top.popup_return
         self.caller = top
         self.entry = None
         self.popup_root = None
         self.name = "Add Woodway Step"
+        self.dur, self.rs, self.ls, self.incl = dur, rs, ls, incl
+        self.edit = edit
         self.popup_entry(root)
 
     def popup_entry(self, root):
@@ -341,18 +343,26 @@ class AddWoodwayProtocolStep:
         label.pack()
         self.duration_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.duration_entry.pack()
+        if self.dur:
+            set_entry_text(self.duration_entry, self.dur)
         label = tkinter.Label(popup_root, text="Left Side Speed", font=('Purisa', 12), bg='white')
         label.pack()
         self.ls_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.ls_entry.pack()
+        if self.ls:
+            set_entry_text(self.ls_entry, self.ls)
         label = tkinter.Label(popup_root, text="Right Side Speed", font=('Purisa', 12), bg='white')
         label.pack()
         self.rs_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.rs_entry.pack()
+        if self.rs:
+            set_entry_text(self.rs_entry, self.rs)
         label = tkinter.Label(popup_root, text="Incline", font=('Purisa', 12), bg='white')
         label.pack()
         self.incline_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.incline_entry.pack()
+        if self.incl:
+            set_entry_text(self.incline_entry, self.incl)
 
         # Create a Button Widget in the Toplevel Window
         button = tkinter.Button(popup_root, text="OK", command=self.close_win)
@@ -363,22 +373,24 @@ class AddWoodwayProtocolStep:
 
     def close_win(self):
         try:
-            new_step = [int(self.duration_entry.get()), int(self.ls_entry.get()),
-                        int(self.rs_entry.get()), int(self.incline_entry.get())]
-            self.caller.popup_return(new_step)
+            new_step = [float(self.duration_entry.get()), float(self.ls_entry.get()),
+                        float(self.rs_entry.get()), float(self.incline_entry.get())]
+            self.caller.popup_return(new_step, self.edit)
             self.popup_root.destroy()
         except ValueError:
-            messagebox.showerror("Error", "All values input must be integers! Check Woodway documentation or\n"
+            messagebox.showerror("Error", "All values input must be numbers! Check Woodway documentation or\n"
                                           "User Guide for valid values!")
 
 
 class AddBleProtocolStep:
-    def __init__(self, top, root):
+    def __init__(self, top, root, edit=False, dur=None, motor_1=None, motor_2=None, motor_3=None, motor_4=None):
         assert top.popup_return
         self.caller = top
         self.entry = None
         self.popup_root = None
         self.name = "Add BLE Step"
+        self.edit = edit
+        self.dur, self.motor_1, self.motor_2, self.motor_3, self.motor_4 = dur, motor_1, motor_2, motor_3, motor_4
         self.popup_entry(root)
 
     def popup_entry(self, root):
@@ -393,22 +405,32 @@ class AddBleProtocolStep:
         label.pack()
         self.duration_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.duration_entry.pack()
+        if self.dur:
+            set_entry_text(self.duration_entry, self.dur)
         label = tkinter.Label(popup_root, text="1-3 Motor Level", font=('Purisa', 12), bg='white')
         label.pack()
         self.motor_1_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.motor_1_entry.pack()
+        if self.motor_1:
+            set_entry_text(self.motor_1_entry, self.motor_1)
         label = tkinter.Label(popup_root, text="4-6 Motor Level", font=('Purisa', 12), bg='white')
         label.pack()
         self.motor_2_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.motor_2_entry.pack()
+        if self.motor_2:
+            set_entry_text(self.motor_2_entry, self.motor_2)
         label = tkinter.Label(popup_root, text="7-9 Motor Level", font=('Purisa', 12), bg='white')
         label.pack()
         self.motor_3_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.motor_3_entry.pack()
+        if self.motor_3:
+            set_entry_text(self.motor_3_entry, self.motor_3)
         label = tkinter.Label(popup_root, text="10-12 Motor Level", font=('Purisa', 12), bg='white')
         label.pack()
         self.motor_4_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.motor_4_entry.pack()
+        if self.motor_4:
+            set_entry_text(self.motor_4_entry, self.motor_4)
 
         # Create a Button Widget in the Toplevel Window
         button = tkinter.Button(popup_root, text="OK", command=self.close_win)
@@ -422,8 +444,8 @@ class AddBleProtocolStep:
             new_step = [int(self.duration_entry.get()), int(self.motor_1_entry.get()),
                         int(self.motor_2_entry.get()), int(self.motor_3_entry.get()),
                         int(self.motor_4_entry.get())]
-            self.caller.popup_return(new_step)
+            self.caller.popup_return(new_step, edit=self.edit)
             self.popup_root.destroy()
         except ValueError:
-            messagebox.showerror("Error", "All values input must be integers! Check Woodway documentation or\n"
+            messagebox.showerror("Error", "All values input must be numbers! Check Woodway documentation or\n"
                                           "User Guide for valid values!")

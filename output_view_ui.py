@@ -264,44 +264,54 @@ class ViewWoodway:
         prot_column_dict = {"1": ["LS", 'c', 1, YES, 'c'],
                             "2": ["RS", 'c', 1, YES, 'c'],
                             "3": ["Incline", 'c', 1, YES, 'c']}
+        treeview_offset = int(width * 0.05)
         self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=int(width * 0.05), y=40,
                                                                   height=height - element_height_adj - 40,
                                                                   heading_dict=prot_heading_dict,
                                                                   column_dict=prot_column_dict,
                                                                   width=(int(width * 0.5) - int(width * 0.05)),
-                                                                  double_bind=self.select_protocol_step)
+                                                                  button_1_bind=self.select_protocol_step,
+                                                                  double_bind=self.__edit_protocol_step)
         self.prot_add_button = Button(parent, text="Add", font=field_font, command=self.__add_protocol_step)
-        self.prot_add_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj),
-                                   width=button_size[0], height=button_size[1])
-
-        self.prot_del_button = Button(parent, text="Delete", font=field_font,
-                                      command=self.__delete_protocol_step)
-        self.prot_del_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj), anchor=NE,
-                                   width=button_size[0], height=button_size[1])
-
-        self.prot_save_button = Button(parent, text="Save To File", font=field_font,
-                                       command=self.__save_protocol_to_file)
-        self.prot_save_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1],
-                                    anchor=NE,
-                                    width=button_size[0], height=button_size[1])
-
-        self.prot_load_button = Button(parent, text="Load File", font=field_font,
-                                       command=self.__load_protocol_from_file)
-        self.prot_load_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1],
-                                    anchor=NW,
-                                    width=button_size[0], height=button_size[1])
+        self.prot_add_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
+                                   y=(height - element_height_adj),
+                                   anchor=N,
+                                   width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
 
         self.woodway_connect_button = Button(parent, text="Connect", font=field_font,
                                              command=self.__connect_to_woodway, bg='#4abb5f')
-        self.woodway_connect_button.place(x=int(width * 0.05) + 18,
+        self.woodway_connect_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
                                           y=(height - element_height_adj) + button_size[1] * 2,
-                                          width=button_size[0], height=button_size[1])
+                                          anchor=N,
+                                          width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.prot_load_button = Button(parent, text="Load File", font=field_font,
+                                       command=self.__load_protocol_from_file)
+        self.prot_load_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
+                                    y=(height - element_height_adj) + button_size[1],
+                                    anchor=N,
+                                    width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.prot_save_button = Button(parent, text="Save To File", font=field_font,
+                                       command=self.__save_protocol_to_file)
+        self.prot_save_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                    y=(height - element_height_adj) + button_size[1],
+                                    anchor=N,
+                                    width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.prot_del_button = Button(parent, text="Delete", font=field_font,
+                                      command=self.__delete_protocol_step)
+        self.prot_del_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                   y=(height - element_height_adj),
+                                   anchor=N,
+                                   width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
 
         self.woodway_disconnect_button = Button(parent, text="Disconnect", font=field_font,
                                                 command=self.disconnect_woodway, bg='red')
-        self.woodway_disconnect_button.place(x=int(width * 0.45) + 18,
-                                             y=(height - element_height_adj) + button_size[1] * 2, anchor=NE,
-                                             width=button_size[0], height=button_size[1])
+        self.woodway_disconnect_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                             y=(height - element_height_adj) + button_size[1] * 2,
+                                             anchor=N,
+                                             width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
         # endregion
 
         # region BELT CONTROL
@@ -318,17 +328,18 @@ class ViewWoodway:
 
         self.belt_speed_l_var = IntVar(parent)
         self.belt_speed_l = Scale(parent, orient="vertical", variable=self.belt_speed_l_var,
-                                  command=self.__write_l_speed, length=height - slider_height_adj, from_=29, to=0)
+                                  command=self.__write_l_speed, length=int(height * 0.75), from_=29, to=0)
         self.belt_speed_l.place(x=int(width * 0.56), y=70, anchor=N)
-        self.belt_speed_l_value = Label(parent, text="0 m/s", anchor=CENTER, font=field_font)
-        self.belt_speed_l_value.place(x=int(width * 0.55), y=80 + height - slider_height_adj, anchor=NW)
+
+        self.belt_speed_l_value = Label(parent, text="0 MPH", anchor=CENTER, font=field_font)
+        self.belt_speed_l_value.place(x=int(width * 0.55), y=80 + int(height * 0.75), anchor=NW)
 
         self.belt_speed_r_var = IntVar(parent)
         self.belt_speed_r = Scale(parent, orient="vertical", variable=self.belt_speed_r_var,
-                                  command=self.__write_r_speed, length=height - slider_height_adj, from_=29, to=0)
+                                  command=self.__write_r_speed, length=int(height * 0.75), from_=29, to=0)
         self.belt_speed_r.place(x=int(width * 0.7), y=70, anchor=NE)
-        self.belt_speed_r_value = Label(parent, text="0 m/s", anchor=CENTER, font=field_font)
-        self.belt_speed_r_value.place(x=int(width * 0.7), y=80 + height - slider_height_adj, anchor=NE)
+        self.belt_speed_r_value = Label(parent, text="0 MPH", anchor=CENTER, font=field_font)
+        self.belt_speed_r_value.place(x=int(width * 0.7), y=80 + int(height * 0.75), anchor=NE)
 
         # This section gets 25% of the panel
         self.belt_incline_label = Label(parent, text="Belt Incline", font=header_font, anchor=CENTER)
@@ -336,10 +347,17 @@ class ViewWoodway:
 
         self.belt_incline_l_var = IntVar(parent)
         self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var,
-                                    command=self.__write_l_incline, length=height - slider_height_adj, from_=29, to=0)
+                                    command=self.__write_l_incline, length=int(height * 0.75), from_=29, to=0)
         self.belt_incline_l.place(x=int(width * 0.885), y=70, anchor=NE)
+
         self.belt_incline_l_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
-        self.belt_incline_l_value.place(x=int(width * 0.875), y=80 + height - slider_height_adj, anchor=N)
+        self.belt_incline_l_value.place(x=int(width * 0.875), y=80 + int(height * 0.75), anchor=N)
+
+        self.calibrate_button = Button(parent, text='Calibrate Woodway Threshold', font=field_font,
+                                       command=self.__calibrate_woodway)
+        self.calibrate_button.place(x=int(width * 0.75), y=(height - element_height_adj) + button_size[1] * 2,
+                                    anchor=N,
+                                    width=int(width * 0.45), height=button_size[1])
 
         self.__disable_ui_elements()
         # endregion
@@ -361,6 +379,9 @@ class ViewWoodway:
         self.belt_speed_r.config(state='active')
         self.woodway_disconnect_button.config(state='active')
         self.woodway_connect_button.config(state='disabled')
+
+    def __calibrate_woodway(self):
+        pass
 
     def select_protocol_step(self, event):
         selection = self.prot_treeview.identify_row(event.y)
@@ -427,14 +448,24 @@ class ViewWoodway:
         except Exception as ex:
             messagebox.showerror("Exception Encountered", f"Error encountered when saving protocol file!\n{str(ex)}")
 
-    def popup_return(self, new_step):
-        self.protocol_steps.append(new_step)
-        self.repopulate_treeview()
+    def popup_return(self, new_step, edit=False):
+        if edit:
+            if self.selected_step:
+                self.protocol_steps[int(self.selected_step) - 1] = new_step
+                self.repopulate_treeview()
+        else:
+            self.protocol_steps.append(new_step)
+            self.repopulate_treeview()
 
     def repopulate_treeview(self):
         clear_treeview(self.prot_treeview)
         self.prot_treeview_parents = []
         self.populate_protocol_steps()
+
+    def __edit_protocol_step(self, event):
+        if self.selected_step:
+            step = self.protocol_steps[int(self.selected_step) - 1]
+            AddWoodwayProtocolStep(self, self.root, edit=True, dur=step[0], ls=step[1], rs=step[2], incl=step[3])
 
     def __add_protocol_step(self):
         AddWoodwayProtocolStep(self, self.root)
@@ -457,7 +488,8 @@ class ViewWoodway:
             else:
                 messagebox.showerror("Error", "No treadmills found! Check serial numbers and connections!")
         except Exception as ex:
-            messagebox.showerror("Exception Encountered", f"Encountered exception when connecting to Woodway!\n{str(ex)}")
+            messagebox.showerror("Exception Encountered",
+                                 f"Encountered exception when connecting to Woodway!\n{str(ex)}")
 
     def disconnect_woodway(self):
         if self.woodway:
@@ -471,12 +503,12 @@ class ViewWoodway:
 
     def __write_l_speed(self, speed):
         if self.woodway:
-            self.belt_speed_l_value.config(text=f"{int(speed)} m/s")
+            self.belt_speed_l_value.config(text=f"{int(speed)} MPH")
             self.woodway.belt_a.set_speed(float(speed))
 
     def __write_r_speed(self, speed):
         if self.woodway:
-            self.belt_speed_r_value.config(text=f"{int(speed)} m/s")
+            self.belt_speed_r_value.config(text=f"{int(speed)} MPH")
             self.woodway.belt_b.set_speed(float(speed))
 
     def __write_l_incline(self, incline):
@@ -505,41 +537,55 @@ class ViewBLE:
                             "2": ["4-6", 'c', 1, YES, 'c'],
                             "3": ["7-9", 'c', 1, YES, 'c'],
                             "4": ["10-12", 'c', 1, YES, 'c']}
+        treeview_offset = int(width * 0.05)
         self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=int(width * 0.05), y=40,
                                                                   height=height - element_height_adj - 40,
                                                                   heading_dict=prot_heading_dict,
                                                                   column_dict=prot_column_dict,
                                                                   width=(int(width * 0.5) - int(width * 0.05)),
-                                                                  double_bind=self.select_protocol_step)
+                                                                  button_1_bind=self.select_protocol_step,
+                                                                  double_bind=self.__edit_protocol_step)
 
         self.prot_add_button = Button(parent, text="Add", font=field_font, command=self.__add_protocol_step)
-        self.prot_add_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj),
-                                   width=button_size[0], height=button_size[1])
-
-        self.prot_del_button = Button(parent, text="Delete", font=field_font,
-                                      command=self.__delete_protocol_step)
-        self.prot_del_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj),
-                                   anchor=NE, width=button_size[0], height=button_size[1])
-
-        self.prot_save_button = Button(parent, text="Save To File", font=field_font,
-                                       command=self.__save_protocol_to_file)
-        self.prot_save_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1],
-                                    anchor=NE, width=button_size[0], height=button_size[1])
-
-        self.prot_save_button = Button(parent, text="Load File", font=field_font,
-                                       command=self.__load_protocol_from_file)
-        self.prot_save_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1],
-                                    anchor=NW, width=button_size[0], height=button_size[1])
+        self.prot_add_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
+                                   y=(height - element_height_adj),
+                                   anchor=N,
+                                   width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
 
         self.ble_connect_button = Button(parent, text="Connect", font=field_font,
                                          command=self.__connect_to_ble, bg='#4abb5f')
-        self.ble_connect_button.place(x=int(width * 0.05) + 18, y=(height - element_height_adj) + button_size[1] * 2,
-                                      width=button_size[0], height=button_size[1])
+        self.ble_connect_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
+                                      y=(height - element_height_adj) + button_size[1] * 2,
+                                      anchor=N,
+                                      width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.prot_load_button = Button(parent, text="Load File", font=field_font,
+                                       command=self.__load_protocol_from_file)
+        self.prot_load_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
+                                    y=(height - element_height_adj) + button_size[1],
+                                    anchor=N,
+                                    width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.prot_save_button = Button(parent, text="Save To File", font=field_font,
+                                       command=self.__save_protocol_to_file)
+        self.prot_save_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                    y=(height - element_height_adj) + button_size[1],
+                                    anchor=N,
+                                    width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.prot_del_button = Button(parent, text="Delete", font=field_font,
+                                      command=self.__delete_protocol_step)
+        self.prot_del_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                   y=(height - element_height_adj),
+                                   anchor=N,
+                                   width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
 
         self.ble_disconnect_button = Button(parent, text="Disconnect", font=field_font,
                                             command=self.disconnect_ble, bg='red')
-        self.ble_disconnect_button.place(x=int(width * 0.45) + 18, y=(height - element_height_adj) + button_size[1] * 2,
-                                         anchor=NE, width=button_size[0], height=button_size[1])
+        self.ble_disconnect_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                         y=(height - element_height_adj) + button_size[1] * 2,
+                                         anchor=N,
+                                         width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
         # endregion
 
         # region VIBROTACTOR SLIDERS
@@ -567,11 +613,11 @@ class ViewBLE:
         for i in range(0, 12):
             if i == 6:
                 slider_count = 0
-                slider_separation_h += int(height * 0.45)
+                slider_separation_h += int(height * 0.4)
             label = Label(parent, text=f"{i + 1}", font=field_font, anchor=E, width=4)
             label.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h)
             temp_slider = Scale(parent, orient="vertical", variable=slider_vars[i][1],
-                                command=slider_vars[i][0], length=int(height * 0.4), from_=255, to=0)
+                                command=slider_vars[i][0], length=int(height * 0.35), from_=255, to=0)
             temp_slider.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h + 20)
             self.slider_objects.append(temp_slider)
             slider_count += 1
@@ -579,8 +625,15 @@ class ViewBLE:
         label = Label(parent, text="Freq", font=field_font, anchor=CENTER, width=6)
         label.place(x=int(width * 0.52), y=slider_separation_h)
         self.freq_slider = Scale(parent, orient="vertical", variable=slider_vars[12][1],
-                                 command=slider_vars[12][0], length=int(height * 0.85), from_=100, to=0)
+                                 command=slider_vars[12][0], length=int(height * 0.75), from_=7, to=0)
         self.freq_slider.place(x=int(width * 0.52), y=slider_separation_h + 20)
+
+        self.calibrate_button = Button(parent, text='Calibrate Vibrotactor Threshold', font=field_font,
+                                       command=self.__calibrate_ble)
+        self.calibrate_button.place(x=int(width*0.75), y=(height - element_height_adj) + button_size[1] * 2,
+                                    anchor=N,
+                                    width=int(width*0.45), height=button_size[1])
+
         self.__disable_ui_elements()
         self.ble_dir = os.path.join(self.session_dir, "BLE")
         if os.path.exists(self.ble_dir):
@@ -601,6 +654,15 @@ class ViewBLE:
         self.freq_slider.config(state='disabled')
         for slider in self.slider_objects:
             slider.config(state='disabled')
+
+    def __calibrate_ble(self):
+        pass
+
+    def __edit_protocol_step(self, event):
+        if self.selected_step:
+            step = self.protocol_steps[int(self.selected_step) - 1]
+            AddBleProtocolStep(self, self.root, edit=True, dur=step[0],
+                               motor_1=step[1], motor_2=step[2], motor_3=step[3], motor_4=step[4])
 
     def select_protocol_step(self, event):
         selection = self.prot_treeview.identify_row(event.y)
@@ -636,12 +698,17 @@ class ViewBLE:
             messagebox.showerror("Exception Encountered", f"Error encountered when loading protocol file!\n{str(ex)}")
 
     def __load_protocol(self, file):
-            self.prot_file = file
-            self.protocol_steps = json.loads(self.prot_file)
+        self.prot_file = file
+        self.protocol_steps = json.loads(self.prot_file)
 
-    def popup_return(self, new_step):
-        self.protocol_steps.append(new_step)
-        self.repopulate_treeview()
+    def popup_return(self, new_step, edit=False):
+        if edit:
+            if self.selected_step:
+                self.protocol_steps[int(self.selected_step) - 1] = new_step
+                self.repopulate_treeview()
+        else:
+            self.protocol_steps.append(new_step)
+            self.repopulate_treeview()
 
     def repopulate_treeview(self):
         clear_treeview(self.prot_treeview)
