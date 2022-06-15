@@ -207,6 +207,7 @@ class SessionTimeFields:
             self.interval_input.place_forget()
 
     def time_update_thread(self):
+        # TODO: Tie in Woodway and BLE protocol access
         while self.timer_running:
             time.sleep(1 - time.monotonic() % 1)
             if self.timer_running:

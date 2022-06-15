@@ -318,14 +318,14 @@ class ViewWoodway:
 
         self.belt_speed_l_var = IntVar(parent)
         self.belt_speed_l = Scale(parent, orient="vertical", variable=self.belt_speed_l_var,
-                                  command=self.__write_l_speed, length=height - slider_height_adj, from_=100, to=0)
+                                  command=self.__write_l_speed, length=height - slider_height_adj, from_=29, to=0)
         self.belt_speed_l.place(x=int(width * 0.56), y=70, anchor=N)
         self.belt_speed_l_value = Label(parent, text="0 m/s", anchor=CENTER, font=field_font)
         self.belt_speed_l_value.place(x=int(width * 0.55), y=80 + height - slider_height_adj, anchor=NW)
 
         self.belt_speed_r_var = IntVar(parent)
         self.belt_speed_r = Scale(parent, orient="vertical", variable=self.belt_speed_r_var,
-                                  command=self.__write_r_speed, length=height - slider_height_adj, from_=100, to=0)
+                                  command=self.__write_r_speed, length=height - slider_height_adj, from_=29, to=0)
         self.belt_speed_r.place(x=int(width * 0.7), y=70, anchor=NE)
         self.belt_speed_r_value = Label(parent, text="0 m/s", anchor=CENTER, font=field_font)
         self.belt_speed_r_value.place(x=int(width * 0.7), y=80 + height - slider_height_adj, anchor=NE)
@@ -336,7 +336,7 @@ class ViewWoodway:
 
         self.belt_incline_l_var = IntVar(parent)
         self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var,
-                                    command=self.__write_l_incline, length=height - slider_height_adj, from_=100, to=0)
+                                    command=self.__write_l_incline, length=height - slider_height_adj, from_=29, to=0)
         self.belt_incline_l.place(x=int(width * 0.885), y=70, anchor=NE)
         self.belt_incline_l_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
         self.belt_incline_l_value.place(x=int(width * 0.875), y=80 + height - slider_height_adj, anchor=N)
@@ -451,7 +451,7 @@ class ViewWoodway:
                 a_port = ports[0]
                 b_port = ports[1]
                 if a_port and b_port:
-                    self.woodway = SplitBelt(a_port, b_port)
+                    self.woodway = SplitBelt(a_port.device, b_port.device)
                     self.woodway.start_belts(True, False, True, False)
                     self.__enable_ui_elements()
             else:
@@ -472,17 +472,17 @@ class ViewWoodway:
     def __write_l_speed(self, speed):
         if self.woodway:
             self.belt_speed_l_value.config(text=f"{int(speed)} m/s")
-            self.woodway.belt_a.set_speed(speed)
+            self.woodway.belt_a.set_speed(float(speed))
 
     def __write_r_speed(self, speed):
         if self.woodway:
             self.belt_speed_r_value.config(text=f"{int(speed)} m/s")
-            self.woodway.belt_b.set_speed(speed)
+            self.woodway.belt_b.set_speed(float(speed))
 
     def __write_l_incline(self, incline):
         if self.woodway:
             self.belt_incline_l_value.config(text=f"{int(incline)}\u00b0")
-            self.woodway.set_elevations(incline)
+            self.woodway.set_elevations(float(incline))
 
 
 class ViewBLE:
@@ -571,7 +571,7 @@ class ViewBLE:
             label = Label(parent, text=f"{i + 1}", font=field_font, anchor=E, width=4)
             label.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h)
             temp_slider = Scale(parent, orient="vertical", variable=slider_vars[i][1],
-                                command=slider_vars[i][0], length=int(height * 0.4), from_=100, to=0)
+                                command=slider_vars[i][0], length=int(height * 0.4), from_=255, to=0)
             temp_slider.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h + 20)
             self.slider_objects.append(temp_slider)
             slider_count += 1
