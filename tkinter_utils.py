@@ -441,9 +441,9 @@ class AddBleProtocolStep:
 
     def close_win(self):
         try:
-            new_step = [int(self.duration_entry.get()), int(self.motor_1_entry.get()),
-                        int(self.motor_2_entry.get()), int(self.motor_3_entry.get()),
-                        int(self.motor_4_entry.get())]
+            new_step = [float(self.duration_entry.get()), float(self.motor_1_entry.get()),
+                        float(self.motor_2_entry.get()), float(self.motor_3_entry.get()),
+                        float(self.motor_4_entry.get())]
             self.caller.popup_return(new_step, edit=self.edit)
             self.popup_root.destroy()
         except ValueError:
