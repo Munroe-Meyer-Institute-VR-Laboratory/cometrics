@@ -247,7 +247,8 @@ class OutputViewPanel:
 
 
 class ViewWoodway:
-    def __init__(self, parent, height, width, field_font, header_font, button_size, config, session_dir):
+    def __init__(self, parent, height, width, field_font, header_font, button_size, config, session_dir,
+                 woodway_thresh=None):
         self.woodway = None
         self.session_dir = session_dir
         self.config = config
@@ -256,6 +257,12 @@ class ViewWoodway:
         self.selected_step = None
         self.load_protocol_thread = None
         self.prot_file = None
+        if woodway_thresh:
+            self.calibrated = False
+            self.woodway_thresh = woodway_thresh
+        else:
+            self.calibrated = False
+            self.woodway_thresh = None
         # region EXPERIMENTAL PROTOCOL
         element_height_adj = 120
         self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
@@ -380,6 +387,13 @@ class ViewWoodway:
         self.belt_speed_r.config(state='active')
         self.woodway_disconnect_button.config(state='active')
         self.woodway_connect_button.config(state='disabled')
+
+    def is_calibrated(self):
+        return self.calibrated
+
+    def __calibrate_return(self, woodway_threshold):
+        self.calibrated = True
+        self.woodway_thresh = woodway_threshold
 
     def __calibrate_woodway(self):
         CalibrateWoodway(self, self.root, self.woodway)
@@ -519,7 +533,7 @@ class ViewWoodway:
 
 
 class ViewBLE:
-    def __init__(self, parent, height, width, field_font, header_font, button_size, session_dir):
+    def __init__(self, parent, height, width, field_font, header_font, button_size, session_dir, ble_thresh=None):
         self.root = parent
         self.session_dir = session_dir
         self.ble_instance = VibrotactorArray.get_ble_instance()
@@ -528,6 +542,14 @@ class ViewBLE:
         self.protocol_steps = []
         self.selected_step = None
         self.prot_file = None
+        if ble_thresh:
+            self.calibrated = True
+            self.right_ble_thresh = ble_thresh[0]
+            self.left_ble_thresh = ble_thresh[1]
+        else:
+            self.calibrated = False
+            self.right_ble_thresh = None
+            self.left_ble_thresh = None
         # region EXPERIMENTAL PROTOCOL
         element_height_adj = 120
         self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
@@ -656,6 +678,14 @@ class ViewBLE:
         for slider in self.slider_objects:
             slider.config(state='disabled')
 
+    def is_calibrated(self):
+        return self.calibrated
+
+    def __calibrate_return(self, left_threshold, right_threshold):
+        self.calibrated = True
+        self.left_ble_thresh = left_threshold
+        self.right_ble_thresh = right_threshold
+
     def __calibrate_ble(self):
         CalibrateVibrotactors(self, self.root, self.left_vta, self.right_vta)
 
@@ -776,9 +806,6 @@ class ViewBLE:
             self.__enable_ui_elements()
         except Exception as ex:
             messagebox.showerror("Error", f"Exception encountered:\n{str(ex)}")
-
-    def get_side(self, vta):
-        return vta.get_side()
 
     def update_frequency(self, value):
         if self.right_vta and self.left_vta:

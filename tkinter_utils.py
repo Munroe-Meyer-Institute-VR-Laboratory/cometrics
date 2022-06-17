@@ -457,7 +457,7 @@ class AddBleProtocolStep:
 
 class CalibrateWoodway:
     def __init__(self, top, root, woodway):
-        assert top.popup_return
+        assert top.__calibrate_return
         self.caller = top
         self.entry = None
         self.popup_root = None
@@ -567,14 +567,14 @@ class CalibrateWoodway:
 
     def close_win(self):
         if self.calibrated_speed:
-            self.caller.popup_return(self.calibrated_speed)
+            self.caller.__calibrate_return(self.calibrated_speed)
         self.calibrating = False
         self.popup_root.destroy()
 
 
 class CalibrateVibrotactors:
     def __init__(self, top, root, left_vta, right_vta):
-        assert top.popup_return
+        assert top.__calibrate_return
         self.caller = top
         self.entry = None
         self.popup_root = None
@@ -730,6 +730,6 @@ class CalibrateVibrotactors:
 
     def close_win(self):
         if self.calibrated_left and self.calibrated_right:
-            self.caller.popup_return(self.calibrated_left, self.calibrated_right)
+            self.caller.__calibrate_return(self.calibrated_left, self.calibrated_right)
         self.calibrating = False
         self.popup_root.destroy()
