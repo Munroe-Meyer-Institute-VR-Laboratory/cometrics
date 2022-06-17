@@ -1,7 +1,11 @@
+import threading
+import time
 import tkinter
-from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk
+from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk, LEFT
 from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview, Entry
+
+import numpy as np
 
 from ui_params import treeview_default_tag_dict
 
@@ -449,3 +453,283 @@ class AddBleProtocolStep:
         except ValueError:
             messagebox.showerror("Error", "All values input must be numbers! Check Woodway documentation or\n"
                                           "User Guide for valid values!")
+
+
+class CalibrateWoodway:
+    def __init__(self, top, root, woodway):
+        assert top.popup_return
+        self.caller = top
+        self.entry = None
+        self.popup_root = None
+        self.name = "Calibrate Woodway"
+        self.woodway = woodway
+        self.calibrating = False
+        self.calibrated_speed_increasing = None
+        self.calibrated_speed_decreasing = None
+        self.calibrated_speed = None
+        self.calibration_step = 0
+        self.popup_entry(root)
+
+    def popup_entry(self, root):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("800x300")
+        popup_root.title(self.name)
+
+        # Create an Entry Widget in the Toplevel window
+        label = tkinter.Label(popup_root, text="1. Press the 'Calibrate' button,\n"
+                                               "2. The Woodway will increase speed by 0.1 MPH from zero every five seconds,\n"
+                                               "3. Prompt the subject to alert operator when walking feels comfortable,\n"
+                                               "4. When subject alerts operator, press the 'Stop' button,\n"
+                                               "5. The speed when stopped will be recorded, \n"
+                                               "6. Press 'Calibrate' button again to decrease speed from 150% of previous recorded speed,\n"
+                                               "7. Prompt the subject to alert operator when walking feel comfortable,\n"
+                                               "8. When subject alerts operator, press the 'Stop' button,\n"
+                                               "9. The speed when stopped will be recorded,\n"
+                                               "10. The two recorded speeds will be averaged and saved as the Preferred Walking Speed,\n"
+                                               "11. Double check the final speed and press 'Save' to save the speed.",
+                              font=('Purisa', 12), bg='white', justify=tkinter.LEFT)
+        label.pack()
+
+        # Create a Button Widget in the Toplevel Window
+        label.place(x=10, y=10)
+
+        # Create a Button Widget in the Toplevel Window
+        self.cal_button = tkinter.Button(popup_root, text="Calibrate", command=self.start_calibration_step, font=('Purisa', 12))
+        self.cal_button.place(x=400, y=280, anchor=tkinter.SE, width=150, height=30)
+        self.stop_button = tkinter.Button(popup_root, text="Stop", command=self.stop_calibration_step,
+                                          font=('Purisa', 12))
+        self.stop_button.place(x=400, y=280, anchor=tkinter.SW, width=150, height=30)
+        self.calibration_text_var = tkinter.StringVar(popup_root, value=f"Calibration Value: 0.0 MPH")
+        text = tkinter.Label(popup_root, textvariable=self.calibration_text_var, font=('Purisa', 12), bg='white')
+        text.place(x=400, y=240, anchor=tkinter.S)
+        center(popup_root)
+        popup_root.focus_force()
+
+    def start_calibration_step(self):
+        if self.calibration_step == 0:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread, args=(0.1, True))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        elif self.calibration_step == 1:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread,
+                                          args=(self.calibrated_speed_increasing * 2.0, False))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        self.stop_button["state"] = 'active'
+        self.cal_button["state"] = 'disabled'
+
+    def calibration_thread(self, start_value, increasing):
+        while self.calibrating:
+            if increasing:
+                for speed in np.arange(start_value, 20.0, 0.1):
+                    self.calibrated_speed_increasing = speed
+                    self.woodway.belt_a.set_speed(float(speed))
+                    self.woodway.belt_b.set_speed(float(speed))
+                    self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed_increasing:.1f} MPH")
+                    for i in range(0, 20):
+                        time.sleep(0.25)
+                        if not self.calibrating:
+                            self.woodway.belt_a.set_speed(float(0.0))
+                            self.woodway.belt_b.set_speed(float(0.0))
+                            return
+            else:
+                for speed in np.arange(start_value, 0.0, -0.1):
+                    self.calibrated_speed_decreasing = speed
+                    self.woodway.belt_a.set_speed(float(speed))
+                    self.woodway.belt_b.set_speed(float(speed))
+                    self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed_decreasing:.1f} MPH")
+                    for i in range(0, 20):
+                        time.sleep(0.25)
+                        if not self.calibrating:
+                            self.woodway.belt_a.set_speed(float(0.0))
+                            self.woodway.belt_b.set_speed(float(0.0))
+                            if self.calibrated_speed_increasing and self.calibrated_speed_decreasing:
+                                self.calibrated_speed = np.average([self.calibrated_speed_increasing,
+                                                                    self.calibrated_speed_decreasing])
+                                self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed:.1f} MPH")
+                                self.stop_button.config(text="Save", command=self.close_win)
+                            return
+
+    def stop_calibration_step(self):
+        self.calibrating = False
+        if self.calibration_step == 2:
+            self.stop_button["state"] = 'active'
+            self.cal_button["state"] = 'disabled'
+        else:
+            self.stop_button["state"] = 'disabled'
+            self.cal_button["state"] = 'active'
+
+    def close_win(self):
+        if self.calibrated_speed:
+            self.caller.popup_return(self.calibrated_speed)
+        self.calibrating = False
+        self.popup_root.destroy()
+
+
+class CalibrateVibrotactors:
+    def __init__(self, top, root, left_vta, right_vta):
+        assert top.popup_return
+        self.caller = top
+        self.entry = None
+        self.popup_root = None
+        self.name = "Calibrate Vibrotactors"
+        self.left_vta, self.right_vta = left_vta, right_vta
+        self.calibrating = False
+        self.calibrated_left_increasing = None
+        self.calibrated_right_increasing = None
+        self.calibrated_left_decreasing = None
+        self.calibrated_right_decreasing = None
+        self.calibrated_left = None
+        self.calibrated_right = None
+        self.calibration_step = 0
+        self.popup_entry(root)
+
+    def popup_entry(self, root):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("800x350")
+        popup_root.title(self.name)
+
+        # Create an Entry Widget in the Toplevel window
+        label = tkinter.Label(popup_root, text="1. Press the 'Calibrate Left' button,\n"
+                                               "2. The vibrotactors will increase intensity by one from zero each second,\n"
+                                               "3. Prompt the subject to alert operator when vibrotactors are perceptible,\n"
+                                               "4. When subject alerts operator, press the 'Stop' button,\n"
+                                               "5. The intensity level when stopped will be recorded, \n"
+                                               "6. Press 'Calibrate Left' button again to decrease intensity from 200% of previous recorded intensity level,\n"
+                                               "7. Prompt the subject to alert operator when vibrotactors are perceptible,\n"
+                                               "8. When subject alerts operator, press the 'Stop' button,\n"
+                                               "9. The intensity level when stopped will be recorded,\n"
+                                               "10. The two recorded levels will be averaged and saved as the Left Sensory Perception Threshold,\n"
+                                               "11. Notice 'Calibrate Right' button, repeat procedure for left vibrotactor,\n"
+                                               "12. Double check the final values and press 'Save' to save the thresholds.",
+                              font=('Purisa', 12), bg='white', justify=tkinter.LEFT)
+        label.place(x=10, y=10)
+
+        # Create a Button Widget in the Toplevel Window
+        self.cal_button = tkinter.Button(popup_root, text="Calibrate Left", command=self.start_calibration_step,
+                                         font=('Purisa', 12))
+        self.cal_button.place(x=400, y=330, anchor=tkinter.SE, width=150, height=30)
+        self.stop_button = tkinter.Button(popup_root, text="Stop", command=self.stop_calibration_step,
+                                          font=('Purisa', 12))
+        self.stop_button.place(x=400, y=330, anchor=tkinter.SW, width=150, height=30)
+        self.stop_button["state"] = 'disabled'
+        self.calibration_text_var = tkinter.StringVar(popup_root, value=f"Calibration Left: 0\tCalibration Right: 0")
+        text = tkinter.Label(popup_root, textvariable=self.calibration_text_var, font=('Purisa', 12), bg='white')
+        text.place(x=400, y=290, anchor=tkinter.S)
+        center(popup_root)
+        popup_root.focus_force()
+
+    def start_calibration_step(self):
+        if self.calibration_step == 0:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread, args=(self.left_vta, 0, True, True))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        elif self.calibration_step == 1:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread,
+                                          args=(self.left_vta, self.calibrated_left_increasing * 2, False, True))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        elif self.calibration_step == 2:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread,
+                                          args=(self.right_vta, 0, True, False))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        elif self.calibration_step == 3:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread,
+                                          args=(self.right_vta, self.calibrated_right_increasing * 2, False, False))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        self.stop_button["state"] = 'active'
+        self.cal_button["state"] = 'disabled'
+
+    def calibration_thread(self, vta, start_value, increasing, side):
+        while self.calibrating:
+            if side:
+                if increasing:
+                    for speed in np.arange(start_value, 255, 1):
+                        self.calibrated_left_increasing = speed
+                        vta.write_all_motors(speed)
+                        self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left_increasing}"
+                                                      f"\tCalibration Right: 0")
+                        for i in range(0, 4):
+                            time.sleep(0.25)
+                            if not self.calibrating:
+                                vta.write_all_motors(0)
+                                return
+                else:
+                    for speed in np.arange(start_value, 0, -1):
+                        self.calibrated_left_decreasing = speed
+                        vta.write_all_motors(speed)
+                        self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left_decreasing}"
+                                                      f"\tCalibration Right: 0")
+                        for i in range(0, 4):
+                            time.sleep(0.25)
+                            if not self.calibrating:
+                                vta.write_all_motors(0)
+                                if self.calibrated_left_decreasing and self.calibrated_left_increasing:
+                                    self.calibrated_left = int(np.average([self.calibrated_left_increasing,
+                                                                           self.calibrated_left_decreasing]))
+                                    self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left}"
+                                                                  f"\tCalibration Right: 0")
+                                self.cal_button.config(text="Calibrate Right")
+                                return
+            else:
+                if increasing:
+                    for speed in np.arange(start_value, 255, 1):
+                        self.calibrated_right_increasing = speed
+                        vta.write_all_motors(speed)
+                        self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left}"
+                                                      f"\tCalibration Right: {self.calibrated_right_increasing}")
+                        for i in range(0, 4):
+                            time.sleep(0.25)
+                            if not self.calibrating:
+                                vta.write_all_motors(0)
+                                return
+                else:
+                    for speed in np.arange(start_value, 0, -1):
+                        self.calibrated_right_decreasing = speed
+                        vta.write_all_motors(speed)
+                        self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left}"
+                                                      f"\tCalibration Right: {self.calibrated_right_decreasing}")
+                        for i in range(0, 4):
+                            time.sleep(0.25)
+                            if not self.calibrating:
+                                vta.write_all_motors(0)
+                                if self.calibrated_right_decreasing and self.calibrated_right_increasing:
+                                    self.calibrated_right = int(np.average([self.calibrated_right_decreasing,
+                                                                            self.calibrated_right_increasing]))
+                                    self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left}"
+                                                                  f"\tCalibration Right: {self.calibrated_right}")
+                                    self.stop_button.config(text="Save", command=self.close_win)
+                                return
+
+    def stop_calibration_step(self):
+        self.calibrating = False
+        if self.calibration_step == 4:
+            self.cal_button["state"] = 'disabled'
+            self.stop_button["state"] = 'active'
+        else:
+            self.stop_button["state"] = 'disabled'
+            self.cal_button["state"] = 'active'
+
+    def close_win(self):
+        if self.calibrated_left and self.calibrated_right:
+            self.caller.popup_return(self.calibrated_left, self.calibrated_right)
+        self.calibrating = False
+        self.popup_root.destroy()

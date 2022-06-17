@@ -19,7 +19,8 @@ from matplotlib.figure import Figure
 # Custom library imports
 from ttkwidgets import TickScale
 from pywoodway.treadmill import SplitBelt, find_treadmills
-from tkinter_utils import build_treeview, clear_treeview, AddWoodwayProtocolStep, AddBleProtocolStep
+from tkinter_utils import build_treeview, clear_treeview, AddWoodwayProtocolStep, AddBleProtocolStep, \
+    CalibrateVibrotactors, CalibrateWoodway
 from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags, crossmark, checkmark
 from pytactor import VibrotactorArray
 from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient, EmpaticaServerConnectError
@@ -381,7 +382,7 @@ class ViewWoodway:
         self.woodway_connect_button.config(state='disabled')
 
     def __calibrate_woodway(self):
-        pass
+        CalibrateWoodway(self, self.root, self.woodway)
 
     def select_protocol_step(self, event):
         selection = self.prot_treeview.identify_row(event.y)
@@ -656,7 +657,7 @@ class ViewBLE:
             slider.config(state='disabled')
 
     def __calibrate_ble(self):
-        pass
+        CalibrateVibrotactors(self, self.root, self.left_vta, self.right_vta)
 
     def __edit_protocol_step(self, event):
         if self.selected_step:
