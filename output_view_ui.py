@@ -22,7 +22,7 @@ from pywoodway.treadmill import SplitBelt, find_treadmills
 from tkinter_utils import build_treeview, clear_treeview, AddWoodwayProtocolStep, AddBleProtocolStep, \
     CalibrateVibrotactors, CalibrateWoodway
 from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags, crossmark, checkmark
-from pytactor import VibrotactorArray
+from pytactor import VibrotactorArray, VibrotactorArraySide
 from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient, EmpaticaServerConnectError
 
 
@@ -769,6 +769,10 @@ class ViewBLE:
         try:
             self.left_vta = VibrotactorArray(self.ble_instance)
             self.right_vta = VibrotactorArray(self.ble_instance)
+            if self.left_vta.get_side() != VibrotactorArraySide.LEFT:
+                vta = self.left_vta
+                self.left_vta = self.right_vta
+                self.right_vta = vta
             self.__enable_ui_elements()
         except Exception as ex:
             messagebox.showerror("Error", f"Exception encountered:\n{str(ex)}")

@@ -10,3 +10,7 @@ pyEmpatica~=0.5.7
 openpyxl~=3.0.9
 matplotlib==3.4.3
 logger-util~=0.2
+future~=0.18.2
+ttkwidgets~=0.12.1
+pyWoodway~=0.2.2
+pyTactor~=0.1.1
