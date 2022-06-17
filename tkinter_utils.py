@@ -483,7 +483,7 @@ class CalibrateWoodway:
                                                "3. Prompt the subject to alert operator when walking feels comfortable,\n"
                                                "4. When subject alerts operator, press the 'Stop' button,\n"
                                                "5. The speed when stopped will be recorded, \n"
-                                               "6. Press 'Calibrate' button again to decrease speed from 150% of previous recorded speed,\n"
+                                               "6. Press 'Calibrate' button again to decrease speed from 200% of previous recorded speed,\n"
                                                "7. Prompt the subject to alert operator when walking feel comfortable,\n"
                                                "8. When subject alerts operator, press the 'Stop' button,\n"
                                                "9. The speed when stopped will be recorded,\n"

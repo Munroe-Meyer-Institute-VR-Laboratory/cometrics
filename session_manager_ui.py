@@ -31,6 +31,7 @@ class SessionManagerWindow:
         self.button_input_handler = None
         self.ext_raw, self.ext_dur_val, self.ext_freq_val = None, None, None
         self.patient_file = project_setup.patient_data_file
+        self.patient_container = project_setup.patient_container
         self.keystroke_file = project_setup.ksf_file
         self.session_dir = project_setup.phase_dir
         self.tracker_file = project_setup.tracker_file
@@ -113,6 +114,9 @@ class SessionManagerWindow:
                                      field_font=self.field_font,
                                      field_offset=self.field_offset,
                                      button_size=self.button_size)
+        thresholds = [self.patient_container.right_ble_thresh,
+                      self.patient_container.left_ble_thresh,
+                      self.patient_container.woodway_thresh]
         self.ovu = OutputViewPanel(root,
                                    x=(self.logo_width * 2) + 20,
                                    y=(self.logo_height + 10) - self.button_size[1],
@@ -125,7 +129,8 @@ class SessionManagerWindow:
                                    video_import_cb=self.start_video_control,
                                    slider_change_cb=self.change_time,
                                    config=self.config,
-                                   session_dir=self.session_dir)
+                                   session_dir=self.session_dir,
+                                   thresholds=thresholds)
         self.stf.kdf = self.ovu.key_view
         self.pdf = PatientDataFields(root,
                                      x=5,
@@ -338,9 +343,36 @@ class SessionManagerWindow:
     def start_session(self):
         response = self.pdf.check_session_fields()
         if response is False:
+            ble_thresh_r, ble_thresh_l, woodway_thresh = None, None, None
+            if self.config.get_ble():
+                if self.ovu.ble_view:
+                    if not self.ovu.ble_view.is_calibrated():
+                        messagebox.showwarning("Warning", "Vibrotactors must be calibrated before starting session!")
+                        print("WARNING: Vibrotactors must be calibrated before starting session")
+                        return
+                    else:
+                        ble_thresh_r, ble_thresh_l = self.ovu.ble_view.get_calibration_thresholds()
+                else:
+                    messagebox.showwarning("Error", "Something went wrong with starting session!\n"
+                                                    "Vibrotactor view is not present when it should be!")
+                    print("ERROR: Something went wrong with starting session, vibrotactor view is not present when it should be")
+                    return
+            if self.config.get_woodway():
+                if self.ovu.woodway_view:
+                    if not self.ovu.woodway_view.is_calibrated():
+                        messagebox.showwarning("Warning", "Woodway must be calibrated before starting session!")
+                        print("WARNING: Woodway must be calibrated before starting session")
+                        return
+                    else:
+                        woodway_thresh = self.ovu.woodway_view.get_calibration_thresholds()
+                else:
+                    messagebox.showwarning("Error", "Something went wrong with starting session!\n"
+                                                    "Woodway view is not present when it should be!")
+                    print("ERROR: Something went wrong with starting session, Woodway view is not present when it should be")
+                    return
             self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
             self.pdf.start_label['text'] = "Session Start Time: " + self.session_time
-            self.pdf.save_patient_fields()
+            self.pdf.save_patient_fields(ble_thresh_r, ble_thresh_l, woodway_thresh)
             self.pdf.lock_session_fields()
             self.stf.lock_session_fields()
             # Start the session

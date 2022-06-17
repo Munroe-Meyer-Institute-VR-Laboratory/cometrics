@@ -28,7 +28,8 @@ from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClien
 
 class OutputViewPanel:
     def __init__(self, parent, x, y, height, width, button_size, ksf,
-                 field_font, header_font, video_import_cb, slider_change_cb, config, session_dir):
+                 field_font, header_font, video_import_cb, slider_change_cb, config, session_dir,
+                 thresholds):
         self.KEY_VIEW, self.E4_VIEW, self.VIDEO_VIEW, self.WOODWAY_VIEW, self.BLE_VIEW = 0, 1, 2, 3, 4
         self.config = config
         self.height, self.width = height, width
@@ -88,7 +89,7 @@ class OutputViewPanel:
             self.ble_view = ViewBLE(self.view_frames[self.BLE_VIEW],
                                     height=self.height - self.button_size[1], width=self.width,
                                     field_font=field_font, header_font=header_font, button_size=button_size,
-                                    session_dir=session_dir)
+                                    session_dir=session_dir, ble_thresh=thresholds[0:2])
             ble_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(ble_frame)
         else:
@@ -104,7 +105,7 @@ class OutputViewPanel:
             self.woodway_view = ViewWoodway(self.view_frames[self.WOODWAY_VIEW],
                                             height=self.height - self.button_size[1], width=self.width,
                                             field_font=field_font, header_font=header_font, button_size=button_size,
-                                            config=config, session_dir=session_dir)
+                                            config=config, session_dir=session_dir, woodway_thresh=thresholds[2])
             woodway_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(woodway_frame)
         else:
@@ -388,6 +389,12 @@ class ViewWoodway:
         self.woodway_disconnect_button.config(state='active')
         self.woodway_connect_button.config(state='disabled')
 
+    def get_calibration_thresholds(self):
+        if not self.is_calibrated():
+            raise ValueError("Woodway are not calibrated!")
+        else:
+            return self.woodway_thresh
+
     def is_calibrated(self):
         return self.calibrated
 
@@ -542,7 +549,7 @@ class ViewBLE:
         self.protocol_steps = []
         self.selected_step = None
         self.prot_file = None
-        if ble_thresh:
+        if ble_thresh[0] and ble_thresh[1]:
             self.calibrated = True
             self.right_ble_thresh = ble_thresh[0]
             self.left_ble_thresh = ble_thresh[1]
@@ -677,6 +684,12 @@ class ViewBLE:
         self.freq_slider.config(state='disabled')
         for slider in self.slider_objects:
             slider.config(state='disabled')
+
+    def get_calibration_thresholds(self):
+        if not self.is_calibrated():
+            raise ValueError("Vibrotactors are not calibrated!")
+        else:
+            return self.right_ble_thresh, self.left_ble_thresh
 
     def is_calibrated(self):
         return self.calibrated

@@ -9,6 +9,7 @@ import yaml
 from tkinter.ttk import Combobox
 
 from ksf_utils import import_ksf, create_new_ksf_revision, compare_keystrokes
+from patient_data_fields import PatientContainer
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
     NewKeyPopup, clear_treeview, get_slider_style
 from ui_params import project_treeview_params as ptp, treeview_tags, window_ratio, large_field_font, medium_field_font, \
@@ -317,13 +318,7 @@ class ProjectSetupWindow:
             self.populate_patient_concerns()
             self.patient_data_file = os.path.normpath(
                 os.path.join(self.patient_dir, pathlib.Path(self.patient_dir).stem + '.json'))
-            if not os.path.exists(self.patient_data_file):
-                with open(self.patient_data_file, 'w') as f:
-                    x = {
-                        "Name": pathlib.Path(self.patient_dir).stem,
-                        "MRN": ""
-                    }
-                    json.dump(x, f)
+            self.patient_container = PatientContainer(self.patient_data_file)
 
     # endregion
 
