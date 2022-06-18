@@ -131,7 +131,7 @@ class SessionManagerWindow:
                                    config=self.config,
                                    session_dir=self.session_dir,
                                    thresholds=thresholds)
-        self.stf.kdf = self.ovu.key_view
+        self.stf.ovu = self.ovu
         self.pdf = PatientDataFields(root,
                                      x=5,
                                      y=self.logo_height + 10,
@@ -352,6 +352,7 @@ class SessionManagerWindow:
                         return
                     else:
                         ble_thresh_r, ble_thresh_l = self.ovu.ble_view.get_calibration_thresholds()
+                        self.ovu.ble_view.disable_ui_elements()
                 else:
                     messagebox.showwarning("Error", "Something went wrong with starting session!\n"
                                                     "Vibrotactor view is not present when it should be!")
@@ -365,6 +366,7 @@ class SessionManagerWindow:
                         return
                     else:
                         woodway_thresh = self.ovu.woodway_view.get_calibration_thresholds()
+                        self.ovu.woodway_view.disable_ui_elements()
                 else:
                     messagebox.showwarning("Error", "Something went wrong with starting session!\n"
                                                     "Woodway view is not present when it should be!")

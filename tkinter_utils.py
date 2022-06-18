@@ -387,14 +387,14 @@ class AddWoodwayProtocolStep:
 
 
 class AddBleProtocolStep:
-    def __init__(self, top, root, edit=False, dur=None, motor_1=None, motor_2=None, motor_3=None, motor_4=None):
+    def __init__(self, top, root, edit=False, dur=None, motor_1=None, motor_2=None):
         assert top.popup_return
         self.caller = top
         self.entry = None
         self.popup_root = None
         self.name = "Add BLE Step"
         self.edit = edit
-        self.dur, self.motor_1, self.motor_2, self.motor_3, self.motor_4 = dur, motor_1, motor_2, motor_3, motor_4
+        self.dur, self.motor_1, self.motor_2 = dur, motor_1, motor_2
         self.popup_entry(root)
 
     def popup_entry(self, root):
@@ -411,30 +411,18 @@ class AddBleProtocolStep:
         self.duration_entry.pack()
         if self.dur:
             set_entry_text(self.duration_entry, self.dur)
-        label = tkinter.Label(popup_root, text="1-3 Motor Level", font=('Purisa', 12), bg='white')
+        label = tkinter.Label(popup_root, text="Left Motor Level", font=('Purisa', 12), bg='white')
         label.pack()
         self.motor_1_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.motor_1_entry.pack()
         if self.motor_1:
             set_entry_text(self.motor_1_entry, self.motor_1)
-        label = tkinter.Label(popup_root, text="4-6 Motor Level", font=('Purisa', 12), bg='white')
+        label = tkinter.Label(popup_root, text="Right Motor Level", font=('Purisa', 12), bg='white')
         label.pack()
         self.motor_2_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.motor_2_entry.pack()
         if self.motor_2:
             set_entry_text(self.motor_2_entry, self.motor_2)
-        label = tkinter.Label(popup_root, text="7-9 Motor Level", font=('Purisa', 12), bg='white')
-        label.pack()
-        self.motor_3_entry = tkinter.Entry(popup_root, bd=2, width=25)
-        self.motor_3_entry.pack()
-        if self.motor_3:
-            set_entry_text(self.motor_3_entry, self.motor_3)
-        label = tkinter.Label(popup_root, text="10-12 Motor Level", font=('Purisa', 12), bg='white')
-        label.pack()
-        self.motor_4_entry = tkinter.Entry(popup_root, bd=2, width=25)
-        self.motor_4_entry.pack()
-        if self.motor_4:
-            set_entry_text(self.motor_4_entry, self.motor_4)
 
         # Create a Button Widget in the Toplevel Window
         button = tkinter.Button(popup_root, text="OK", command=self.close_win)
@@ -446,8 +434,7 @@ class AddBleProtocolStep:
     def close_win(self):
         try:
             new_step = [float(self.duration_entry.get()), float(self.motor_1_entry.get()),
-                        float(self.motor_2_entry.get()), float(self.motor_3_entry.get()),
-                        float(self.motor_4_entry.get())]
+                        float(self.motor_2_entry.get())]
             self.caller.popup_return(new_step, edit=self.edit)
             self.popup_root.destroy()
         except ValueError:
@@ -529,26 +516,22 @@ class CalibrateWoodway:
             if increasing:
                 for speed in np.arange(start_value, 20.0, 0.1):
                     self.calibrated_speed_increasing = speed
-                    self.woodway.belt_a.set_speed(float(speed))
-                    self.woodway.belt_b.set_speed(float(speed))
+                    self.woodway.set_speed(float(speed))
                     self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed_increasing:.1f} MPH")
                     for i in range(0, 20):
                         time.sleep(0.25)
                         if not self.calibrating:
-                            self.woodway.belt_a.set_speed(float(0.0))
-                            self.woodway.belt_b.set_speed(float(0.0))
+                            self.woodway.set_speed(float(0.0))
                             return
             else:
                 for speed in np.arange(start_value, 0.0, -0.1):
                     self.calibrated_speed_decreasing = speed
-                    self.woodway.belt_a.set_speed(float(speed))
-                    self.woodway.belt_b.set_speed(float(speed))
+                    self.woodway.set_speed(float(speed))
                     self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed_decreasing:.1f} MPH")
                     for i in range(0, 20):
                         time.sleep(0.25)
                         if not self.calibrating:
-                            self.woodway.belt_a.set_speed(float(0.0))
-                            self.woodway.belt_b.set_speed(float(0.0))
+                            self.woodway.set_speed(float(0.0))
                             if self.calibrated_speed_increasing and self.calibrated_speed_decreasing:
                                 self.calibrated_speed = np.average([self.calibrated_speed_increasing,
                                                                     self.calibrated_speed_decreasing])

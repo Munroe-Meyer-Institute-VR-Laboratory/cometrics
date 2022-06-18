@@ -17,13 +17,13 @@ from ui_params import treeview_bind_tags
 class SessionTimeFields:
     def __init__(self, caller, parent, x, y, height, width, button_size,
                  header_font=('Purisa', 14), field_font=('Purisa', 11),
-                 field_offset=60, kdf=None):
+                 field_offset=60, ovu=None):
         self.SESSION_VIEW, self.REVIEW_VIEW = 0, 1
         self.x, self.y = x, y
         self.button_size = button_size
         self.width, self.height = width, height
         self.field_offset = field_offset
-        self.kdf = kdf
+        self.ovu = ovu
         self.caller = caller
 
         self.frame = Frame(parent, width=width, height=height)
@@ -213,13 +213,17 @@ class SessionTimeFields:
             if self.timer_running:
                 if self.session_started and not self.session_paused:
                     self.session_time += 1
-                    for i in range(0, len(self.kdf.dur_sticky)):
-                        if self.kdf.dur_sticky[i]:
-                            self.kdf.dur_treeview.set(str(i), column="1",
-                                                      value=self.session_time - self.kdf.sticky_start[i])
+                    for i in range(0, len(self.ovu.key_view.dur_sticky)):
+                        if self.ovu.key_view.dur_sticky[i]:
+                            self.ovu.key_view.dur_treeview.set(str(i), column="1",
+                                                      value=self.session_time - self.ovu.key_view.sticky_start[i])
                     if self.session_duration:
                         if self.session_time >= self.session_duration:
                             self.caller.stop_session()
+                    if self.ovu.woodway_view:
+                        self.ovu.woodway_view.next_protocol_step(self.session_time)
+                    if self.ovu.ble_view:
+                        self.ovu.ble_view.next_protocol_step(self.session_time)
                 elif self.session_paused:
                     if not self.caller.ovu.video_view.player:
                         self.break_time += 1
@@ -229,14 +233,14 @@ class SessionTimeFields:
     def change_time(self, current_seconds):
         self.session_time = current_seconds
         self.session_time_label['text'] = str(datetime.timedelta(seconds=self.session_time))
-        for i in range(0, len(self.kdf.dur_sticky)):
-            if self.kdf.dur_sticky[i]:
-                if self.session_time < self.kdf.sticky_start[i]:
-                    self.kdf.dur_sticky[i] = False
-                    self.kdf.dur_treeview.item(str(i), tags=treeview_bind_tags[i % 2])
+        for i in range(0, len(self.ovu.key_view.dur_sticky)):
+            if self.ovu.key_view.dur_sticky[i]:
+                if self.session_time < self.ovu.key_view.sticky_start[i]:
+                    self.ovu.key_view.dur_sticky[i] = False
+                    self.ovu.key_view.dur_treeview.item(str(i), tags=treeview_bind_tags[i % 2])
                 else:
-                    self.kdf.dur_treeview.set(str(i), column="1",
-                                              value=self.session_time - self.kdf.sticky_start[i])
+                    self.ovu.key_view.dur_treeview.set(str(i), column="1",
+                                              value=self.session_time - self.ovu.key_view.sticky_start[i])
 
     def start_session(self):
         self.session_started = True

@@ -37,6 +37,7 @@ class OutputViewPanel:
         self.current_button = 0
         self.view_buttons = []
         self.view_frames = []
+        self.time_change_sources = False
 
         self.frame = Frame(parent, width=width, height=height)
         self.frame.place(x=x, y=y)
@@ -80,6 +81,7 @@ class OutputViewPanel:
             self.e4_view = None
 
         if self.config.get_ble():
+            self.time_change_sources = False
             ble_output_button = Button(self.frame, text="BLE Input", command=self.switch_ble_frame, width=12,
                                        font=field_font)
             self.view_buttons.append(ble_output_button)
@@ -96,6 +98,7 @@ class OutputViewPanel:
             self.ble_view = None
 
         if self.config.get_woodway():
+            self.time_change_sources = False
             woodway_output_button = Button(self.frame, text="Woodway", command=self.switch_woodway_frame, width=12,
                                            font=field_font)
             self.view_buttons.append(woodway_output_button)
@@ -166,6 +169,10 @@ class OutputViewPanel:
             self.e4_view.session_started = True
         if self.video_view.recorder:
             self.video_view.recorder.start_recording(output_path=recording_path)
+        if self.ble_view:
+            self.ble_view.start_session()
+        if self.woodway_view:
+            self.woodway_view.start_session()
 
     def enable_video_slider(self):
         if self.video_view.player:
@@ -182,6 +189,10 @@ class OutputViewPanel:
         if self.video_view.recorder:
             self.video_view.recorder.stop_recording()
             self.video_view.recorder.stop_playback()
+        if self.ble_view:
+            self.ble_view.stop_session()
+        if self.woodway_view:
+            self.woodway_view.stop_session()
 
     def check_event(self, key_char, start_time):
         # Make sure it is not None
@@ -258,6 +269,11 @@ class ViewWoodway:
         self.selected_step = None
         self.load_protocol_thread = None
         self.prot_file = None
+        self.step_time = 0
+        self.step_duration = 0
+        self.woodway_speed_r, self.woodway_speed_l = 0, 0
+        self.woodway_incline = 0
+        self.session_started = False
         if woodway_thresh:
             self.calibrated = False
             self.woodway_thresh = woodway_thresh
@@ -376,6 +392,14 @@ class ViewWoodway:
             latest_protocol = max(pathlib.Path(self.woodway_dir).glob("*.json"), key=lambda f: f.stat().st_ctime)
             self.__load_protocol_from_file(latest_protocol)
 
+    def disable_ui_elements(self):
+        self.__disable_ui_elements()
+        self.prot_add_button.config(state='disabled')
+        self.prot_del_button.config(state='disabled')
+        self.prot_save_button.config(state='disabled')
+        self.prot_load_button.config(state='disabled')
+        self.calibrate_button.config(state='disabled')
+
     def __disable_ui_elements(self):
         self.belt_incline_l.config(state='disabled')
         self.belt_speed_l.config(state='disabled')
@@ -393,7 +417,40 @@ class ViewWoodway:
         if not self.is_calibrated():
             raise ValueError("Woodway are not calibrated!")
         else:
+            self.woodway_speed_l, self.woodway_speed_r = self.woodway_thresh, self.woodway_thresh
             return self.woodway_thresh
+
+    def start_session(self):
+        self.session_started = True
+        self.woodway.belt_a.set_speed(self.woodway_speed_l)
+        self.woodway.belt_b.set_speed(self.woodway_speed_r)
+
+    def stop_session(self):
+        self.session_started = False
+        self.woodway.belt_a.set_speed(0)
+        self.woodway.belt_b.set_speed(0)
+
+    def next_protocol_step(self, current_time):
+        if current_time == 0:
+            self.selected_step = 0
+            self.__update_woodway_protocol()
+        if (self.step_time - current_time) == 0:
+            self.selected_step += 1
+            self.__update_woodway_protocol()
+
+    def __update_woodway_protocol(self):
+        self.selected_command = self.protocol_steps[self.selected_step]
+        self.step_duration = self.selected_command[0]
+        self.step_time += self.step_duration
+        self.woodway_speed_l += self.selected_command[1]
+        self.woodway_speed_r += self.selected_command[2]
+        self.woodway_incline += self.selected_command[3]
+        self.__update_woodway()
+
+    def __update_woodway(self):
+        self.__write_l_incline(self.woodway_incline)
+        self.__write_l_speed(self.woodway_speed_l)
+        self.__write_r_speed(self.woodway_speed_r)
 
     def is_calibrated(self):
         return self.calibrated
@@ -524,16 +581,22 @@ class ViewWoodway:
             messagebox.showwarning("Warning", "Connect to Woodway first!")
 
     def __write_l_speed(self, speed):
+        if self.session_started:
+            self.belt_speed_l.set(speed)
         if self.woodway:
             self.belt_speed_l_value.config(text=f"{int(speed)} MPH")
             self.woodway.belt_a.set_speed(float(speed))
 
     def __write_r_speed(self, speed):
+        if self.session_started:
+            self.belt_speed_r.set(speed)
         if self.woodway:
             self.belt_speed_r_value.config(text=f"{int(speed)} MPH")
             self.woodway.belt_b.set_speed(float(speed))
 
     def __write_l_incline(self, incline):
+        if self.session_started:
+            self.belt_incline_l.set(incline)
         if self.woodway:
             self.belt_incline_l_value.config(text=f"{int(incline)}\u00b0")
             self.woodway.set_elevations(float(incline))
@@ -549,6 +612,11 @@ class ViewBLE:
         self.protocol_steps = []
         self.selected_step = None
         self.prot_file = None
+        self.step_duration = 0
+        self.step_time = 0
+        self.session_started = False
+        self.r_ble_1_3_value, self.r_ble_4_6_value, self.r_ble_7_9_value, self.r_ble_10_12_value = 0, 0, 0, 0
+        self.l_ble_1_3_value, self.l_ble_4_6_value, self.l_ble_7_9_value, self.l_ble_10_12_value = 0, 0, 0, 0
         if ble_thresh[0] and ble_thresh[1]:
             self.calibrated = True
             self.right_ble_thresh = ble_thresh[0]
@@ -563,10 +631,8 @@ class ViewBLE:
         self.exp_prot_label.place(x=int(width * 0.25) + 18, y=10, anchor=N)
         self.prot_treeview_parents = []
         prot_heading_dict = {"#0": ["Duration", 'w', 20, YES, 'w']}
-        prot_column_dict = {"1": ["1-3", 'c', 1, YES, 'c'],
-                            "2": ["4-6", 'c', 1, YES, 'c'],
-                            "3": ["7-9", 'c', 1, YES, 'c'],
-                            "4": ["10-12", 'c', 1, YES, 'c']}
+        prot_column_dict = {"1": ["Left", 'c', 1, YES, 'c'],
+                            "2": ["Right", 'c', 1, YES, 'c']}
         treeview_offset = int(width * 0.05)
         self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=int(width * 0.05), y=40,
                                                                   height=height - element_height_adj - 40,
@@ -678,6 +744,16 @@ class ViewBLE:
         for slider in self.slider_objects:
             slider.config(state='active')
 
+    def disable_ui_elements(self):
+        for slider in self.slider_objects:
+            slider.config(state='disabled')
+        self.ble_disconnect_button.config(state='disabled')
+        self.prot_add_button.config(state='disabled')
+        self.prot_del_button.config(state='disabled')
+        self.prot_save_button.config(state='disabled')
+        self.prot_load_button.config(state='disabled')
+        self.calibrate_button.config(state='disabled')
+
     def __disable_ui_elements(self):
         self.ble_connect_button.config(state='active')
         self.ble_disconnect_button.config(state='disabled')
@@ -689,7 +765,27 @@ class ViewBLE:
         if not self.is_calibrated():
             raise ValueError("Vibrotactors are not calibrated!")
         else:
+            self.r_ble_1_3_value = self.right_ble_thresh
+            self.r_ble_4_6_value = self.right_ble_thresh
+            self.r_ble_7_9_value = self.right_ble_thresh
+            self.r_ble_10_12_value = self.right_ble_thresh
+            self.l_ble_1_3_value = self.left_ble_thresh
+            self.l_ble_4_6_value = self.left_ble_thresh
+            self.l_ble_7_9_value = self.left_ble_thresh
+            self.l_ble_10_12_value = self.left_ble_thresh
             return self.right_ble_thresh, self.left_ble_thresh
+
+    def start_session(self):
+        self.session_started = True
+        self.right_vta.write_all_motors(self.right_ble_thresh)
+        self.left_vta.write_all_motors(self.left_ble_thresh)
+        self.right_vta.start_imu()
+        self.left_vta.start_imu()
+
+    def stop_session(self):
+        self.session_started = False
+        self.right_vta.stop_imu()
+        self.left_vta.stop_imu()
 
     def is_calibrated(self):
         return self.calibrated
@@ -706,7 +802,41 @@ class ViewBLE:
         if self.selected_step:
             step = self.protocol_steps[int(self.selected_step) - 1]
             AddBleProtocolStep(self, self.root, edit=True, dur=step[0],
-                               motor_1=step[1], motor_2=step[2], motor_3=step[3], motor_4=step[4])
+                               motor_1=step[1], motor_2=step[2])
+
+    def next_protocol_step(self, current_time):
+        if current_time == 0:
+            self.selected_step = 0
+            self.__update_ble_protocol()
+        if (self.step_time - current_time) == 0:
+            self.selected_step += 1
+            self.__update_ble_protocol()
+
+    def __update_ble_protocol(self):
+        self.selected_command = self.protocol_steps[self.selected_step]
+        self.step_duration = self.selected_command[0]
+        self.step_time += self.step_duration
+        self.r_ble_1_3_value += self.selected_command[1]
+        self.r_ble_4_6_value += self.selected_command[2]
+        self.r_ble_7_9_value += self.selected_command[3]
+        self.r_ble_10_12_value += self.selected_command[4]
+        self.l_ble_1_3_value += self.selected_command[1]
+        self.l_ble_4_6_value += self.selected_command[2]
+        self.l_ble_7_9_value += self.selected_command[3]
+        self.l_ble_10_12_value += self.selected_command[4]
+        self.__update_ble()
+
+    def __update_ble(self):
+        for i in range(0, 3):
+            self.slider_objects[i].set(self.l_ble_1_3_value)
+        for i in range(3, 6):
+            self.slider_objects[i].set(self.l_ble_4_6_value)
+        for i in range(6, 9):
+            self.slider_objects[i].set(self.l_ble_7_9_value)
+        for i in range(9, 12):
+            self.slider_objects[i].set(self.l_ble_10_12_value)
+        self.right_vta.write_all_motors(self.r_ble_1_3_value)
+        self.left_vta.write_all_motors(self.l_ble_1_3_value)
 
     def select_protocol_step(self, event):
         selection = self.prot_treeview.identify_row(event.y)
@@ -718,8 +848,7 @@ class ViewBLE:
             for i in range(0, len(self.protocol_steps)):
                 self.prot_treeview_parents.append(
                     self.prot_treeview.insert("", 'end', str(i + 1), text=str(self.protocol_steps[i][0]),
-                                              values=(self.protocol_steps[i][1], self.protocol_steps[i][2],
-                                                      self.protocol_steps[i][3], self.protocol_steps[i][4]),
+                                              values=(self.protocol_steps[i][1], self.protocol_steps[i][2]),
                                               tags=(treeview_tags[(i + 1) % 2])))
 
     def __load_protocol_from_file(self, selected_file=None):
