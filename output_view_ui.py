@@ -442,8 +442,8 @@ class ViewWoodway:
         self.selected_command = self.protocol_steps[self.selected_step]
         self.step_duration = self.selected_command[0]
         self.step_time += self.step_duration
-        self.woodway_speed_l += self.selected_command[1]
-        self.woodway_speed_r += self.selected_command[2]
+        self.woodway_speed_l = (self.selected_command[1] / 100) * self.woodway_thresh
+        self.woodway_speed_r = (self.selected_command[2] / 100) * self.woodway_thresh
         self.woodway_incline += self.selected_command[3]
         self.__update_woodway()
 
@@ -816,25 +816,25 @@ class ViewBLE:
         self.selected_command = self.protocol_steps[self.selected_step]
         self.step_duration = self.selected_command[0]
         self.step_time += self.step_duration
-        self.r_ble_1_3_value += self.selected_command[1]
-        self.r_ble_4_6_value += self.selected_command[2]
-        self.r_ble_7_9_value += self.selected_command[3]
-        self.r_ble_10_12_value += self.selected_command[4]
-        self.l_ble_1_3_value += self.selected_command[1]
-        self.l_ble_4_6_value += self.selected_command[2]
-        self.l_ble_7_9_value += self.selected_command[3]
-        self.l_ble_10_12_value += self.selected_command[4]
+        self.r_ble_1_3_value = (self.selected_command[1] / 100) * self.right_ble_thresh
+        # self.r_ble_4_6_value = self.selected_command[2]
+        # self.r_ble_7_9_value = self.selected_command[3]
+        # self.r_ble_10_12_value = self.selected_command[4]
+        self.l_ble_1_3_value = (self.selected_command[2] / 100) * self.left_ble_thresh
+        # self.l_ble_4_6_value = self.selected_command[2]
+        # self.l_ble_7_9_value = self.selected_command[3]
+        # self.l_ble_10_12_value = self.selected_command[4]
         self.__update_ble()
 
     def __update_ble(self):
-        for i in range(0, 3):
-            self.slider_objects[i].set(self.l_ble_1_3_value)
-        for i in range(3, 6):
-            self.slider_objects[i].set(self.l_ble_4_6_value)
-        for i in range(6, 9):
-            self.slider_objects[i].set(self.l_ble_7_9_value)
-        for i in range(9, 12):
-            self.slider_objects[i].set(self.l_ble_10_12_value)
+        for slider in self.slider_objects:
+            slider.set(self.l_ble_1_3_value)
+        # for i in range(3, 6):
+        #     self.slider_objects[i].set(self.l_ble_4_6_value)
+        # for i in range(6, 9):
+        #     self.slider_objects[i].set(self.l_ble_7_9_value)
+        # for i in range(9, 12):
+        #     self.slider_objects[i].set(self.l_ble_10_12_value)
         self.right_vta.write_all_motors(self.r_ble_1_3_value)
         self.left_vta.write_all_motors(self.l_ble_1_3_value)
 
