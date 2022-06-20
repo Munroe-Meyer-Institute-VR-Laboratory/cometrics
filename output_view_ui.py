@@ -442,8 +442,8 @@ class ViewWoodway:
         self.selected_command = self.protocol_steps[self.selected_step]
         self.step_duration = self.selected_command[0]
         self.step_time += self.step_duration
-        self.woodway_speed_l = (self.selected_command[1] / 100) * self.woodway_thresh
-        self.woodway_speed_r = (self.selected_command[2] / 100) * self.woodway_thresh
+        self.woodway_speed_l = self.woodway_thresh + self.selected_command[1]
+        self.woodway_speed_r = self.woodway_thresh + self.selected_command[2]
         self.woodway_incline += self.selected_command[3]
         self.__update_woodway()
 
