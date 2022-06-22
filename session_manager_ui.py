@@ -1,6 +1,5 @@
 import datetime
 import json
-import math
 import os
 import pathlib
 from os import walk, path
@@ -323,14 +322,18 @@ class SessionManagerWindow:
                                         f"{session_fields['Condition Name'][:2]}"
                                         f"{self.session_file_date}{reli}.json")
         if self.ovu.video_view.video_file:
-            cp_rename(src=self.ovu.video_view.video_file,
-                      dst=path.join(self.session_dir,
-                                    self.config.get_data_folders()[1],
-                                    session_fields["Primary Data"]),
-                      name=f"{session_fields['Session Number']}"
-                           f"{session_fields['Assessment Name'][:2]}"
-                           f"{session_fields['Condition Name'][:2]}"
-                           f"{self.session_file_date}{reli}")
+            try:
+                cp_rename(src=self.ovu.video_view.video_file,
+                          dst=path.join(self.session_dir,
+                                        self.config.get_data_folders()[1],
+                                        session_fields["Primary Data"]),
+                          name=f"{session_fields['Session Number']}"
+                               f"{session_fields['Assessment Name'][:2]}"
+                               f"{session_fields['Condition Name'][:2]}"
+                               f"{self.session_file_date}{reli}")
+            except FileExistsError:
+                messagebox.showwarning("Warning", "Video copy procedure failed, double check that session video is present with session file!")
+                print("WARNING: Video copy procedure failed, double check that session video is present with session file!")
         with open(output_session_file, 'w') as f:
             json.dump(session_fields, f)
         print(f"INFO: Saved session file to: {output_session_file}")

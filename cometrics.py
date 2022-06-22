@@ -1,6 +1,7 @@
 import datetime
 import os
 import sys
+import gc
 # Custom library imports
 import imageio_ffmpeg
 
@@ -47,6 +48,8 @@ if __name__ == "__main__":
                     break
                 elif manager.close_program:
                     break
+                del manager
+                gc.collect()
             if manager.close_program:
                 break
         else:
