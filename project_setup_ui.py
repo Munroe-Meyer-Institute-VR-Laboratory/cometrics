@@ -11,7 +11,7 @@ from tkinter.ttk import Combobox
 from ksf_utils import import_ksf, create_new_ksf_revision, compare_keystrokes
 from patient_data_fields import PatientContainer
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
-    NewKeyPopup, clear_treeview, get_slider_style
+    NewKeyPopup, clear_treeview, get_slider_style, ProjectPopup
 from ui_params import project_treeview_params as ptp, treeview_tags, window_ratio, large_field_font, medium_field_font, \
     small_field_font, large_treeview_font, \
     medium_treeview_font, small_treeview_font, large_treeview_rowheight, medium_treeview_rowheight, \
@@ -193,12 +193,13 @@ class ProjectSetupWindow:
             return
         if caller == 0:
             # Update path to project and create if it doesn't exist
-            self.project_dir = os.path.join(self.top_dir, data)
+            self.project_name = data[0]
+            self.project_dir = os.path.join(data[1], data[0])
             if not os.path.exists(self.project_dir):
                 os.mkdir(self.project_dir)
             # Add to treeview
             self.project_treeview_parents.append(
-                self.project_treeview.insert("", 'end', str((int(self.project_treeview_parents[-1]) + 1)), text=data,
+                self.project_treeview.insert("", 'end', str((int(self.project_treeview_parents[-1]) + 1)), text=self.project_name,
                                              tags=treeview_tags[(int(self.project_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.project_treeview, self.project_treeview_parents[-1])
             # Save recent path to config
@@ -242,14 +243,14 @@ class ProjectSetupWindow:
                           f"{self.recent_projects}\n{selection}")
 
     def create_new_project(self):
-        self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
-        print("INFO:", self.top_dir)
-        if not self.top_dir:
-            messagebox.showwarning("Warning", "No root filepath chosen! Please try again.")
-            return
-        else:
-            self.top_dir = os.path.normpath(self.top_dir)
-        EntryPopup(self, self.main_root, "Enter New Project Name", 0)
+        # self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
+        # print("INFO:", self.top_dir)
+        # if not self.top_dir:
+        #     messagebox.showwarning("Warning", "No root filepath chosen! Please try again.")
+        #     return
+        # else:
+        #     self.top_dir = os.path.normpath(self.top_dir)
+        ProjectPopup(self, self.main_root, "Create or Import New Project", 0)
 
     def populate_recent_projects(self):
         self.project_treeview_parents.append(

@@ -1,13 +1,15 @@
+import os.path
+import pathlib
 import threading
 import time
 import tkinter
-from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk, LEFT
+from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk, LEFT, filedialog
 from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview, Entry
 
 import numpy as np
-
-from ui_params import treeview_default_tag_dict
+from PIL import ImageTk as itk
+from ui_params import treeview_default_tag_dict, cometrics_ver_root
 
 
 def center(toplevel, y_offset=-20):
@@ -238,6 +240,70 @@ class ConfigPopup:
 
     def clear_projects(self):
         self.config.set_recent_projects([])
+
+
+class ProjectPopup:
+    def __init__(self, top, root, name, popup_call):
+        assert top.popup_return
+        self.popup_call = popup_call
+        self.caller = top
+        self.entry = None
+        self.popup_root = None
+        self.name = name
+        self.popup_entry(root)
+
+    def popup_entry(self, root):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("400x100")
+        popup_root.title(self.name)
+
+        # Create an Entry Widget in the Toplevel window
+        project_name_text = tkinter.Label(popup_root, text="Project Name", font=('Purisa', 10), bg='white')
+        project_name_text.place(x=10, y=10, anchor=NW)
+        self.project_name_var = tkinter.StringVar(popup_root)
+        self.entry = tkinter.Entry(popup_root, bd=2, width=35, textvariable=self.project_name_var)
+        self.entry.place(x=110, y=11, anchor=NW)
+
+        project_dir_text = tkinter.Label(popup_root, text="Project Folder", font=('Purisa', 10), bg='white')
+        project_dir_text.place(x=10, y=40, anchor=NW)
+        self.dir_entry_var = tkinter.StringVar(popup_root, value=rf'{cometrics_ver_root}\Projects')
+        self.dir_entry = tkinter.Entry(popup_root, bd=2, width=35, textvariable=self.dir_entry_var)
+        self.dir_entry.place(x=110, y=41, anchor=NW)
+
+        self.folder_img = itk.PhotoImage(file='images/folder.png')
+        dir_button = tkinter.Button(popup_root, image=self.folder_img, command=self.select_dir)
+        dir_button.place(x=330, y=40, anchor=NW)
+
+        # Create a Button Widget in the Toplevel Window
+        import_button = tkinter.Button(popup_root, text="Import", command=self.import_project)
+        import_button.place(x=195, y=95, anchor=tkinter.SE, width=50)
+        button = tkinter.Button(popup_root, text="OK", command=self.close_win)
+        button.place(x=205, y=95, anchor=tkinter.SW, width=50)
+        center(popup_root)
+        popup_root.focus_force()
+        self.entry.focus()
+
+    def import_project(self):
+        chosen_project = filedialog.askdirectory(title='Select project folder')
+        if chosen_project:
+            if os.path.isdir(chosen_project):
+                self.dir_entry_var.set(pathlib.Path(chosen_project).parent)
+                self.project_name_var.set(pathlib.Path(chosen_project).name)
+            else:
+                messagebox.showerror("Project Error", "Projects must be folders!")
+        self.popup_root.focus_force()
+
+    def select_dir(self):
+        chosen_dir = filedialog.askdirectory(title='Select root directory to save files')
+        if chosen_dir:
+            self.dir_entry_var.set(chosen_dir)
+        self.popup_root.focus_force()
+
+    def close_win(self):
+        self.caller.popup_return((self.entry.get(), self.dir_entry.get()), self.popup_call)
+        self.popup_root.destroy()
 
 
 class EntryPopup:
