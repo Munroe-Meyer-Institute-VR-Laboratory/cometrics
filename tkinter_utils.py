@@ -65,8 +65,8 @@ def get_treeview_style(name="mystyle.Treeview", font=('Purisa', 12), heading_fon
 
 
 def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, selectmode='browse', t_height=18,
-                   filescroll=True, button_1_bind=None, double_bind=None, style="mystyle.Treeview", anchor=NW,
-                   tag_dict=treeview_default_tag_dict, fs_offset=18):
+                   filescroll=True, button_1_bind=None, double_bind=None, button_3_bind=None, style="mystyle.Treeview",
+                   anchor=NW, tag_dict=treeview_default_tag_dict, fs_offset=18):
     treeview = Treeview(root, style=style, height=t_height, selectmode=selectmode)
     treeview.place(x=x, y=y, height=height, width=width, anchor=anchor)
     # Define header
@@ -85,6 +85,8 @@ def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, se
         treeview.bind("<ButtonRelease-1>", button_1_bind)
     if double_bind:
         treeview.bind("<Double-Button-1>", double_bind)
+    if button_3_bind:
+        treeview.bind("<ButtonRelease-3>", button_3_bind)
     if filescroll:
         file_scroll = tkinter.Scrollbar(root, orient="vertical", command=treeview.yview)
         file_scroll.place(x=(x - fs_offset), y=y, height=height, anchor=anchor)

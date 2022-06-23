@@ -74,7 +74,8 @@ class ProjectSetupWindow:
                                                                         project_treeview_height,
                                                                         treeview_width,
                                                                         project_heading_dict,
-                                                                        double_bind=self.select_project)
+                                                                        double_bind=self.select_project,
+                                                                        button_3_bind=self.delete_project)
         self.recent_projects = config.get_recent_projects()
         self.populate_recent_projects()
         patient_treeview_height = int(self.window_height * 0.2)
@@ -228,7 +229,6 @@ class ProjectSetupWindow:
                                              tags=treeview_tags[(int(self.concern_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.concern_treeview, self.concern_treeview_parents[-1])
             self.load_concern(len(self.concerns))
-
     # endregion
 
     # region Project UI Controls
@@ -244,6 +244,26 @@ class ProjectSetupWindow:
                     print(f"ERROR: Error encountered when selecting project:\n{str(e)}\n{traceback.print_exc()}\n"
                           f"{self.recent_projects}\n{selection}")
 
+    def delete_project(self, event):
+        selection = self.project_treeview.identify_row(event.y)
+        if selection:
+            if selection == '0':
+                return
+            else:
+                try:
+                    response = messagebox.askyesno("Delete Project?", f"Delete {self.recent_projects[int(selection) - 1]} from Recent Projects?")
+                    if response:
+                        self.recent_projects.pop(int(selection) - 1)
+                        self.config.set_recent_projects(self.recent_projects[-20:])
+                        clear_treeview(self.project_treeview)
+                        clear_treeview(self.patient_treeview)
+                        clear_treeview(self.concern_treeview)
+                        self.reset_ksf()
+                        self.populate_recent_projects()
+                except IndexError as e:
+                    print(
+                        f"ERROR: Error encountered when deleting project: \n{str(e)}\n{traceback.print_exc()}\n{self.recent_projects}\n{selection}")
+
     def create_new_project(self):
         # self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
         # print("INFO:", self.top_dir)
@@ -255,6 +275,7 @@ class ProjectSetupWindow:
         ProjectPopup(self, self.main_root, "Create or Import New Project", 0)
 
     def populate_recent_projects(self):
+        self.project_treeview_parents = []
         self.project_treeview_parents.append(
             self.project_treeview.insert("", 'end', str(0), text="Create or Import New Project",
                                          tags=treeview_tags[2]))
@@ -275,13 +296,13 @@ class ProjectSetupWindow:
         clear_treeview(self.patient_treeview)
         clear_treeview(self.concern_treeview)
         self.reset_ksf()
-        self.patient_treeview_parents = []
         self.populate_patients()
 
     # endregion
 
     # region Patient UI Controls
     def populate_patients(self):
+        self.patient_treeview_parents = []
         self.patient_treeview_parents.append(self.patient_treeview.insert("", 'end', str(0), text="Create New Patient",
                                                                           tags=treeview_tags[2]))
         if self.patients:
@@ -328,6 +349,7 @@ class ProjectSetupWindow:
     # region Concern UI Controls
     def populate_patient_concerns(self):
         self.read_concern_file()
+        self.concern_treeview_parents = []
         self.concern_treeview_parents.append(self.concern_treeview.insert("", 'end', str(0), text="Create New Concern",
                                                                           tags=treeview_tags[2]))
         if self.concerns:
@@ -473,6 +495,7 @@ class ProjectSetupWindow:
 
     def populate_frequency_treeview(self):
         self.clear_frequency_treeview()
+        self.frequency_treeview_parents = []
         self.frequency_treeview_parents.append(
             self.frequency_key_treeview.insert("", 'end', str(0), text="Create New Frequency Key",
                                                tags=treeview_tags[2]))
@@ -493,6 +516,7 @@ class ProjectSetupWindow:
 
     def populate_duration_treeview(self):
         self.clear_duration_treeview()
+        self.duration_treeview_parents = []
         self.duration_treeview_parents.append(
             self.duration_key_treeview.insert("", 'end', str(0), text="Create New Duration Key",
                                               tags=treeview_tags[2]))
