@@ -251,7 +251,8 @@ class ProjectSetupWindow:
                 return
             else:
                 try:
-                    response = messagebox.askyesno("Delete Project?", f"Delete {self.recent_projects[int(selection) - 1]} from Recent Projects?")
+                    response = messagebox.askyesno("Delete Project?",
+                                                   f"Delete {pathlib.Path(self.recent_projects[int(selection) - 1]).name} from Recent Projects?")
                     if response:
                         self.recent_projects.pop(int(selection) - 1)
                         self.config.set_recent_projects(self.recent_projects[-20:])

@@ -301,9 +301,9 @@ class ProjectPopup:
                         return
                 self.dir_entry_var.set(pathlib.Path(chosen_project).parent)
                 self.project_name_var.set(pathlib.Path(chosen_project).name)
+                self.close_win()
             else:
                 messagebox.showerror("Project Error", "Projects must be folders!")
-        self.popup_root.focus_force()
 
     def select_dir(self):
         chosen_dir = filedialog.askdirectory(title='Select root directory to save files')

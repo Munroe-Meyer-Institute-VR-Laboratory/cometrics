@@ -41,6 +41,8 @@ if __name__ == "__main__":
     config = ConfigUtils()
     config.set_cwd(cwd)
     config.set_logs_dir(os.path.join(cometrics_ver_root, 'logs'))
+    if not os.path.exists(f"{cometrics_ver_root}/Projects"):
+        os.mkdir(f"{cometrics_ver_root}/Projects")
     while True:
         first_time = config.get_first_time()
         setup = ProjectSetupWindow(config, first_time)
