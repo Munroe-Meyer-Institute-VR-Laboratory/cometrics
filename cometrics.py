@@ -3,6 +3,9 @@ import os
 import sys
 import gc
 # Custom library imports
+import traceback
+from tkinter import messagebox
+
 import imageio_ffmpeg
 
 from config_utils import ConfigUtils
@@ -43,13 +46,16 @@ if __name__ == "__main__":
         setup = ProjectSetupWindow(config, first_time)
         if setup.setup_complete:
             while True:
-                manager = SessionManagerWindow(config, setup)
-                if manager.setup_again:
-                    break
-                elif manager.close_program:
-                    break
-                del manager
-                gc.collect()
+                try:
+                    manager = SessionManagerWindow(config, setup)
+                    if manager.setup_again:
+                        break
+                    elif manager.close_program:
+                        break
+                    del manager
+                    gc.collect()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Exception encountered:\n{str(e)}\n{traceback.print_exc()}")
             if manager.close_program:
                 break
         else:

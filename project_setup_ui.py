@@ -265,13 +265,6 @@ class ProjectSetupWindow:
                         f"ERROR: Error encountered when deleting project: \n{str(e)}\n{traceback.print_exc()}\n{self.recent_projects}\n{selection}")
 
     def create_new_project(self):
-        # self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
-        # print("INFO:", self.top_dir)
-        # if not self.top_dir:
-        #     messagebox.showwarning("Warning", "No root filepath chosen! Please try again.")
-        #     return
-        # else:
-        #     self.top_dir = os.path.normpath(self.top_dir)
         ProjectPopup(self, self.main_root, "Create or Import New Project", 0)
 
     def populate_recent_projects(self):

@@ -124,20 +124,20 @@ class SessionTimeFields:
         self.beep_th = None
         self.interval_thread = None
 
-        session_button = Button(self.frame, text="Session", command=self.switch_session_frame, width=12,
-                                font=field_font)
-        self.view_buttons.append(session_button)
-        self.SESSION_VIEW = len(self.view_buttons) - 1
-        self.view_buttons[self.SESSION_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
-                                                   width=button_size[0], height=button_size[1])
-        self.view_buttons[self.SESSION_VIEW].config(relief=SUNKEN)
+        # session_button = Button(self.frame, text="Session", command=self.switch_session_frame, width=12,
+        #                         font=field_font)
+        # self.view_buttons.append(session_button)
+        # self.SESSION_VIEW = len(self.view_buttons) - 1
+        # self.view_buttons[self.SESSION_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+        #                                            width=button_size[0], height=button_size[1])
+        # self.view_buttons[self.SESSION_VIEW].config(relief=SUNKEN)
 
-        review_button = Button(self.frame, text="Review", command=self.switch_review_frame, width=12,
-                               font=field_font)
-        self.view_buttons.append(review_button)
-        self.REVIEW_VIEW = len(self.view_buttons) - 1
-        self.view_buttons[self.REVIEW_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
-                                                  width=button_size[0], height=button_size[1])
+        # review_button = Button(self.frame, text="Review", command=self.switch_review_frame, width=12,
+        #                        font=field_font)
+        # self.view_buttons.append(review_button)
+        # self.REVIEW_VIEW = len(self.view_buttons) - 1
+        # self.view_buttons[self.REVIEW_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
+        #                                           width=button_size[0], height=button_size[1])
 
         self.time_thread = threading.Thread(target=self.time_update_thread)
 
