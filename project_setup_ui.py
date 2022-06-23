@@ -197,6 +197,8 @@ class ProjectSetupWindow:
             self.project_dir = os.path.join(data[1], data[0])
             if not os.path.exists(self.project_dir):
                 os.mkdir(self.project_dir)
+            if not os.path.exists(os.path.join(self.project_dir, '.cometrics')):
+                open(os.path.join(self.project_dir, '.cometrics'), 'w')
             # Add to treeview
             self.project_treeview_parents.append(
                 self.project_treeview.insert("", 'end', str((int(self.project_treeview_parents[-1]) + 1)), text=self.project_name,

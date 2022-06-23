@@ -289,6 +289,14 @@ class ProjectPopup:
         chosen_project = filedialog.askdirectory(title='Select project folder')
         if chosen_project:
             if os.path.isdir(chosen_project):
+                if not os.path.exists(os.path.join(chosen_project, '.cometrics')):
+                    response = messagebox.askyesno("Invalid Project", "Project is not a valid cometrics project, "
+                                                                      "this could happen if importing a legacy project "
+                                                                      "(legacy projects will be updated in that case), "
+                                                                      "continue?")
+                    if not response:
+                        self.popup_root.focus_force()
+                        return
                 self.dir_entry_var.set(pathlib.Path(chosen_project).parent)
                 self.project_name_var.set(pathlib.Path(chosen_project).name)
             else:
