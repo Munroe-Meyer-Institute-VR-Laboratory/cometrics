@@ -546,7 +546,7 @@ class CalibrateWoodway:
                                                "3. Prompt the subject to alert operator when walking feels comfortable,\n"
                                                "4. When subject alerts operator, press the 'Stop' button,\n"
                                                "5. The speed when stopped will be recorded, \n"
-                                               "6. Press 'Calibrate' button again to decrease speed from 200% of previous recorded speed,\n"
+                                               "6. Press 'Calibrate' button again to decrease speed from 150% of previous recorded speed,\n"
                                                "7. Prompt the subject to alert operator when walking feel comfortable,\n"
                                                "8. When subject alerts operator, press the 'Stop' button,\n"
                                                "9. The speed when stopped will be recorded,\n"
@@ -580,7 +580,7 @@ class CalibrateWoodway:
         elif self.calibration_step == 1:
             self.calibrating = True
             cal_thread = threading.Thread(target=self.calibration_thread,
-                                          args=(self.calibrated_speed_increasing * 2.0, False))
+                                          args=(self.calibrated_speed_increasing * 1.5, False))
             cal_thread.daemon = True
             cal_thread.start()
             self.calibration_step += 1
@@ -594,7 +594,7 @@ class CalibrateWoodway:
                     self.calibrated_speed_increasing = speed
                     self.woodway.set_speed(float(speed), float(speed))
                     self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed_increasing:.1f} MPH")
-                    for i in range(0, 20):
+                    for i in range(0, 4):
                         time.sleep(0.25)
                         if not self.calibrating:
                             self.woodway.set_speed(float(0.0), float(0.0))
@@ -604,7 +604,7 @@ class CalibrateWoodway:
                     self.calibrated_speed_decreasing = speed
                     self.woodway.set_speed(float(speed), float(speed))
                     self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed_decreasing:.1f} MPH")
-                    for i in range(0, 20):
+                    for i in range(0, 4):
                         time.sleep(0.25)
                         if not self.calibrating:
                             self.woodway.set_speed(float(0.0), float(0.0))
@@ -662,7 +662,7 @@ class CalibrateVibrotactors:
                                                "3. Prompt the subject to alert operator when vibrotactors are perceptible,\n"
                                                "4. When subject alerts operator, press the 'Stop' button,\n"
                                                "5. The intensity level when stopped will be recorded, \n"
-                                               "6. Press 'Calibrate Left' button again to decrease intensity from 200% of previous recorded intensity level,\n"
+                                               "6. Press 'Calibrate Left' button again to decrease intensity from 150% of previous recorded intensity level,\n"
                                                "7. Prompt the subject to alert operator when vibrotactors are perceptible,\n"
                                                "8. When subject alerts operator, press the 'Stop' button,\n"
                                                "9. The intensity level when stopped will be recorded,\n"
@@ -696,7 +696,8 @@ class CalibrateVibrotactors:
         elif self.calibration_step == 1:
             self.calibrating = True
             cal_thread = threading.Thread(target=self.calibration_thread,
-                                          args=(self.left_vta, self.calibrated_left_increasing * 2, False, True))
+                                          args=(self.left_vta, int(self.calibrated_left_increasing * 1.5),
+                                                False, True))
             cal_thread.daemon = True
             cal_thread.start()
             self.calibration_step += 1
@@ -710,7 +711,8 @@ class CalibrateVibrotactors:
         elif self.calibration_step == 3:
             self.calibrating = True
             cal_thread = threading.Thread(target=self.calibration_thread,
-                                          args=(self.right_vta, self.calibrated_right_increasing * 2, False, False))
+                                          args=(self.right_vta, int(self.calibrated_right_increasing * 1.5),
+                                                False, False))
             cal_thread.daemon = True
             cal_thread.start()
             self.calibration_step += 1

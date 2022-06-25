@@ -346,34 +346,37 @@ class ViewWoodway:
         self.belt_speed_label.place(x=int(width * 0.625), y=10, anchor=N)
 
         self.belt_speed_l_label = Label(parent, text='Left', font=field_font, anchor=CENTER)
-        self.belt_speed_l_label.place(x=int(width * 0.55), y=40, anchor=NW)
+        self.belt_speed_l_label.place(x=int(width * 0.575), y=40, anchor=N)
 
         self.belt_speed_r_label = Label(parent, text='Right', font=field_font, anchor=CENTER)
-        self.belt_speed_r_label.place(x=int(width * 0.7), y=40, anchor=NE)
+        self.belt_speed_r_label.place(x=int(width * 0.675), y=40, anchor=N)
 
-        self.belt_speed_l_var = IntVar(parent)
-        self.belt_speed_l = Scale(parent, orient="vertical", variable=self.belt_speed_l_var,
-                                  command=self.__write_l_speed, length=int(height * 0.7), from_=29, to=0)
-        self.belt_speed_l.place(x=int(width * 0.56), y=70, anchor=N)
+        self.belt_speed_l_var = StringVar(parent)
+        self.belt_speed_l = Scale(parent, orient="vertical", variable=self.belt_speed_l_var, showvalue=False,
+                                  command=self.__write_l_speed, length=int(height * 0.7), from_=29.9, to=-29.9,
+                                  digits=3, resolution=0.1)
+        self.belt_speed_l.place(x=int(width * 0.575), y=70, anchor=N)
 
         self.belt_speed_l_value = Label(parent, text="0 MPH", anchor=CENTER, font=field_font)
-        self.belt_speed_l_value.place(x=int(width * 0.55), y=80 + int(height * 0.7), anchor=NW)
+        self.belt_speed_l_value.place(x=int(width * 0.575), y=80 + int(height * 0.7), anchor=N)
 
-        self.belt_speed_r_var = IntVar(parent)
-        self.belt_speed_r = Scale(parent, orient="vertical", variable=self.belt_speed_r_var,
-                                  command=self.__write_r_speed, length=int(height * 0.7), from_=29, to=0)
-        self.belt_speed_r.place(x=int(width * 0.7), y=70, anchor=NE)
+        self.belt_speed_r_var = StringVar(parent)
+        self.belt_speed_r = Scale(parent, orient="vertical", variable=self.belt_speed_r_var, showvalue=False,
+                                  command=self.__write_r_speed, length=int(height * 0.7), from_=29.9, to=-29.9,
+                                  digits=3, resolution=0.1)
+        self.belt_speed_r.place(x=int(width * 0.675), y=70, anchor=N)
         self.belt_speed_r_value = Label(parent, text="0 MPH", anchor=CENTER, font=field_font)
-        self.belt_speed_r_value.place(x=int(width * 0.7), y=80 + int(height * 0.7), anchor=NE)
+        self.belt_speed_r_value.place(x=int(width * 0.675), y=80 + int(height * 0.7), anchor=N)
 
         # This section gets 25% of the panel
         self.belt_incline_label = Label(parent, text="Belt Incline", font=header_font, anchor=CENTER)
         self.belt_incline_label.place(x=int(width * 0.875), y=10, anchor=N)
 
-        self.belt_incline_l_var = IntVar(parent)
-        self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var,
-                                    command=self.__write_incline, length=int(height * 0.7), from_=29, to=0)
-        self.belt_incline_l.place(x=int(width * 0.885), y=70, anchor=NE)
+        self.belt_incline_l_var = StringVar(parent)
+        self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var, showvalue=False,
+                                    command=self.__write_incline, length=int(height * 0.7), from_=29.9, to=0,
+                                    digits=3, resolution=0.1)
+        self.belt_incline_l.place(x=int(width * 0.875), y=70, anchor=N)
 
         self.belt_incline_l_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
         self.belt_incline_l_value.place(x=int(width * 0.875), y=80 + int(height * 0.7), anchor=N)
@@ -401,9 +404,9 @@ class ViewWoodway:
         self.calibrate_button.config(state='disabled')
 
     def __disable_ui_elements(self):
-        self.belt_incline_l.config(state='disabled')
-        self.belt_speed_l.config(state='disabled')
-        self.belt_speed_r.config(state='disabled')
+        self.belt_incline_l.config(state='active')
+        self.belt_speed_l.config(state='active')
+        self.belt_speed_r.config(state='active')
         self.woodway_disconnect_button.config(state='disabled')
 
     def __enable_ui_elements(self):
@@ -440,7 +443,6 @@ class ViewWoodway:
             self.__update_woodway_protocol()
 
     def __update_woodway_protocol(self):
-        # TODO: Check external input
         if self.selected_step == len(self.protocol_steps):
             return
         self.selected_command = self.protocol_steps[self.selected_step]
@@ -594,21 +596,21 @@ class ViewWoodway:
         if self.session_started:
             self.belt_speed_l.set(speed)
         if self.woodway:
-            self.belt_speed_l_value.config(text=f"{int(speed)} MPH")
+            self.belt_speed_l_value.config(text=f"{float(speed):.1f} MPH")
             self.woodway.belt_a.set_speed(float(speed))
 
     def __write_r_speed(self, speed):
         if self.session_started:
             self.belt_speed_r.set(speed)
         if self.woodway:
-            self.belt_speed_r_value.config(text=f"{int(speed)} MPH")
+            self.belt_speed_r_value.config(text=f"{float(speed):.1f} MPH")
             self.woodway.belt_b.set_speed(float(speed))
 
     def __write_incline(self, incline):
         if self.session_started:
             self.belt_incline_l.set(incline)
         if self.woodway:
-            self.belt_incline_l_value.config(text=f"{int(incline)}\u00b0")
+            self.belt_incline_l_value.config(text=f"{float(incline):.1f}\u00b0")
             self.woodway.set_elevations(float(incline))
 
 
@@ -722,7 +724,7 @@ class ViewBLE:
                 slider_separation_h += int(height * 0.4)
             label = Label(parent, text=f"{i + 1}", font=field_font, anchor=E, width=4)
             label.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h)
-            temp_slider = Scale(parent, orient="vertical", variable=slider_vars[i][1],
+            temp_slider = Scale(parent, orient="vertical", variable=slider_vars[i][1], showvalue=False,
                                 command=slider_vars[i][0], length=int(height * 0.35), from_=255, to=0)
             temp_slider.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h + 20)
             self.slider_objects.append(temp_slider)
@@ -730,15 +732,15 @@ class ViewBLE:
         slider_separation_h = 40
         label = Label(parent, text="Freq", font=field_font, anchor=CENTER, width=6)
         label.place(x=int(width * 0.52), y=slider_separation_h)
-        self.freq_slider = Scale(parent, orient="vertical", variable=slider_vars[12][1],
+        self.freq_slider = Scale(parent, orient="vertical", variable=slider_vars[12][1], showvalue=False,
                                  command=slider_vars[12][0], length=int(height * 0.75), from_=7, to=0)
         self.freq_slider.place(x=int(width * 0.52), y=slider_separation_h + 20)
 
         self.calibrate_button = Button(parent, text='Calibrate Vibrotactor Threshold', font=field_font,
                                        command=self.__calibrate_ble)
-        self.calibrate_button.place(x=int(width*0.75), y=(height - element_height_adj) + button_size[1] * 2,
+        self.calibrate_button.place(x=int(width * 0.75), y=(height - element_height_adj) + button_size[1] * 2,
                                     anchor=N,
-                                    width=int(width*0.45), height=button_size[1])
+                                    width=int(width * 0.45), height=button_size[1])
 
         self.__disable_ui_elements()
         self.ble_dir = os.path.join(self.session_dir, "BLE")
@@ -941,7 +943,7 @@ class ViewBLE:
             messagebox.showerror("Exception Encountered", f"Error encountered when saving protocol file!\n{str(ex)}")
 
     def disconnect_ble(self):
-        self.right_vta, self.left_vta = None, None
+        VibrotactorArray.disconnect_ble_devices(self.ble_instance)
         self.__disable_ui_elements()
 
     def __connect_to_ble(self):
@@ -950,21 +952,28 @@ class ViewBLE:
         self.ble_connect_thread.start()
 
     def __connect_ble_thread(self):
-        try:
-            self.left_vta = VibrotactorArray(self.ble_instance)
-            self.right_vta = VibrotactorArray(self.ble_instance)
-            if self.left_vta.get_side() != VibrotactorArraySide.LEFT:
-                vta = self.left_vta
-                self.left_vta = self.right_vta
-                self.right_vta = vta
-            else:
-                vta = self.right_vta
-                self.right_vta = self.left_vta
-                self.left_vta = vta
-            self.__enable_ui_elements()
-            messagebox.showinfo("Success!", "Vibrotactor arrays are connected!")
-        except Exception as ex:
-            messagebox.showerror("Error", f"Exception encountered:\n{str(ex)}")
+        while True:
+            try:
+                self.left_vta = VibrotactorArray(self.ble_instance)
+                self.right_vta = VibrotactorArray(self.ble_instance)
+                if self.left_vta.is_connected() and self.left_vta.is_connected():
+                    if self.left_vta.get_side() != VibrotactorArraySide.LEFT:
+                        vta = self.left_vta
+                        self.left_vta = self.right_vta
+                        self.right_vta = vta
+                    else:
+                        vta = self.right_vta
+                        self.right_vta = self.left_vta
+                        self.left_vta = vta
+                    self.__enable_ui_elements()
+                    messagebox.showinfo("Success!", "Vibrotactor arrays are connected!")
+                    break
+                else:
+                    response = messagebox.askyesno("Error", "Could not connect to both vibrotactor arrays!\nTry again?")
+                    if not response:
+                        break
+            except Exception as ex:
+                messagebox.showerror("Error", f"Exception encountered:\n{str(ex)}")
 
     def update_frequency(self, value):
         if self.right_vta and self.left_vta:
