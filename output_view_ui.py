@@ -7,7 +7,7 @@ import threading
 import time
 import traceback
 from tkinter import *
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox
 from tkinter.ttk import Combobox
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
@@ -275,7 +275,7 @@ class ViewWoodway:
         self.woodway_incline = 0
         self.session_started = False
         if woodway_thresh:
-            self.calibrated = False
+            self.calibrated = True
             self.woodway_thresh = woodway_thresh
         else:
             self.calibrated = False
@@ -353,18 +353,18 @@ class ViewWoodway:
 
         self.belt_speed_l_var = IntVar(parent)
         self.belt_speed_l = Scale(parent, orient="vertical", variable=self.belt_speed_l_var,
-                                  command=self.__write_l_speed, length=int(height * 0.75), from_=29, to=0)
+                                  command=self.__write_l_speed, length=int(height * 0.7), from_=29, to=0)
         self.belt_speed_l.place(x=int(width * 0.56), y=70, anchor=N)
 
         self.belt_speed_l_value = Label(parent, text="0 MPH", anchor=CENTER, font=field_font)
-        self.belt_speed_l_value.place(x=int(width * 0.55), y=80 + int(height * 0.75), anchor=NW)
+        self.belt_speed_l_value.place(x=int(width * 0.55), y=80 + int(height * 0.7), anchor=NW)
 
         self.belt_speed_r_var = IntVar(parent)
         self.belt_speed_r = Scale(parent, orient="vertical", variable=self.belt_speed_r_var,
-                                  command=self.__write_r_speed, length=int(height * 0.75), from_=29, to=0)
+                                  command=self.__write_r_speed, length=int(height * 0.7), from_=29, to=0)
         self.belt_speed_r.place(x=int(width * 0.7), y=70, anchor=NE)
         self.belt_speed_r_value = Label(parent, text="0 MPH", anchor=CENTER, font=field_font)
-        self.belt_speed_r_value.place(x=int(width * 0.7), y=80 + int(height * 0.75), anchor=NE)
+        self.belt_speed_r_value.place(x=int(width * 0.7), y=80 + int(height * 0.7), anchor=NE)
 
         # This section gets 25% of the panel
         self.belt_incline_label = Label(parent, text="Belt Incline", font=header_font, anchor=CENTER)
@@ -372,11 +372,11 @@ class ViewWoodway:
 
         self.belt_incline_l_var = IntVar(parent)
         self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var,
-                                    command=self.__write_l_incline, length=int(height * 0.75), from_=29, to=0)
+                                    command=self.__write_incline, length=int(height * 0.7), from_=29, to=0)
         self.belt_incline_l.place(x=int(width * 0.885), y=70, anchor=NE)
 
         self.belt_incline_l_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
-        self.belt_incline_l_value.place(x=int(width * 0.875), y=80 + int(height * 0.75), anchor=N)
+        self.belt_incline_l_value.place(x=int(width * 0.875), y=80 + int(height * 0.7), anchor=N)
 
         self.calibrate_button = Button(parent, text='Calibrate Woodway Threshold', font=field_font,
                                        command=self.__calibrate_woodway)
@@ -427,11 +427,12 @@ class ViewWoodway:
 
     def stop_session(self):
         self.session_started = False
-        self.woodway.belt_a.set_speed(0)
-        self.woodway.belt_b.set_speed(0)
+        self.woodway.belt_a.set_speed(0.0)
+        self.woodway.belt_b.set_speed(0.0)
+        self.woodway.set_elevations(0.0)
 
     def next_protocol_step(self, current_time):
-        if current_time == 0:
+        if current_time == 1:
             self.selected_step = 0
             self.__update_woodway_protocol()
         if (self.step_time - current_time) == 0:
@@ -439,6 +440,9 @@ class ViewWoodway:
             self.__update_woodway_protocol()
 
     def __update_woodway_protocol(self):
+        # TODO: Check external input
+        if self.selected_step == len(self.protocol_steps):
+            return
         self.selected_command = self.protocol_steps[self.selected_step]
         self.step_duration = self.selected_command[0]
         self.step_time += self.step_duration
@@ -448,14 +452,13 @@ class ViewWoodway:
         self.__update_woodway()
 
     def __update_woodway(self):
-        self.__write_l_incline(self.woodway_incline)
-        self.__write_l_speed(self.woodway_speed_l)
-        self.__write_r_speed(self.woodway_speed_r)
+        self.__write_incline(self.woodway_incline)
+        self.__write_speed()
 
     def is_calibrated(self):
         return self.calibrated
 
-    def __calibrate_return(self, woodway_threshold):
+    def calibrate_return(self, woodway_threshold):
         self.calibrated = True
         self.woodway_thresh = woodway_threshold
 
@@ -556,14 +559,12 @@ class ViewWoodway:
 
     def __connect_to_woodway(self):
         try:
-            ports = find_treadmills(self.config.get_woodway_a(), self.config.get_woodway_b())
-            if ports:
-                a_port = ports[0]
-                b_port = ports[1]
-                if a_port and b_port:
-                    self.woodway = SplitBelt(a_port.device, b_port.device)
-                    self.woodway.start_belts(True, False, True, False)
-                    self.__enable_ui_elements()
+            a_port, b_port = find_treadmills(a_sn=self.config.get_woodway_a(), b_sn=self.config.get_woodway_b())
+            if a_port and b_port:
+                self.woodway = SplitBelt(b_port.name, a_port.name)
+                self.woodway.start_belts(True, False, True, False)
+                self.__enable_ui_elements()
+                messagebox.showinfo("Success!", "Woodway Split Belt treadmill connected!")
             else:
                 messagebox.showerror("Error", "No treadmills found! Check serial numbers and connections!")
         except Exception as ex:
@@ -580,6 +581,15 @@ class ViewWoodway:
         else:
             messagebox.showwarning("Warning", "Connect to Woodway first!")
 
+    def __write_speed(self):
+        if self.session_started:
+            self.belt_speed_l.set(self.woodway_speed_l)
+            self.belt_speed_r.set(self.woodway_speed_r)
+        if self.woodway:
+            self.belt_speed_l_value.config(text=f"{int(self.woodway_speed_l)} MPH")
+            self.belt_speed_r_value.config(text=f"{int(self.woodway_speed_r)} MPH")
+            self.woodway.set_speed(self.woodway_speed_l, self.woodway_speed_r)
+
     def __write_l_speed(self, speed):
         if self.session_started:
             self.belt_speed_l.set(speed)
@@ -594,7 +604,7 @@ class ViewWoodway:
             self.belt_speed_r_value.config(text=f"{int(speed)} MPH")
             self.woodway.belt_b.set_speed(float(speed))
 
-    def __write_l_incline(self, incline):
+    def __write_incline(self, incline):
         if self.session_started:
             self.belt_incline_l.set(incline)
         if self.woodway:
@@ -790,7 +800,7 @@ class ViewBLE:
     def is_calibrated(self):
         return self.calibrated
 
-    def __calibrate_return(self, left_threshold, right_threshold):
+    def calibrate_return(self, left_threshold, right_threshold):
         self.calibrated = True
         self.left_ble_thresh = left_threshold
         self.right_ble_thresh = right_threshold
@@ -805,7 +815,7 @@ class ViewBLE:
                                motor_1=step[1], motor_2=step[2])
 
     def next_protocol_step(self, current_time):
-        if current_time == 0:
+        if current_time == 1:
             self.selected_step = 0
             self.__update_ble_protocol()
         if (self.step_time - current_time) == 0:
@@ -813,6 +823,8 @@ class ViewBLE:
             self.__update_ble_protocol()
 
     def __update_ble_protocol(self):
+        if self.selected_step + 1 == len(self.protocol_steps):
+            return
         self.selected_command = self.protocol_steps[self.selected_step]
         self.step_duration = self.selected_command[0]
         self.step_time += self.step_duration
@@ -835,8 +847,8 @@ class ViewBLE:
         #     self.slider_objects[i].set(self.l_ble_7_9_value)
         # for i in range(9, 12):
         #     self.slider_objects[i].set(self.l_ble_10_12_value)
-        self.right_vta.write_all_motors(self.r_ble_1_3_value)
-        self.left_vta.write_all_motors(self.l_ble_1_3_value)
+        self.right_vta.write_all_motors(int(self.r_ble_1_3_value))
+        self.left_vta.write_all_motors(int(self.l_ble_1_3_value))
 
     def select_protocol_step(self, event):
         selection = self.prot_treeview.identify_row(event.y)
@@ -945,7 +957,12 @@ class ViewBLE:
                 vta = self.left_vta
                 self.left_vta = self.right_vta
                 self.right_vta = vta
+            else:
+                vta = self.right_vta
+                self.right_vta = self.left_vta
+                self.left_vta = vta
             self.__enable_ui_elements()
+            messagebox.showinfo("Success!", "Vibrotactor arrays are connected!")
         except Exception as ex:
             messagebox.showerror("Error", f"Exception encountered:\n{str(ex)}")
 

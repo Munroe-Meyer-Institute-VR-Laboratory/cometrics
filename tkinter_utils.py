@@ -520,7 +520,7 @@ class AddBleProtocolStep:
 
 class CalibrateWoodway:
     def __init__(self, top, root, woodway):
-        assert top.__calibrate_return
+        assert top.calibrate_return
         self.caller = top
         self.entry = None
         self.popup_root = None
@@ -592,22 +592,22 @@ class CalibrateWoodway:
             if increasing:
                 for speed in np.arange(start_value, 20.0, 0.1):
                     self.calibrated_speed_increasing = speed
-                    self.woodway.set_speed(float(speed))
+                    self.woodway.set_speed(float(speed), float(speed))
                     self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed_increasing:.1f} MPH")
                     for i in range(0, 20):
                         time.sleep(0.25)
                         if not self.calibrating:
-                            self.woodway.set_speed(float(0.0))
+                            self.woodway.set_speed(float(0.0), float(0.0))
                             return
             else:
                 for speed in np.arange(start_value, 0.0, -0.1):
                     self.calibrated_speed_decreasing = speed
-                    self.woodway.set_speed(float(speed))
+                    self.woodway.set_speed(float(speed), float(speed))
                     self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed_decreasing:.1f} MPH")
                     for i in range(0, 20):
                         time.sleep(0.25)
                         if not self.calibrating:
-                            self.woodway.set_speed(float(0.0))
+                            self.woodway.set_speed(float(0.0), float(0.0))
                             if self.calibrated_speed_increasing and self.calibrated_speed_decreasing:
                                 self.calibrated_speed = np.average([self.calibrated_speed_increasing,
                                                                     self.calibrated_speed_decreasing])
@@ -626,14 +626,14 @@ class CalibrateWoodway:
 
     def close_win(self):
         if self.calibrated_speed:
-            self.caller.__calibrate_return(self.calibrated_speed)
+            self.caller.calibrate_return(self.calibrated_speed)
         self.calibrating = False
         self.popup_root.destroy()
 
 
 class CalibrateVibrotactors:
     def __init__(self, top, root, left_vta, right_vta):
-        assert top.__calibrate_return
+        assert top.calibrate_return
         self.caller = top
         self.entry = None
         self.popup_root = None
@@ -789,6 +789,6 @@ class CalibrateVibrotactors:
 
     def close_win(self):
         if self.calibrated_left and self.calibrated_right:
-            self.caller.__calibrate_return(self.calibrated_left, self.calibrated_right)
+            self.caller.calibrate_return(self.calibrated_left, self.calibrated_right)
         self.calibrating = False
         self.popup_root.destroy()

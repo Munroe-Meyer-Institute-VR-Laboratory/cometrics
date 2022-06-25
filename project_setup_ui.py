@@ -209,7 +209,7 @@ class ProjectSetupWindow:
             if not self.recent_projects:
                 self.recent_projects = []
             self.recent_projects.append(self.project_dir)
-            self.config.set_recent_projects(self.recent_projects[-20:])
+            self.config.set_recent_projects(self.recent_projects)
             # Load the project
             self.load_project(self.project_dir)
         elif caller == 1:
@@ -239,7 +239,8 @@ class ProjectSetupWindow:
                 self.create_new_project()
             else:
                 try:
-                    self.load_project(self.recent_projects[int(selection) - 1])
+                    self.selected_project = int(selection) - 1
+                    self.load_project(self.recent_projects[self.selected_project])
                 except IndexError as e:
                     print(f"ERROR: Error encountered when selecting project:\n{str(e)}\n{traceback.print_exc()}\n"
                           f"{self.recent_projects}\n{selection}")
@@ -255,7 +256,7 @@ class ProjectSetupWindow:
                                                    f"Delete {pathlib.Path(self.recent_projects[int(selection) - 1]).name} from Recent Projects?")
                     if response:
                         self.recent_projects.pop(int(selection) - 1)
-                        self.config.set_recent_projects(self.recent_projects[-20:])
+                        self.config.set_recent_projects(self.recent_projects)
                         clear_treeview(self.project_treeview)
                         clear_treeview(self.patient_treeview)
                         clear_treeview(self.concern_treeview)
@@ -285,7 +286,15 @@ class ProjectSetupWindow:
         try:
             _, self.patients, _ = next(os.walk(directory))
         except StopIteration:
-            messagebox.showerror("Error", "Selected project cannot be found!")
+            response = messagebox.askyesno("Error", "Selected project cannot be found!\nDelete from Recent Projects?")
+            if response:
+                self.recent_projects.pop(self.selected_project)
+                self.config.set_recent_projects(self.recent_projects)
+                clear_treeview(self.project_treeview)
+                clear_treeview(self.patient_treeview)
+                clear_treeview(self.concern_treeview)
+                self.reset_ksf()
+                self.populate_recent_projects()
             return
         clear_treeview(self.patient_treeview)
         clear_treeview(self.concern_treeview)
@@ -315,6 +324,8 @@ class ProjectSetupWindow:
                 self.create_new_patient()
             else:
                 self.patient_dir = os.path.join(self.project_dir, self.patients[int(selection) - 1])
+                if not os.path.exists(self.patient_dir):
+                    os.mkdir(self.patient_dir)
                 self.load_patient(self.patients[int(selection) - 1])
 
     def patient_creation_check(self):
