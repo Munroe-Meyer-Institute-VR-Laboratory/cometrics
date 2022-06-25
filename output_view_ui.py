@@ -281,16 +281,16 @@ class ViewWoodway:
             self.calibrated = False
             self.woodway_thresh = None
         # region EXPERIMENTAL PROTOCOL
-        element_height_adj = 120
+        element_height_adj = 100
         self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
-        self.exp_prot_label.place(x=int(width * 0.25) + 18, y=10, anchor=N)
+        self.exp_prot_label.place(x=int(width * 0.23) + 18, y=10, anchor=N)
         self.prot_treeview_parents = []
         prot_heading_dict = {"#0": ["Duration", 'w', 20, YES, 'w']}
         prot_column_dict = {"1": ["LS", 'c', 1, YES, 'c'],
                             "2": ["RS", 'c', 1, YES, 'c'],
                             "3": ["Incline", 'c', 1, YES, 'c']}
-        treeview_offset = int(width * 0.05)
-        self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=int(width * 0.05), y=40,
+        treeview_offset = int(width * 0.03)
+        self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=treeview_offset, y=40,
                                                                   height=height - element_height_adj - 40,
                                                                   heading_dict=prot_heading_dict,
                                                                   column_dict=prot_column_dict,
@@ -404,9 +404,9 @@ class ViewWoodway:
         self.calibrate_button.config(state='disabled')
 
     def __disable_ui_elements(self):
-        self.belt_incline_l.config(state='active')
-        self.belt_speed_l.config(state='active')
-        self.belt_speed_r.config(state='active')
+        self.belt_incline_l.config(state='disabled')
+        self.belt_speed_l.config(state='disabled')
+        self.belt_speed_r.config(state='disabled')
         self.woodway_disconnect_button.config(state='disabled')
 
     def __enable_ui_elements(self):
@@ -638,15 +638,15 @@ class ViewBLE:
             self.right_ble_thresh = None
             self.left_ble_thresh = None
         # region EXPERIMENTAL PROTOCOL
-        element_height_adj = 120
+        element_height_adj = 100
         self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
-        self.exp_prot_label.place(x=int(width * 0.25) + 18, y=10, anchor=N)
+        self.exp_prot_label.place(x=int(width * 0.23) + 18, y=10, anchor=N)
         self.prot_treeview_parents = []
         prot_heading_dict = {"#0": ["Duration", 'w', 20, YES, 'w']}
         prot_column_dict = {"1": ["Left", 'c', 1, YES, 'c'],
                             "2": ["Right", 'c', 1, YES, 'c']}
-        treeview_offset = int(width * 0.05)
-        self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=int(width * 0.05), y=40,
+        treeview_offset = int(width * 0.03)
+        self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=treeview_offset, y=40,
                                                                   height=height - element_height_adj - 40,
                                                                   heading_dict=prot_heading_dict,
                                                                   column_dict=prot_column_dict,
@@ -713,28 +713,30 @@ class ViewBLE:
             (self.update_frequency, IntVar(parent))
         ]
         self.slider_objects = []
-        label = Label(parent, text="Vibrotactor Levels", font=header_font, anchor=CENTER)
-        label.place(x=int(width * 0.8), y=10, anchor=N)
+
         slider_separation = int((width * 0.4) / 6)
         slider_separation_h = 40
         slider_count = 0
+
+        label = Label(parent, text="Vibrotactor Control", font=header_font, anchor=N)
+        label.place(x=int(width * 0.60) - slider_separation + int(slider_separation * 3), y=10, anchor=N)
         for i in range(0, 12):
             if i == 6:
                 slider_count = 0
                 slider_separation_h += int(height * 0.4)
-            label = Label(parent, text=f"{i + 1}", font=field_font, anchor=E, width=4)
-            label.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h)
+            label = Label(parent, text=f"{i + 1}", font=field_font, anchor=N, width=4)
+            label.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h, anchor=N)
             temp_slider = Scale(parent, orient="vertical", variable=slider_vars[i][1], showvalue=False,
                                 command=slider_vars[i][0], length=int(height * 0.35), from_=255, to=0)
-            temp_slider.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h + 20)
+            temp_slider.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h + 20, anchor=N)
             self.slider_objects.append(temp_slider)
             slider_count += 1
         slider_separation_h = 40
         label = Label(parent, text="Freq", font=field_font, anchor=CENTER, width=6)
-        label.place(x=int(width * 0.52), y=slider_separation_h)
+        label.place(x=int(width * 0.60) - slider_separation, y=slider_separation_h, anchor=N)
         self.freq_slider = Scale(parent, orient="vertical", variable=slider_vars[12][1], showvalue=False,
                                  command=slider_vars[12][0], length=int(height * 0.75), from_=7, to=0)
-        self.freq_slider.place(x=int(width * 0.52), y=slider_separation_h + 20)
+        self.freq_slider.place(x=int(width * 0.60) - slider_separation, y=slider_separation_h + 20, anchor=N)
 
         self.calibrate_button = Button(parent, text='Calibrate Vibrotactor Threshold', font=field_font,
                                        command=self.__calibrate_ble)
@@ -758,7 +760,7 @@ class ViewBLE:
 
     def disable_ui_elements(self):
         for slider in self.slider_objects:
-            slider.config(state='disabled')
+            slider.config(state='active')
         self.ble_disconnect_button.config(state='disabled')
         self.prot_add_button.config(state='disabled')
         self.prot_del_button.config(state='disabled')

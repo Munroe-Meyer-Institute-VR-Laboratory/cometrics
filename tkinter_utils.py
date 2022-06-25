@@ -423,25 +423,25 @@ class AddWoodwayProtocolStep:
         label.pack()
         self.duration_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.duration_entry.pack()
-        if self.dur:
+        if self.dur is not None:
             set_entry_text(self.duration_entry, self.dur)
         label = tkinter.Label(popup_root, text="Left Side Speed", font=('Purisa', 12), bg='white')
         label.pack()
         self.ls_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.ls_entry.pack()
-        if self.ls:
+        if self.ls is not None:
             set_entry_text(self.ls_entry, self.ls)
         label = tkinter.Label(popup_root, text="Right Side Speed", font=('Purisa', 12), bg='white')
         label.pack()
         self.rs_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.rs_entry.pack()
-        if self.rs:
+        if self.rs is not None:
             set_entry_text(self.rs_entry, self.rs)
         label = tkinter.Label(popup_root, text="Incline", font=('Purisa', 12), bg='white')
         label.pack()
         self.incline_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.incline_entry.pack()
-        if self.incl:
+        if self.incl is not None:
             set_entry_text(self.incline_entry, self.incl)
 
         # Create a Button Widget in the Toplevel Window
@@ -477,7 +477,7 @@ class AddBleProtocolStep:
         # Create a Toplevel window
         self.popup_root = popup_root = tkinter.Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x275")
+        popup_root.geometry("300x175")
         popup_root.title(self.name)
 
         # Create an Entry Widget in the Toplevel window
@@ -485,19 +485,19 @@ class AddBleProtocolStep:
         label.pack()
         self.duration_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.duration_entry.pack()
-        if self.dur:
+        if self.dur is not None:
             set_entry_text(self.duration_entry, self.dur)
         label = tkinter.Label(popup_root, text="Left Motor Level", font=('Purisa', 12), bg='white')
         label.pack()
         self.motor_1_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.motor_1_entry.pack()
-        if self.motor_1:
+        if self.motor_1 is not None:
             set_entry_text(self.motor_1_entry, self.motor_1)
         label = tkinter.Label(popup_root, text="Right Motor Level", font=('Purisa', 12), bg='white')
         label.pack()
         self.motor_2_entry = tkinter.Entry(popup_root, bd=2, width=25)
         self.motor_2_entry.pack()
-        if self.motor_2:
+        if self.motor_2 is not None:
             set_entry_text(self.motor_2_entry, self.motor_2)
 
         # Create a Button Widget in the Toplevel Window
