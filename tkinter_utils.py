@@ -564,6 +564,7 @@ class CalibrateWoodway:
         self.stop_button = tkinter.Button(popup_root, text="Stop", command=self.stop_calibration_step,
                                           font=('Purisa', 12))
         self.stop_button.place(x=400, y=280, anchor=tkinter.SW, width=150, height=30)
+        self.stop_button["state"] = 'disabled'
         self.calibration_text_var = tkinter.StringVar(popup_root, value=f"Calibration Value: 0.0 MPH")
         text = tkinter.Label(popup_root, textvariable=self.calibration_text_var, font=('Purisa', 12), bg='white')
         text.place(x=400, y=240, anchor=tkinter.S)

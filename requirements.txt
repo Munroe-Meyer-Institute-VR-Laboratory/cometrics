@@ -12,5 +12,5 @@ matplotlib==3.4.3
 logger-util~=0.2
 future~=0.18.2
 ttkwidgets~=0.12.1
-pyWoodway~=0.2.2
+pyWoodway~=0.2.3
 pyTactor~=0.1.4

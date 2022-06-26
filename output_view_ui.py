@@ -465,7 +465,14 @@ class ViewWoodway:
         self.woodway_thresh = woodway_threshold
 
     def __calibrate_woodway(self):
-        CalibrateWoodway(self, self.root, self.woodway)
+        if self.woodway:
+            if self.woodway.is_connected():
+                CalibrateWoodway(self, self.root, self.woodway)
+            else:
+                messagebox.showerror("Error",
+                                     "Something went wrong connecting to the Woodway!\nCannot be calibrated!")
+        else:
+            messagebox.showerror("Error", "Connect to Woodway first!\nCannot be calibrated!")
 
     def select_protocol_step(self, event):
         selection = self.prot_treeview.identify_row(event.y)
@@ -810,7 +817,13 @@ class ViewBLE:
         self.right_ble_thresh = right_threshold
 
     def __calibrate_ble(self):
-        CalibrateVibrotactors(self, self.root, self.left_vta, self.right_vta)
+        if self.right_vta and self.left_vta:
+            if self.right_vta.is_connected() and self.left_vta.is_connected():
+                CalibrateVibrotactors(self, self.root, self.left_vta, self.right_vta)
+            else:
+                messagebox.showerror("Error", "Something went wrong connecting to the vibrotactors!\nCannot be calibrated!")
+        else:
+            messagebox.showerror("Error", "Connect to vibrotactors first!\nCannot be calibrated!")
 
     def __edit_protocol_step(self, event):
         if self.selected_step:
