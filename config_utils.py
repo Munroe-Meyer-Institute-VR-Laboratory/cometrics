@@ -113,3 +113,21 @@ class ConfigUtils:
         if self.config:
             self.config['enable-ble'] = set_ble
             self.save_config()
+
+    def get_woodway_a(self):
+        if self.config:
+            return str(self.config['woodway-a-sn'])
+
+    def set_woodway_a(self, woodway_sn):
+        if self.config:
+            self.config['woodway-a-sn'] = woodway_sn
+            self.save_config()
+
+    def get_woodway_b(self):
+        if self.config:
+            return str(self.config['woodway-b-sn'])
+
+    def set_woodway_b(self, woodway_sn):
+        if self.config:
+            self.config['woodway-b-sn'] = woodway_sn
+            self.save_config()

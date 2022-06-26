@@ -9,8 +9,9 @@ import yaml
 from tkinter.ttk import Combobox
 
 from ksf_utils import import_ksf, create_new_ksf_revision, compare_keystrokes
+from patient_data_fields import PatientContainer
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
-    NewKeyPopup, clear_treeview, get_slider_style
+    NewKeyPopup, clear_treeview, get_slider_style, ProjectPopup
 from ui_params import project_treeview_params as ptp, treeview_tags, window_ratio, large_field_font, medium_field_font, \
     small_field_font, large_treeview_font, \
     medium_treeview_font, small_treeview_font, large_treeview_rowheight, medium_treeview_rowheight, \
@@ -73,7 +74,8 @@ class ProjectSetupWindow:
                                                                         project_treeview_height,
                                                                         treeview_width,
                                                                         project_heading_dict,
-                                                                        double_bind=self.select_project)
+                                                                        double_bind=self.select_project,
+                                                                        button_3_bind=self.delete_project)
         self.recent_projects = config.get_recent_projects()
         self.populate_recent_projects()
         patient_treeview_height = int(self.window_height * 0.2)
@@ -192,19 +194,22 @@ class ProjectSetupWindow:
             return
         if caller == 0:
             # Update path to project and create if it doesn't exist
-            self.project_dir = os.path.join(self.top_dir, data)
+            self.project_name = data[0]
+            self.project_dir = os.path.join(data[1], data[0])
             if not os.path.exists(self.project_dir):
                 os.mkdir(self.project_dir)
+            if not os.path.exists(os.path.join(self.project_dir, '.cometrics')):
+                open(os.path.join(self.project_dir, '.cometrics'), 'w')
             # Add to treeview
             self.project_treeview_parents.append(
-                self.project_treeview.insert("", 'end', str((int(self.project_treeview_parents[-1]) + 1)), text=data,
+                self.project_treeview.insert("", 'end', str((int(self.project_treeview_parents[-1]) + 1)), text=self.project_name,
                                              tags=treeview_tags[(int(self.project_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.project_treeview, self.project_treeview_parents[-1])
             # Save recent path to config
             if not self.recent_projects:
                 self.recent_projects = []
             self.recent_projects.append(self.project_dir)
-            self.config.set_recent_projects(self.recent_projects[-20:])
+            self.config.set_recent_projects(self.recent_projects)
             # Load the project
             self.load_project(self.project_dir)
         elif caller == 1:
@@ -224,7 +229,6 @@ class ProjectSetupWindow:
                                              tags=treeview_tags[(int(self.concern_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.concern_treeview, self.concern_treeview_parents[-1])
             self.load_concern(len(self.concerns))
-
     # endregion
 
     # region Project UI Controls
@@ -235,22 +239,38 @@ class ProjectSetupWindow:
                 self.create_new_project()
             else:
                 try:
-                    self.load_project(self.recent_projects[int(selection) - 1])
+                    self.selected_project = int(selection) - 1
+                    self.load_project(self.recent_projects[self.selected_project])
                 except IndexError as e:
                     print(f"ERROR: Error encountered when selecting project:\n{str(e)}\n{traceback.print_exc()}\n"
                           f"{self.recent_projects}\n{selection}")
 
+    def delete_project(self, event):
+        selection = self.project_treeview.identify_row(event.y)
+        if selection:
+            if selection == '0':
+                return
+            else:
+                try:
+                    response = messagebox.askyesno("Delete Project?",
+                                                   f"Delete {pathlib.Path(self.recent_projects[int(selection) - 1]).name} from Recent Projects?")
+                    if response:
+                        self.recent_projects.pop(int(selection) - 1)
+                        self.config.set_recent_projects(self.recent_projects)
+                        clear_treeview(self.project_treeview)
+                        clear_treeview(self.patient_treeview)
+                        clear_treeview(self.concern_treeview)
+                        self.reset_ksf()
+                        self.populate_recent_projects()
+                except IndexError as e:
+                    print(
+                        f"ERROR: Error encountered when deleting project: \n{str(e)}\n{traceback.print_exc()}\n{self.recent_projects}\n{selection}")
+
     def create_new_project(self):
-        self.top_dir = filedialog.askdirectory(title='Select root directory to save files')
-        print("INFO:", self.top_dir)
-        if not self.top_dir:
-            messagebox.showwarning("Warning", "No root filepath chosen! Please try again.")
-            return
-        else:
-            self.top_dir = os.path.normpath(self.top_dir)
-        EntryPopup(self, self.main_root, "Enter New Project Name", 0)
+        ProjectPopup(self, self.main_root, "Create or Import New Project", 0)
 
     def populate_recent_projects(self):
+        self.project_treeview_parents = []
         self.project_treeview_parents.append(
             self.project_treeview.insert("", 'end', str(0), text="Create or Import New Project",
                                          tags=treeview_tags[2]))
@@ -266,18 +286,26 @@ class ProjectSetupWindow:
         try:
             _, self.patients, _ = next(os.walk(directory))
         except StopIteration:
-            messagebox.showerror("Error", "Selected project cannot be found!")
+            response = messagebox.askyesno("Error", "Selected project cannot be found!\nDelete from Recent Projects?")
+            if response:
+                self.recent_projects.pop(self.selected_project)
+                self.config.set_recent_projects(self.recent_projects)
+                clear_treeview(self.project_treeview)
+                clear_treeview(self.patient_treeview)
+                clear_treeview(self.concern_treeview)
+                self.reset_ksf()
+                self.populate_recent_projects()
             return
         clear_treeview(self.patient_treeview)
         clear_treeview(self.concern_treeview)
         self.reset_ksf()
-        self.patient_treeview_parents = []
         self.populate_patients()
 
     # endregion
 
     # region Patient UI Controls
     def populate_patients(self):
+        self.patient_treeview_parents = []
         self.patient_treeview_parents.append(self.patient_treeview.insert("", 'end', str(0), text="Create New Patient",
                                                                           tags=treeview_tags[2]))
         if self.patients:
@@ -296,6 +324,8 @@ class ProjectSetupWindow:
                 self.create_new_patient()
             else:
                 self.patient_dir = os.path.join(self.project_dir, self.patients[int(selection) - 1])
+                if not os.path.exists(self.patient_dir):
+                    os.mkdir(self.patient_dir)
                 self.load_patient(self.patients[int(selection) - 1])
 
     def patient_creation_check(self):
@@ -317,19 +347,14 @@ class ProjectSetupWindow:
             self.populate_patient_concerns()
             self.patient_data_file = os.path.normpath(
                 os.path.join(self.patient_dir, pathlib.Path(self.patient_dir).stem + '.json'))
-            if not os.path.exists(self.patient_data_file):
-                with open(self.patient_data_file, 'w') as f:
-                    x = {
-                        "Name": pathlib.Path(self.patient_dir).stem,
-                        "MRN": ""
-                    }
-                    json.dump(x, f)
+            self.patient_container = PatientContainer(self.patient_data_file)
 
     # endregion
 
     # region Concern UI Controls
     def populate_patient_concerns(self):
         self.read_concern_file()
+        self.concern_treeview_parents = []
         self.concern_treeview_parents.append(self.concern_treeview.insert("", 'end', str(0), text="Create New Concern",
                                                                           tags=treeview_tags[2]))
         if self.concerns:
@@ -475,6 +500,7 @@ class ProjectSetupWindow:
 
     def populate_frequency_treeview(self):
         self.clear_frequency_treeview()
+        self.frequency_treeview_parents = []
         self.frequency_treeview_parents.append(
             self.frequency_key_treeview.insert("", 'end', str(0), text="Create New Frequency Key",
                                                tags=treeview_tags[2]))
@@ -495,6 +521,7 @@ class ProjectSetupWindow:
 
     def populate_duration_treeview(self):
         self.clear_duration_treeview()
+        self.duration_treeview_parents = []
         self.duration_treeview_parents.append(
             self.duration_key_treeview.insert("", 'end', str(0), text="Create New Duration Key",
                                               tags=treeview_tags[2]))

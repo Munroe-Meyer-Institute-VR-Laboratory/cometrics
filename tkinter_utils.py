@@ -1,9 +1,15 @@
+import os.path
+import pathlib
+import threading
+import time
 import tkinter
-from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk
+from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk, LEFT, filedialog
 from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview, Entry
 
-from ui_params import treeview_default_tag_dict
+import numpy as np
+from PIL import ImageTk as itk
+from ui_params import treeview_default_tag_dict, cometrics_ver_root
 
 
 def center(toplevel, y_offset=-20):
@@ -59,8 +65,8 @@ def get_treeview_style(name="mystyle.Treeview", font=('Purisa', 12), heading_fon
 
 
 def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, selectmode='browse', t_height=18,
-                   filescroll=True, button_1_bind=None, double_bind=None, style="mystyle.Treeview", anchor=NW,
-                   tag_dict=treeview_default_tag_dict, fs_offset=18):
+                   filescroll=True, button_1_bind=None, double_bind=None, button_3_bind=None, style="mystyle.Treeview",
+                   anchor=NW, tag_dict=treeview_default_tag_dict, fs_offset=18):
     treeview = Treeview(root, style=style, height=t_height, selectmode=selectmode)
     treeview.place(x=x, y=y, height=height, width=width, anchor=anchor)
     # Define header
@@ -79,6 +85,8 @@ def build_treeview(root, x, y, height, width, heading_dict, column_dict=None, se
         treeview.bind("<ButtonRelease-1>", button_1_bind)
     if double_bind:
         treeview.bind("<Double-Button-1>", double_bind)
+    if button_3_bind:
+        treeview.bind("<ButtonRelease-3>", button_3_bind)
     if filescroll:
         file_scroll = tkinter.Scrollbar(root, orient="vertical", command=treeview.yview)
         file_scroll.place(x=(x - fs_offset), y=y, height=height, anchor=anchor)
@@ -173,7 +181,7 @@ class ConfigPopup:
         self.config = config
         self.popup_root = popup_root = tkinter.Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x250")
+        popup_root.geometry("300x340")
         popup_root.title("Configuration Settings")
         fps_tag = tkinter.Label(popup_root, text="FPS", bg='white', font=('Purisa', 12))
         fps_tag.place(x=10, y=10)
@@ -192,11 +200,26 @@ class ConfigPopup:
         ble_checkbutton = tkinter.Checkbutton(popup_root, text="BLE Enabled", bg='white',
                                               variable=self.ble_var, font=('Purisa', 12))
         ble_checkbutton.place(x=10, y=130)
+
+        a_tag = tkinter.Label(popup_root, text="A", bg='white', font=('Purisa', 12))
+        a_tag.place(x=10, y=170)
+
+        self.a_entry = tkinter.Entry(popup_root, bd=2, width=12, font=('Purisa', 12))
+        self.a_entry.insert(0, str(self.config.get_woodway_a()))
+        self.a_entry.place(x=60, y=170)
+
+        b_tag = tkinter.Label(popup_root, text="B", bg='white', font=('Purisa', 12))
+        b_tag.place(x=10, y=210)
+
+        self.b_entry = tkinter.Entry(popup_root, bd=2, width=12, font=('Purisa', 12))
+        self.b_entry.insert(0, str(self.config.get_woodway_b()))
+        self.b_entry.place(x=60, y=210)
+
         clear_projects = tkinter.Button(popup_root, text="Clear Recent Projects",
                                         font=('Purisa', 12), command=self.clear_projects)
-        clear_projects.place(x=10, y=170)
+        clear_projects.place(x=10, y=250)
         ok_button = tkinter.Button(popup_root, text="OK", command=self.on_closing, font=('Purisa', 12))
-        ok_button.place(x=150, y=210, anchor=N)
+        ok_button.place(x=150, y=290, anchor=N)
 
     def on_closing(self):
         self.update_fps()
@@ -219,6 +242,78 @@ class ConfigPopup:
 
     def clear_projects(self):
         self.config.set_recent_projects([])
+
+
+class ProjectPopup:
+    def __init__(self, top, root, name, popup_call):
+        assert top.popup_return
+        self.popup_call = popup_call
+        self.caller = top
+        self.entry = None
+        self.popup_root = None
+        self.name = name
+        self.popup_entry(root)
+
+    def popup_entry(self, root):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("400x100")
+        popup_root.title(self.name)
+
+        # Create an Entry Widget in the Toplevel window
+        project_name_text = tkinter.Label(popup_root, text="Project Name", font=('Purisa', 10), bg='white')
+        project_name_text.place(x=10, y=10, anchor=NW)
+        self.project_name_var = tkinter.StringVar(popup_root)
+        self.entry = tkinter.Entry(popup_root, bd=2, width=35, textvariable=self.project_name_var)
+        self.entry.place(x=110, y=11, anchor=NW)
+
+        project_dir_text = tkinter.Label(popup_root, text="Project Folder", font=('Purisa', 10), bg='white')
+        project_dir_text.place(x=10, y=40, anchor=NW)
+        self.dir_entry_var = tkinter.StringVar(popup_root, value=rf'{cometrics_ver_root}\Projects')
+        self.dir_entry = tkinter.Entry(popup_root, bd=2, width=35, textvariable=self.dir_entry_var)
+        self.dir_entry.place(x=110, y=41, anchor=NW)
+
+        self.folder_img = itk.PhotoImage(file='images/folder.png')
+        dir_button = tkinter.Button(popup_root, image=self.folder_img, command=self.select_dir)
+        dir_button.place(x=330, y=40, anchor=NW)
+
+        # Create a Button Widget in the Toplevel Window
+        import_button = tkinter.Button(popup_root, text="Import", command=self.import_project)
+        import_button.place(x=195, y=95, anchor=tkinter.SE, width=50)
+        button = tkinter.Button(popup_root, text="OK", command=self.close_win)
+        button.place(x=205, y=95, anchor=tkinter.SW, width=50)
+        center(popup_root)
+        popup_root.focus_force()
+        self.entry.focus()
+
+    def import_project(self):
+        chosen_project = filedialog.askdirectory(title='Select project folder')
+        if chosen_project:
+            if os.path.isdir(chosen_project):
+                if not os.path.exists(os.path.join(chosen_project, '.cometrics')):
+                    response = messagebox.askyesno("Invalid Project", "Project is not a valid cometrics project, "
+                                                                      "this could happen if importing a legacy project "
+                                                                      "(legacy projects will be updated in that case), "
+                                                                      "continue?")
+                    if not response:
+                        self.popup_root.focus_force()
+                        return
+                self.dir_entry_var.set(pathlib.Path(chosen_project).parent)
+                self.project_name_var.set(pathlib.Path(chosen_project).name)
+                self.close_win()
+            else:
+                messagebox.showerror("Project Error", "Projects must be folders!")
+
+    def select_dir(self):
+        chosen_dir = filedialog.askdirectory(title='Select root directory to save files')
+        if chosen_dir:
+            self.dir_entry_var.set(chosen_dir)
+        self.popup_root.focus_force()
+
+    def close_win(self):
+        self.caller.popup_return((self.entry.get(), self.dir_entry.get()), self.popup_call)
+        self.popup_root.destroy()
 
 
 class EntryPopup:
@@ -303,3 +398,400 @@ class NewKeyPopup:
 def set_entry_text(widget: tkinter.Entry, text):
     widget.delete(0, END)
     widget.insert(0, text)
+
+
+class AddWoodwayProtocolStep:
+    def __init__(self, top, root, edit=False, dur=None, rs=None, ls=None, incl=None):
+        assert top.popup_return
+        self.caller = top
+        self.entry = None
+        self.popup_root = None
+        self.name = "Add Woodway Step"
+        self.dur, self.rs, self.ls, self.incl = dur, rs, ls, incl
+        self.edit = edit
+        self.popup_entry(root)
+
+    def popup_entry(self, root):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x250")
+        popup_root.title(self.name)
+
+        # Create an Entry Widget in the Toplevel window
+        label = tkinter.Label(popup_root, text="Step Duration", font=('Purisa', 12), bg='white')
+        label.pack()
+        self.duration_entry = tkinter.Entry(popup_root, bd=2, width=25)
+        self.duration_entry.pack()
+        if self.dur is not None:
+            set_entry_text(self.duration_entry, self.dur)
+        label = tkinter.Label(popup_root, text="Left Side Speed", font=('Purisa', 12), bg='white')
+        label.pack()
+        self.ls_entry = tkinter.Entry(popup_root, bd=2, width=25)
+        self.ls_entry.pack()
+        if self.ls is not None:
+            set_entry_text(self.ls_entry, self.ls)
+        label = tkinter.Label(popup_root, text="Right Side Speed", font=('Purisa', 12), bg='white')
+        label.pack()
+        self.rs_entry = tkinter.Entry(popup_root, bd=2, width=25)
+        self.rs_entry.pack()
+        if self.rs is not None:
+            set_entry_text(self.rs_entry, self.rs)
+        label = tkinter.Label(popup_root, text="Incline", font=('Purisa', 12), bg='white')
+        label.pack()
+        self.incline_entry = tkinter.Entry(popup_root, bd=2, width=25)
+        self.incline_entry.pack()
+        if self.incl is not None:
+            set_entry_text(self.incline_entry, self.incl)
+
+        # Create a Button Widget in the Toplevel Window
+        button = tkinter.Button(popup_root, text="OK", command=self.close_win)
+        button.pack(pady=5, side=TOP)
+        center(popup_root)
+        popup_root.focus_force()
+        self.duration_entry.focus()
+
+    def close_win(self):
+        try:
+            new_step = [float(self.duration_entry.get()), float(self.ls_entry.get()),
+                        float(self.rs_entry.get()), float(self.incline_entry.get())]
+            self.caller.popup_return(new_step, self.edit)
+            self.popup_root.destroy()
+        except ValueError:
+            messagebox.showerror("Error", "All values input must be numbers! Check Woodway documentation or\n"
+                                          "User Guide for valid values!")
+
+
+class AddBleProtocolStep:
+    def __init__(self, top, root, edit=False, dur=None, motor_1=None, motor_2=None):
+        assert top.popup_return
+        self.caller = top
+        self.entry = None
+        self.popup_root = None
+        self.name = "Add BLE Step"
+        self.edit = edit
+        self.dur, self.motor_1, self.motor_2 = dur, motor_1, motor_2
+        self.popup_entry(root)
+
+    def popup_entry(self, root):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x175")
+        popup_root.title(self.name)
+
+        # Create an Entry Widget in the Toplevel window
+        label = tkinter.Label(popup_root, text="Step Duration", font=('Purisa', 12), bg='white')
+        label.pack()
+        self.duration_entry = tkinter.Entry(popup_root, bd=2, width=25)
+        self.duration_entry.pack()
+        if self.dur is not None:
+            set_entry_text(self.duration_entry, self.dur)
+        label = tkinter.Label(popup_root, text="Left Motor Level", font=('Purisa', 12), bg='white')
+        label.pack()
+        self.motor_1_entry = tkinter.Entry(popup_root, bd=2, width=25)
+        self.motor_1_entry.pack()
+        if self.motor_1 is not None:
+            set_entry_text(self.motor_1_entry, self.motor_1)
+        label = tkinter.Label(popup_root, text="Right Motor Level", font=('Purisa', 12), bg='white')
+        label.pack()
+        self.motor_2_entry = tkinter.Entry(popup_root, bd=2, width=25)
+        self.motor_2_entry.pack()
+        if self.motor_2 is not None:
+            set_entry_text(self.motor_2_entry, self.motor_2)
+
+        # Create a Button Widget in the Toplevel Window
+        button = tkinter.Button(popup_root, text="OK", command=self.close_win)
+        button.pack(pady=5, side=TOP)
+        center(popup_root)
+        popup_root.focus_force()
+        self.duration_entry.focus()
+
+    def close_win(self):
+        try:
+            new_step = [float(self.duration_entry.get()), float(self.motor_1_entry.get()),
+                        float(self.motor_2_entry.get())]
+            self.caller.popup_return(new_step, edit=self.edit)
+            self.popup_root.destroy()
+        except ValueError:
+            messagebox.showerror("Error", "All values input must be numbers! Check Woodway documentation or\n"
+                                          "User Guide for valid values!")
+
+
+class CalibrateWoodway:
+    def __init__(self, top, root, woodway):
+        assert top.calibrate_return
+        self.caller = top
+        self.entry = None
+        self.popup_root = None
+        self.name = "Calibrate Woodway"
+        self.woodway = woodway
+        self.calibrating = False
+        self.calibrated_speed_increasing = None
+        self.calibrated_speed_decreasing = None
+        self.calibrated_speed = None
+        self.calibration_step = 0
+        self.popup_entry(root)
+
+    def popup_entry(self, root):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("800x300")
+        popup_root.title(self.name)
+
+        # Create an Entry Widget in the Toplevel window
+        label = tkinter.Label(popup_root, text="1. Press the 'Calibrate' button,\n"
+                                               "2. The Woodway will increase speed by 0.1 MPH from zero every five seconds,\n"
+                                               "3. Prompt the subject to alert operator when walking feels comfortable,\n"
+                                               "4. When subject alerts operator, press the 'Stop' button,\n"
+                                               "5. The speed when stopped will be recorded, \n"
+                                               "6. Press 'Calibrate' button again to decrease speed from 150% of previous recorded speed,\n"
+                                               "7. Prompt the subject to alert operator when walking feel comfortable,\n"
+                                               "8. When subject alerts operator, press the 'Stop' button,\n"
+                                               "9. The speed when stopped will be recorded,\n"
+                                               "10. The two recorded speeds will be averaged and saved as the Preferred Walking Speed,\n"
+                                               "11. Double check the final speed and press 'Save' to save the speed.",
+                              font=('Purisa', 12), bg='white', justify=tkinter.LEFT)
+        label.pack()
+
+        # Create a Button Widget in the Toplevel Window
+        label.place(x=10, y=10)
+
+        # Create a Button Widget in the Toplevel Window
+        self.cal_button = tkinter.Button(popup_root, text="Calibrate", command=self.start_calibration_step, font=('Purisa', 12))
+        self.cal_button.place(x=400, y=280, anchor=tkinter.SE, width=150, height=30)
+        self.stop_button = tkinter.Button(popup_root, text="Stop", command=self.stop_calibration_step,
+                                          font=('Purisa', 12))
+        self.stop_button.place(x=400, y=280, anchor=tkinter.SW, width=150, height=30)
+        self.stop_button["state"] = 'disabled'
+        self.calibration_text_var = tkinter.StringVar(popup_root, value=f"Calibration Value: 0.0 MPH")
+        text = tkinter.Label(popup_root, textvariable=self.calibration_text_var, font=('Purisa', 12), bg='white')
+        text.place(x=400, y=240, anchor=tkinter.S)
+        center(popup_root)
+        popup_root.focus_force()
+
+    def start_calibration_step(self):
+        if self.calibration_step == 0:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread, args=(0.1, True))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        elif self.calibration_step == 1:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread,
+                                          args=(self.calibrated_speed_increasing * 1.5, False))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        self.stop_button["state"] = 'active'
+        self.cal_button["state"] = 'disabled'
+
+    def calibration_thread(self, start_value, increasing):
+        while self.calibrating:
+            if increasing:
+                for speed in np.arange(start_value, 20.0, 0.1):
+                    self.calibrated_speed_increasing = speed
+                    self.woodway.set_speed(float(speed), float(speed))
+                    self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed_increasing:.1f} MPH")
+                    for i in range(0, 4):
+                        time.sleep(0.25)
+                        if not self.calibrating:
+                            self.woodway.set_speed(float(0.0), float(0.0))
+                            return
+            else:
+                for speed in np.arange(start_value, 0.0, -0.1):
+                    self.calibrated_speed_decreasing = speed
+                    self.woodway.set_speed(float(speed), float(speed))
+                    self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed_decreasing:.1f} MPH")
+                    for i in range(0, 4):
+                        time.sleep(0.25)
+                        if not self.calibrating:
+                            self.woodway.set_speed(float(0.0), float(0.0))
+                            if self.calibrated_speed_increasing and self.calibrated_speed_decreasing:
+                                self.calibrated_speed = np.average([self.calibrated_speed_increasing,
+                                                                    self.calibrated_speed_decreasing])
+                                self.calibration_text_var.set(f"Calibration Value: {self.calibrated_speed:.1f} MPH")
+                                self.stop_button.config(text="Save", command=self.close_win)
+                            return
+
+    def stop_calibration_step(self):
+        self.calibrating = False
+        if self.calibration_step == 2:
+            self.stop_button["state"] = 'active'
+            self.cal_button["state"] = 'disabled'
+        else:
+            self.stop_button["state"] = 'disabled'
+            self.cal_button["state"] = 'active'
+
+    def close_win(self):
+        if self.calibrated_speed:
+            self.caller.calibrate_return(self.calibrated_speed)
+        self.calibrating = False
+        self.popup_root.destroy()
+
+
+class CalibrateVibrotactors:
+    def __init__(self, top, root, left_vta, right_vta):
+        assert top.calibrate_return
+        self.caller = top
+        self.entry = None
+        self.popup_root = None
+        self.name = "Calibrate Vibrotactors"
+        self.left_vta, self.right_vta = left_vta, right_vta
+        self.calibrating = False
+        self.calibrated_left_increasing = None
+        self.calibrated_right_increasing = None
+        self.calibrated_left_decreasing = None
+        self.calibrated_right_decreasing = None
+        self.calibrated_left = None
+        self.calibrated_right = None
+        self.calibration_step = 0
+        self.popup_entry(root)
+
+    def popup_entry(self, root):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("800x350")
+        popup_root.title(self.name)
+
+        # Create an Entry Widget in the Toplevel window
+        label = tkinter.Label(popup_root, text="1. Press the 'Calibrate Left' button,\n"
+                                               "2. The vibrotactors will increase intensity by one from zero each second,\n"
+                                               "3. Prompt the subject to alert operator when vibrotactors are perceptible,\n"
+                                               "4. When subject alerts operator, press the 'Stop' button,\n"
+                                               "5. The intensity level when stopped will be recorded, \n"
+                                               "6. Press 'Calibrate Left' button again to decrease intensity from 150% of previous recorded intensity level,\n"
+                                               "7. Prompt the subject to alert operator when vibrotactors are perceptible,\n"
+                                               "8. When subject alerts operator, press the 'Stop' button,\n"
+                                               "9. The intensity level when stopped will be recorded,\n"
+                                               "10. The two recorded levels will be averaged and saved as the Left Sensory Perception Threshold,\n"
+                                               "11. Notice 'Calibrate Right' button, repeat procedure for left vibrotactor,\n"
+                                               "12. Double check the final values and press 'Save' to save the thresholds.",
+                              font=('Purisa', 12), bg='white', justify=tkinter.LEFT)
+        label.place(x=10, y=10)
+
+        # Create a Button Widget in the Toplevel Window
+        self.cal_button = tkinter.Button(popup_root, text="Calibrate Left", command=self.start_calibration_step,
+                                         font=('Purisa', 12))
+        self.cal_button.place(x=400, y=330, anchor=tkinter.SE, width=150, height=30)
+        self.stop_button = tkinter.Button(popup_root, text="Stop", command=self.stop_calibration_step,
+                                          font=('Purisa', 12))
+        self.stop_button.place(x=400, y=330, anchor=tkinter.SW, width=150, height=30)
+        self.stop_button["state"] = 'disabled'
+        self.calibration_text_var = tkinter.StringVar(popup_root, value=f"Calibration Left: 0\tCalibration Right: 0")
+        text = tkinter.Label(popup_root, textvariable=self.calibration_text_var, font=('Purisa', 12), bg='white')
+        text.place(x=400, y=290, anchor=tkinter.S)
+        center(popup_root)
+        popup_root.focus_force()
+
+    def start_calibration_step(self):
+        if self.calibration_step == 0:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread, args=(self.left_vta, 0, True, True))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        elif self.calibration_step == 1:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread,
+                                          args=(self.left_vta, int(self.calibrated_left_increasing * 1.5),
+                                                False, True))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        elif self.calibration_step == 2:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread,
+                                          args=(self.right_vta, 0, True, False))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        elif self.calibration_step == 3:
+            self.calibrating = True
+            cal_thread = threading.Thread(target=self.calibration_thread,
+                                          args=(self.right_vta, int(self.calibrated_right_increasing * 1.5),
+                                                False, False))
+            cal_thread.daemon = True
+            cal_thread.start()
+            self.calibration_step += 1
+        self.stop_button["state"] = 'active'
+        self.cal_button["state"] = 'disabled'
+
+    def calibration_thread(self, vta, start_value, increasing, side):
+        while self.calibrating:
+            if side:
+                if increasing:
+                    for speed in np.arange(start_value, 255, 1):
+                        self.calibrated_left_increasing = speed
+                        vta.write_all_motors(speed)
+                        self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left_increasing}"
+                                                      f"\tCalibration Right: 0")
+                        for i in range(0, 4):
+                            time.sleep(0.25)
+                            if not self.calibrating:
+                                vta.write_all_motors(0)
+                                return
+                else:
+                    for speed in np.arange(start_value, 0, -1):
+                        self.calibrated_left_decreasing = speed
+                        vta.write_all_motors(speed)
+                        self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left_decreasing}"
+                                                      f"\tCalibration Right: 0")
+                        for i in range(0, 4):
+                            time.sleep(0.25)
+                            if not self.calibrating:
+                                vta.write_all_motors(0)
+                                if self.calibrated_left_decreasing and self.calibrated_left_increasing:
+                                    self.calibrated_left = int(np.average([self.calibrated_left_increasing,
+                                                                           self.calibrated_left_decreasing]))
+                                    self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left}"
+                                                                  f"\tCalibration Right: 0")
+                                self.cal_button.config(text="Calibrate Right")
+                                return
+            else:
+                if increasing:
+                    for speed in np.arange(start_value, 255, 1):
+                        self.calibrated_right_increasing = speed
+                        vta.write_all_motors(speed)
+                        self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left}"
+                                                      f"\tCalibration Right: {self.calibrated_right_increasing}")
+                        for i in range(0, 4):
+                            time.sleep(0.25)
+                            if not self.calibrating:
+                                vta.write_all_motors(0)
+                                return
+                else:
+                    for speed in np.arange(start_value, 0, -1):
+                        self.calibrated_right_decreasing = speed
+                        vta.write_all_motors(speed)
+                        self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left}"
+                                                      f"\tCalibration Right: {self.calibrated_right_decreasing}")
+                        for i in range(0, 4):
+                            time.sleep(0.25)
+                            if not self.calibrating:
+                                vta.write_all_motors(0)
+                                if self.calibrated_right_decreasing and self.calibrated_right_increasing:
+                                    self.calibrated_right = int(np.average([self.calibrated_right_decreasing,
+                                                                            self.calibrated_right_increasing]))
+                                    self.calibration_text_var.set(f"Calibration Left: {self.calibrated_left}"
+                                                                  f"\tCalibration Right: {self.calibrated_right}")
+                                    self.stop_button.config(text="Save", command=self.close_win)
+                                return
+
+    def stop_calibration_step(self):
+        self.calibrating = False
+        if self.calibration_step == 4:
+            self.cal_button["state"] = 'disabled'
+            self.stop_button["state"] = 'active'
+        else:
+            self.stop_button["state"] = 'disabled'
+            self.cal_button["state"] = 'active'
+
+    def close_win(self):
+        if self.calibrated_left and self.calibrated_right:
+            self.caller.calibrate_return(self.calibrated_left, self.calibrated_right)
+        self.calibrating = False
+        self.popup_root.destroy()

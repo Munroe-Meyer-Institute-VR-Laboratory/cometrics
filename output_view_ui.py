@@ -1,13 +1,14 @@
+import glob
 import json
+import os
 import pathlib
 import pickle
 import threading
 import time
 import traceback
 from tkinter import *
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox
 from tkinter.ttk import Combobox
-
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,17 +16,20 @@ from tkvideoutils import VideoRecorder, VideoPlayer
 from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg)
 # Implement the default Matplotlib key bindings.
 from matplotlib.figure import Figure
-from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient, EmpaticaServerConnectError
 # Custom library imports
 from ttkwidgets import TickScale
-
-from tkinter_utils import build_treeview, clear_treeview
+from pywoodway.treadmill import SplitBelt, find_treadmills
+from tkinter_utils import build_treeview, clear_treeview, AddWoodwayProtocolStep, AddBleProtocolStep, \
+    CalibrateVibrotactors, CalibrateWoodway
 from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags, crossmark, checkmark
+from pytactor import VibrotactorArray, VibrotactorArraySide
+from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient, EmpaticaServerConnectError
 
 
 class OutputViewPanel:
     def __init__(self, parent, x, y, height, width, button_size, ksf,
-                 field_font, header_font, video_import_cb, slider_change_cb, config):
+                 field_font, header_font, video_import_cb, slider_change_cb, config, session_dir,
+                 thresholds):
         self.KEY_VIEW, self.E4_VIEW, self.VIDEO_VIEW, self.WOODWAY_VIEW, self.BLE_VIEW = 0, 1, 2, 3, 4
         self.config = config
         self.height, self.width = height, width
@@ -33,6 +37,7 @@ class OutputViewPanel:
         self.current_button = 0
         self.view_buttons = []
         self.view_frames = []
+        self.time_change_sources = False
 
         self.frame = Frame(parent, width=width, height=height)
         self.frame.place(x=x, y=y)
@@ -76,26 +81,34 @@ class OutputViewPanel:
             self.e4_view = None
 
         if self.config.get_ble():
+            self.time_change_sources = False
             ble_output_button = Button(self.frame, text="BLE Input", command=self.switch_ble_frame, width=12,
                                        font=field_font)
             self.view_buttons.append(ble_output_button)
             self.BLE_VIEW = len(self.view_buttons) - 1
             self.view_buttons[self.BLE_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
                                                    width=button_size[0], height=button_size[1])
-            self.ble_view = ViewBLE()
+            self.ble_view = ViewBLE(self.view_frames[self.BLE_VIEW],
+                                    height=self.height - self.button_size[1], width=self.width,
+                                    field_font=field_font, header_font=header_font, button_size=button_size,
+                                    session_dir=session_dir, ble_thresh=thresholds[0:2])
             ble_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(ble_frame)
         else:
             self.ble_view = None
 
         if self.config.get_woodway():
+            self.time_change_sources = False
             woodway_output_button = Button(self.frame, text="Woodway", command=self.switch_woodway_frame, width=12,
                                            font=field_font)
             self.view_buttons.append(woodway_output_button)
             self.WOODWAY_VIEW = len(self.view_buttons) - 1
             self.view_buttons[self.WOODWAY_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
                                                        width=button_size[0], height=button_size[1])
-            self.woodway_view = ViewWoodway(self.view_frames[self.WOODWAY_VIEW])
+            self.woodway_view = ViewWoodway(self.view_frames[self.WOODWAY_VIEW],
+                                            height=self.height - self.button_size[1], width=self.width,
+                                            field_font=field_font, header_font=header_font, button_size=button_size,
+                                            config=config, session_dir=session_dir, woodway_thresh=thresholds[2])
             woodway_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(woodway_frame)
         else:
@@ -156,6 +169,10 @@ class OutputViewPanel:
             self.e4_view.session_started = True
         if self.video_view.recorder:
             self.video_view.recorder.start_recording(output_path=recording_path)
+        if self.ble_view:
+            self.ble_view.start_session()
+        if self.woodway_view:
+            self.woodway_view.start_session()
 
     def enable_video_slider(self):
         if self.video_view.player:
@@ -172,6 +189,10 @@ class OutputViewPanel:
         if self.video_view.recorder:
             self.video_view.recorder.stop_recording()
             self.video_view.recorder.stop_playback()
+        if self.ble_view:
+            self.ble_view.stop_session()
+        if self.woodway_view:
+            self.woodway_view.stop_session()
 
     def check_event(self, key_char, start_time):
         # Make sure it is not None
@@ -238,47 +259,815 @@ class OutputViewPanel:
 
 
 class ViewWoodway:
-    def __init__(self, parent):
-        # Vertical sliders speed and inclination for each treadmill
-        self.belt_speed_l_var = IntVar(parent)
-        self.belt_speed_l = Scale(parent, orient="vertical", variable=self.belt_speed_l_var,
-                                  command=self.__write_l_speed)
-        self.belt_incline_l_var = IntVar(parent)
-        self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var,
-                                    command=self.__write_l_incline)
-        self.belt_speed_r_var = IntVar(parent)
-        self.belt_speed_r = Scale(parent, orient="vertical", variable=self.belt_speed_r_var,
-                                  command=self.__write_r_speed)
-        self.belt_incline_r_var = IntVar(parent)
-        self.belt_incline_r = Scale(parent, orient="vertical", variable=self.belt_incline_r_var,
-                                    command=self.__write_r_incline)
-        # Treeview for the changes to treadmill operation with timing delays between each step, import export json
-        # Connect button and assignment of COM ports to each treadmill
-        # Start treadmill button?
-        pass
+    def __init__(self, parent, height, width, field_font, header_font, button_size, config, session_dir,
+                 woodway_thresh=None):
+        self.woodway = None
+        self.session_dir = session_dir
+        self.config = config
+        self.root = parent
+        self.protocol_steps = []
+        self.selected_step = None
+        self.load_protocol_thread = None
+        self.prot_file = None
+        self.step_time = 0
+        self.step_duration = 0
+        self.woodway_speed_r, self.woodway_speed_l = 0, 0
+        self.woodway_incline = 0
+        self.session_started = False
+        self.changed_protocol = True
+        if woodway_thresh:
+            self.calibrated = True
+            self.woodway_thresh = woodway_thresh
+        else:
+            self.calibrated = False
+            self.woodway_thresh = None
+        # region EXPERIMENTAL PROTOCOL
+        element_height_adj = 100
+        self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
+        self.exp_prot_label.place(x=int(width * 0.23) + 18, y=10, anchor=N)
+        self.prot_treeview_parents = []
+        prot_heading_dict = {"#0": ["Duration", 'w', 20, YES, 'w']}
+        prot_column_dict = {"1": ["LS", 'c', 1, YES, 'c'],
+                            "2": ["RS", 'c', 1, YES, 'c'],
+                            "3": ["Incline", 'c', 1, YES, 'c']}
+        treeview_offset = int(width * 0.03)
+        self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=treeview_offset, y=40,
+                                                                  height=height - element_height_adj - 40,
+                                                                  heading_dict=prot_heading_dict,
+                                                                  column_dict=prot_column_dict,
+                                                                  width=(int(width * 0.5) - int(width * 0.05)),
+                                                                  button_1_bind=self.select_protocol_step,
+                                                                  double_bind=self.__edit_protocol_step)
+        self.prot_add_button = Button(parent, text="Add", font=field_font, command=self.__add_protocol_step)
+        self.prot_add_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
+                                   y=(height - element_height_adj),
+                                   anchor=N,
+                                   width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
 
-    def __write_speed(self, side, speed):
-        pass
+        self.woodway_connect_button = Button(parent, text="Connect", font=field_font,
+                                             command=self.__connect_to_woodway, bg='#4abb5f')
+        self.woodway_connect_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
+                                          y=(height - element_height_adj) + button_size[1] * 2,
+                                          anchor=N,
+                                          width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.prot_load_button = Button(parent, text="Load File", font=field_font,
+                                       command=self.__load_protocol_from_file)
+        self.prot_load_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
+                                    y=(height - element_height_adj) + button_size[1],
+                                    anchor=N,
+                                    width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.prot_save_button = Button(parent, text="Save To File", font=field_font,
+                                       command=self.__save_protocol_to_file)
+        self.prot_save_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                    y=(height - element_height_adj) + button_size[1],
+                                    anchor=N,
+                                    width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+        self.prot_save_button['state'] = 'disabled'
+
+        self.prot_del_button = Button(parent, text="Delete", font=field_font,
+                                      command=self.__delete_protocol_step)
+        self.prot_del_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                   y=(height - element_height_adj),
+                                   anchor=N,
+                                   width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.woodway_disconnect_button = Button(parent, text="Disconnect", font=field_font,
+                                                command=self.disconnect_woodway, bg='red')
+        self.woodway_disconnect_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                             y=(height - element_height_adj) + button_size[1] * 2,
+                                             anchor=N,
+                                             width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+        # endregion
+
+        # region BELT CONTROL
+        # Vertical sliders speed and inclination for each treadmill
+        slider_height_adj = element_height_adj
+        self.belt_speed_label = Label(parent, text="Belt Speeds", font=header_font, anchor=CENTER)
+        self.belt_speed_label.place(x=int(width * 0.625), y=10, anchor=N)
+
+        self.belt_speed_l_label = Label(parent, text='Left', font=field_font, anchor=CENTER)
+        self.belt_speed_l_label.place(x=int(width * 0.575), y=40, anchor=N)
+
+        self.belt_speed_r_label = Label(parent, text='Right', font=field_font, anchor=CENTER)
+        self.belt_speed_r_label.place(x=int(width * 0.675), y=40, anchor=N)
+
+        self.belt_speed_l_var = StringVar(parent)
+        self.belt_speed_l = Scale(parent, orient="vertical", variable=self.belt_speed_l_var, showvalue=False,
+                                  command=self.__write_l_speed, length=int(height * 0.7), from_=29.9, to=-29.9,
+                                  digits=3, resolution=0.1)
+        self.belt_speed_l.place(x=int(width * 0.575), y=70, anchor=N)
+
+        self.belt_speed_l_value = Label(parent, text="0 MPH", anchor=CENTER, font=field_font)
+        self.belt_speed_l_value.place(x=int(width * 0.575), y=80 + int(height * 0.7), anchor=N)
+
+        self.belt_speed_r_var = StringVar(parent)
+        self.belt_speed_r = Scale(parent, orient="vertical", variable=self.belt_speed_r_var, showvalue=False,
+                                  command=self.__write_r_speed, length=int(height * 0.7), from_=29.9, to=-29.9,
+                                  digits=3, resolution=0.1)
+        self.belt_speed_r.place(x=int(width * 0.675), y=70, anchor=N)
+        self.belt_speed_r_value = Label(parent, text="0 MPH", anchor=CENTER, font=field_font)
+        self.belt_speed_r_value.place(x=int(width * 0.675), y=80 + int(height * 0.7), anchor=N)
+
+        # This section gets 25% of the panel
+        self.belt_incline_label = Label(parent, text="Belt Incline", font=header_font, anchor=CENTER)
+        self.belt_incline_label.place(x=int(width * 0.875), y=10, anchor=N)
+
+        self.belt_incline_l_var = StringVar(parent)
+        self.belt_incline_l = Scale(parent, orient="vertical", variable=self.belt_incline_l_var, showvalue=False,
+                                    command=self.__write_incline, length=int(height * 0.7), from_=29.9, to=0,
+                                    digits=3, resolution=0.1)
+        self.belt_incline_l.place(x=int(width * 0.875), y=70, anchor=N)
+
+        self.belt_incline_l_value = Label(parent, text="0\u00b0", anchor=CENTER, font=field_font)
+        self.belt_incline_l_value.place(x=int(width * 0.875), y=80 + int(height * 0.7), anchor=N)
+
+        self.calibrate_button = Button(parent, text='Calibrate Woodway Threshold', font=field_font,
+                                       command=self.__calibrate_woodway)
+        self.calibrate_button.place(x=int(width * 0.75), y=(height - element_height_adj) + button_size[1] * 2,
+                                    anchor=N,
+                                    width=int(width * 0.45), height=button_size[1])
+
+        self.__disable_ui_elements()
+        # endregion
+
+        self.woodway_dir = os.path.join(self.session_dir, "Woodway")
+        if os.path.exists(self.woodway_dir):
+            latest_protocol = max(pathlib.Path(self.woodway_dir).glob("*.json"), key=lambda f: f.stat().st_ctime)
+            self.__load_protocol_from_file(latest_protocol)
+
+    def disable_ui_elements(self):
+        self.__disable_ui_elements()
+        self.prot_add_button.config(state='disabled')
+        self.prot_del_button.config(state='disabled')
+        self.prot_save_button.config(state='disabled')
+        self.prot_load_button.config(state='disabled')
+        self.calibrate_button.config(state='disabled')
+
+    def __disable_ui_elements(self):
+        self.belt_incline_l.config(state='disabled')
+        self.belt_speed_l.config(state='disabled')
+        self.belt_speed_r.config(state='disabled')
+        self.woodway_disconnect_button.config(state='disabled')
+
+    def __enable_ui_elements(self):
+        self.belt_incline_l.config(state='active')
+        self.belt_speed_l.config(state='active')
+        self.belt_speed_r.config(state='active')
+        self.woodway_disconnect_button.config(state='active')
+        self.woodway_connect_button.config(state='disabled')
+
+    def get_calibration_thresholds(self):
+        if not self.is_calibrated():
+            raise ValueError("Woodway are not calibrated!")
+        else:
+            self.woodway_speed_l, self.woodway_speed_r = self.woodway_thresh, self.woodway_thresh
+            return self.woodway_thresh
+
+    def start_session(self):
+        self.session_started = True
+        self.woodway.belt_a.set_speed(self.woodway_speed_l)
+        self.woodway.belt_b.set_speed(self.woodway_speed_r)
+        self.__save_protocol_to_file()
+
+    def stop_session(self):
+        self.session_started = False
+        self.woodway.belt_a.set_speed(0.0)
+        self.woodway.belt_b.set_speed(0.0)
+        self.woodway.set_elevations(0.0)
+
+    def next_protocol_step(self, current_time):
+        if current_time == 1:
+            self.selected_step = 0
+            self.__update_woodway_protocol()
+        if (self.step_time - current_time) == 0:
+            self.selected_step += 1
+            self.__update_woodway_protocol()
+
+    def __update_woodway_protocol(self):
+        if self.selected_step == len(self.protocol_steps):
+            return
+        self.selected_command = self.protocol_steps[self.selected_step]
+        self.step_duration = self.selected_command[0]
+        self.step_time += self.step_duration
+        self.woodway_speed_l = self.woodway_thresh + self.selected_command[1]
+        self.woodway_speed_r = self.woodway_thresh + self.selected_command[2]
+        self.woodway_incline += self.selected_command[3]
+        self.__update_woodway()
+
+    def __update_woodway(self):
+        self.__write_incline(self.woodway_incline)
+        self.__write_speed()
+
+    def is_calibrated(self):
+        return self.calibrated
+
+    def calibrate_return(self, woodway_threshold):
+        self.calibrated = True
+        self.woodway_thresh = woodway_threshold
+
+    def __calibrate_woodway(self):
+        if self.woodway:
+            if self.woodway.is_connected():
+                CalibrateWoodway(self, self.root, self.woodway)
+            else:
+                messagebox.showerror("Error",
+                                     "Something went wrong connecting to the Woodway!\nCannot be calibrated!")
+        else:
+            messagebox.showerror("Error", "Connect to Woodway first!\nCannot be calibrated!")
+
+    def select_protocol_step(self, event):
+        selection = self.prot_treeview.identify_row(event.y)
+        if selection:
+            self.selected_step = int(selection)
+
+    def populate_protocol_steps(self):
+        if self.protocol_steps:
+            for i in range(0, len(self.protocol_steps)):
+                self.prot_treeview_parents.append(
+                    self.prot_treeview.insert("", 'end', str(i + 1), text=str(self.protocol_steps[i][0]),
+                                              values=(self.protocol_steps[i][1], self.protocol_steps[i][2],
+                                                      self.protocol_steps[i][3]),
+                                              tags=(treeview_tags[(i + 1) % 2])))
+
+    def __load_protocol_from_file(self, selected_file=None):
+        try:
+            if selected_file:
+                self.prot_file = selected_file
+                with open(self.prot_file, 'r') as f:
+                    self.protocol_steps = json.load(f)['Steps']
+                self.repopulate_treeview()
+            else:
+                selected_file = filedialog.askopenfilename(filetypes=(("JSON Files", "*.json"),))
+                if selected_file:
+                    self.prot_file = selected_file
+                    with open(self.prot_file, 'r') as f:
+                        self.protocol_steps = json.load(f)['Steps']
+                    self.repopulate_treeview()
+                else:
+                    messagebox.showwarning("Warning", "No file selected, please try again!")
+        except Exception as ex:
+            messagebox.showerror("Exception Encountered", f"Error encountered when loading protocol file!\n{str(ex)}")
+
+    def __save_protocol_to_file(self):
+        try:
+            if self.changed_protocol:
+                if self.prot_file:
+                    file_dir = os.path.join(self.session_dir, "Woodway")
+                    file_count = len(glob.glob1(file_dir, "*.json"))
+                    if file_count > 1:
+                        new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                                pathlib.Path(self.prot_file).stem[:-3] + f"_V{file_count}.json")
+                    else:
+                        new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                                pathlib.Path(self.prot_file).stem + f"_V{file_count}.json")
+                    with open(new_file, 'w') as f:
+                        x = {"Steps": self.protocol_steps}
+                        json.dump(x, f)
+                    self.__load_protocol_from_file(selected_file=new_file)
+                    if not self.changed_protocol:
+                        messagebox.showinfo("Success", "Protocol file saved!")
+                else:
+                    file_dir = os.path.join(self.session_dir, "Woodway")
+                    if not os.path.exists(file_dir):
+                        os.mkdir(file_dir)
+                    new_file = os.path.join(file_dir, "woodway_protocol.json")
+                    if new_file:
+                        self.prot_file = new_file
+                        with open(self.prot_file, 'w') as f:
+                            x = {"Steps": self.protocol_steps}
+                            json.dump(x, f)
+                        if not self.changed_protocol:
+                            messagebox.showinfo("Success", "Protocol file saved!")
+                    else:
+                        messagebox.showwarning("Warning", "No filename supplied! Can't save, please try again!")
+        except Exception as ex:
+            messagebox.showerror("Exception Encountered", f"Error encountered when saving protocol file!\n{str(ex)}")
+
+    def popup_return(self, new_step, edit=False):
+        if edit:
+            if self.selected_step:
+                self.protocol_steps[int(self.selected_step) - 1] = new_step
+                self.repopulate_treeview()
+        else:
+            self.protocol_steps.append(new_step)
+            self.repopulate_treeview()
+        self.changed_protocol = True
+        self.prot_save_button['state'] = 'active'
+
+    def repopulate_treeview(self):
+        clear_treeview(self.prot_treeview)
+        self.prot_treeview_parents = []
+        self.populate_protocol_steps()
+
+    def __edit_protocol_step(self, event):
+        if self.selected_step:
+            step = self.protocol_steps[int(self.selected_step) - 1]
+            AddWoodwayProtocolStep(self, self.root, edit=True, dur=step[0], ls=step[1], rs=step[2], incl=step[3])
+
+    def __add_protocol_step(self):
+        AddWoodwayProtocolStep(self, self.root)
+
+    def __delete_protocol_step(self):
+        if self.selected_step:
+            self.protocol_steps.pop(self.selected_step - 1)
+            self.repopulate_treeview()
+
+    def __connect_to_woodway(self):
+        try:
+            a_port, b_port = find_treadmills(a_sn=self.config.get_woodway_a(), b_sn=self.config.get_woodway_b())
+            if a_port and b_port:
+                self.woodway = SplitBelt(b_port.name, a_port.name)
+                self.woodway.start_belts(True, False, True, False)
+                self.__enable_ui_elements()
+                messagebox.showinfo("Success!", "Woodway Split Belt treadmill connected!")
+            else:
+                messagebox.showerror("Error", "No treadmills found! Check serial numbers and connections!")
+        except Exception as ex:
+            messagebox.showerror("Exception Encountered",
+                                 f"Encountered exception when connecting to Woodway!\n{str(ex)}")
+
+    def disconnect_woodway(self):
+        if self.woodway:
+            self.woodway.stop_belts()
+            self.woodway.set_elevations(0)
+            self.woodway.close()
+            self.woodway = None
+            self.__disable_ui_elements()
+        else:
+            messagebox.showwarning("Warning", "Connect to Woodway first!")
+
+    def __write_speed(self):
+        if self.session_started:
+            self.belt_speed_l.set(self.woodway_speed_l)
+            self.belt_speed_r.set(self.woodway_speed_r)
+        if self.woodway:
+            self.belt_speed_l_value.config(text=f"{int(self.woodway_speed_l)} MPH")
+            self.belt_speed_r_value.config(text=f"{int(self.woodway_speed_r)} MPH")
+            self.woodway.set_speed(self.woodway_speed_l, self.woodway_speed_r)
 
     def __write_l_speed(self, speed):
-        pass
+        if self.session_started:
+            self.belt_speed_l.set(speed)
+        if self.woodway:
+            self.belt_speed_l_value.config(text=f"{float(speed):.1f} MPH")
+            self.woodway.belt_a.set_speed(float(speed))
 
     def __write_r_speed(self, speed):
-        pass
+        if self.session_started:
+            self.belt_speed_r.set(speed)
+        if self.woodway:
+            self.belt_speed_r_value.config(text=f"{float(speed):.1f} MPH")
+            self.woodway.belt_b.set_speed(float(speed))
 
-    def __write_incline(self, side, incline):
-        pass
-
-    def __write_l_incline(self, incline):
-        pass
-
-    def __write_r_incline(self, incline):
-        pass
+    def __write_incline(self, incline):
+        if self.session_started:
+            self.belt_incline_l.set(incline)
+        if self.woodway:
+            self.belt_incline_l_value.config(text=f"{float(incline):.1f}\u00b0")
+            self.woodway.set_elevations(float(incline))
 
 
 class ViewBLE:
-    def __init__(self):
-        pass
+    def __init__(self, parent, height, width, field_font, header_font, button_size, session_dir, ble_thresh=None):
+        self.root = parent
+        self.session_dir = session_dir
+        self.ble_instance = VibrotactorArray.get_ble_instance()
+        self.left_vta, self.right_vta = None, None
+        self.ble_connect_thread = None
+        self.protocol_steps = []
+        self.selected_step = None
+        self.prot_file = None
+        self.step_duration = 0
+        self.step_time = 0
+        self.session_started = False
+        self.changed_protocol = True
+        self.r_ble_1_3_value, self.r_ble_4_6_value, self.r_ble_7_9_value, self.r_ble_10_12_value = 0, 0, 0, 0
+        self.l_ble_1_3_value, self.l_ble_4_6_value, self.l_ble_7_9_value, self.l_ble_10_12_value = 0, 0, 0, 0
+        if ble_thresh[0] and ble_thresh[1]:
+            self.calibrated = True
+            self.right_ble_thresh = ble_thresh[0]
+            self.left_ble_thresh = ble_thresh[1]
+        else:
+            self.calibrated = False
+            self.right_ble_thresh = None
+            self.left_ble_thresh = None
+        # region EXPERIMENTAL PROTOCOL
+        element_height_adj = 100
+        self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
+        self.exp_prot_label.place(x=int(width * 0.23) + 18, y=10, anchor=N)
+        self.prot_treeview_parents = []
+        prot_heading_dict = {"#0": ["Duration", 'w', 20, YES, 'w']}
+        prot_column_dict = {"1": ["Left", 'c', 1, YES, 'c'],
+                            "2": ["Right", 'c', 1, YES, 'c']}
+        treeview_offset = int(width * 0.03)
+        self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=treeview_offset, y=40,
+                                                                  height=height - element_height_adj - 40,
+                                                                  heading_dict=prot_heading_dict,
+                                                                  column_dict=prot_column_dict,
+                                                                  width=(int(width * 0.5) - int(width * 0.05)),
+                                                                  button_1_bind=self.select_protocol_step,
+                                                                  double_bind=self.__edit_protocol_step)
+
+        self.prot_add_button = Button(parent, text="Add", font=field_font, command=self.__add_protocol_step)
+        self.prot_add_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
+                                   y=(height - element_height_adj),
+                                   anchor=N,
+                                   width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.ble_connect_button = Button(parent, text="Connect", font=field_font,
+                                         command=self.__connect_to_ble, bg='#4abb5f')
+        self.ble_connect_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
+                                      y=(height - element_height_adj) + button_size[1] * 2,
+                                      anchor=N,
+                                      width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.prot_load_button = Button(parent, text="Load File", font=field_font,
+                                       command=self.__load_protocol_from_file)
+        self.prot_load_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
+                                    y=(height - element_height_adj) + button_size[1],
+                                    anchor=N,
+                                    width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.prot_save_button = Button(parent, text="Save To File", font=field_font,
+                                       command=self.__save_protocol_to_file)
+        self.prot_save_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                    y=(height - element_height_adj) + button_size[1],
+                                    anchor=N,
+                                    width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+        self.prot_save_button['state'] = 'disabled'
+
+        self.prot_del_button = Button(parent, text="Delete", font=field_font,
+                                      command=self.__delete_protocol_step)
+        self.prot_del_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                   y=(height - element_height_adj),
+                                   anchor=N,
+                                   width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+
+        self.ble_disconnect_button = Button(parent, text="Disconnect", font=field_font,
+                                            command=self.disconnect_ble, bg='red')
+        self.ble_disconnect_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.75)),
+                                         y=(height - element_height_adj) + button_size[1] * 2,
+                                         anchor=N,
+                                         width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+        # endregion
+
+        # region VIBROTACTOR SLIDERS
+        slider_vars = [
+            (self.update_ble_1, IntVar(parent)),
+            (self.update_ble_2, IntVar(parent)),
+            (self.update_ble_3, IntVar(parent)),
+            (self.update_ble_4, IntVar(parent)),
+            (self.update_ble_5, IntVar(parent)),
+            (self.update_ble_6, IntVar(parent)),
+            (self.update_ble_7, IntVar(parent)),
+            (self.update_ble_8, IntVar(parent)),
+            (self.update_ble_9, IntVar(parent)),
+            (self.update_ble_10, IntVar(parent)),
+            (self.update_ble_11, IntVar(parent)),
+            (self.update_ble_12, IntVar(parent)),
+            (self.update_frequency, IntVar(parent))
+        ]
+        self.slider_objects = []
+
+        slider_separation = int((width * 0.4) / 6)
+        slider_separation_h = 40
+        slider_count = 0
+
+        label = Label(parent, text="Vibrotactor Control", font=header_font, anchor=N)
+        label.place(x=int(width * 0.60) - slider_separation + int(slider_separation * 3), y=10, anchor=N)
+        for i in range(0, 12):
+            if i == 6:
+                slider_count = 0
+                slider_separation_h += int(height * 0.4)
+            label = Label(parent, text=f"{i + 1}", font=field_font, anchor=N, width=4)
+            label.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h, anchor=N)
+            temp_slider = Scale(parent, orient="vertical", variable=slider_vars[i][1], showvalue=False,
+                                command=slider_vars[i][0], length=int(height * 0.35), from_=255, to=0)
+            temp_slider.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h + 20, anchor=N)
+            self.slider_objects.append(temp_slider)
+            slider_count += 1
+        slider_separation_h = 40
+        label = Label(parent, text="Freq", font=field_font, anchor=CENTER, width=6)
+        label.place(x=int(width * 0.60) - slider_separation, y=slider_separation_h, anchor=N)
+        self.freq_slider = Scale(parent, orient="vertical", variable=slider_vars[12][1], showvalue=False,
+                                 command=slider_vars[12][0], length=int(height * 0.75), from_=7, to=0)
+        self.freq_slider.place(x=int(width * 0.60) - slider_separation, y=slider_separation_h + 20, anchor=N)
+
+        self.calibrate_button = Button(parent, text='Calibrate Vibrotactor Threshold', font=field_font,
+                                       command=self.__calibrate_ble)
+        self.calibrate_button.place(x=int(width * 0.75), y=(height - element_height_adj) + button_size[1] * 2,
+                                    anchor=N,
+                                    width=int(width * 0.45), height=button_size[1])
+
+        self.__disable_ui_elements()
+        self.ble_dir = os.path.join(self.session_dir, "BLE")
+        if os.path.exists(self.ble_dir):
+            latest_protocol = max(pathlib.Path(self.ble_dir).glob("*.json"), key=lambda f: f.stat().st_ctime)
+            self.__load_protocol_from_file(latest_protocol)
+        # endregion
+
+    def __enable_ui_elements(self):
+        self.ble_connect_button.config(state='disabled')
+        self.ble_disconnect_button.config(state='active')
+        self.freq_slider.config(state='active')
+        for slider in self.slider_objects:
+            slider.config(state='active')
+
+    def disable_ui_elements(self):
+        for slider in self.slider_objects:
+            slider.config(state='active')
+        self.ble_disconnect_button.config(state='disabled')
+        self.prot_add_button.config(state='disabled')
+        self.prot_del_button.config(state='disabled')
+        self.prot_save_button.config(state='disabled')
+        self.prot_load_button.config(state='disabled')
+        self.calibrate_button.config(state='disabled')
+
+    def __disable_ui_elements(self):
+        self.ble_connect_button.config(state='active')
+        self.ble_disconnect_button.config(state='disabled')
+        self.freq_slider.config(state='disabled')
+        for slider in self.slider_objects:
+            slider.config(state='disabled')
+
+    def get_calibration_thresholds(self):
+        if not self.is_calibrated():
+            raise ValueError("Vibrotactors are not calibrated!")
+        else:
+            self.r_ble_1_3_value = self.right_ble_thresh
+            self.r_ble_4_6_value = self.right_ble_thresh
+            self.r_ble_7_9_value = self.right_ble_thresh
+            self.r_ble_10_12_value = self.right_ble_thresh
+            self.l_ble_1_3_value = self.left_ble_thresh
+            self.l_ble_4_6_value = self.left_ble_thresh
+            self.l_ble_7_9_value = self.left_ble_thresh
+            self.l_ble_10_12_value = self.left_ble_thresh
+            return self.right_ble_thresh, self.left_ble_thresh
+
+    def start_session(self):
+        self.session_started = True
+        self.right_vta.write_all_motors(self.right_ble_thresh)
+        self.left_vta.write_all_motors(self.left_ble_thresh)
+        self.right_vta.start_imu()
+        self.left_vta.start_imu()
+        self.__save_protocol_to_file()
+
+    def stop_session(self):
+        self.session_started = False
+        self.right_vta.stop_imu()
+        self.left_vta.stop_imu()
+
+    def is_calibrated(self):
+        return self.calibrated
+
+    def calibrate_return(self, left_threshold, right_threshold):
+        self.calibrated = True
+        self.left_ble_thresh = left_threshold
+        self.right_ble_thresh = right_threshold
+
+    def __calibrate_ble(self):
+        if self.right_vta and self.left_vta:
+            if self.right_vta.is_connected() and self.left_vta.is_connected():
+                CalibrateVibrotactors(self, self.root, self.left_vta, self.right_vta)
+            else:
+                messagebox.showerror("Error", "Something went wrong connecting to the vibrotactors!\nCannot be calibrated!")
+        else:
+            messagebox.showerror("Error", "Connect to vibrotactors first!\nCannot be calibrated!")
+
+    def __edit_protocol_step(self, event):
+        if self.selected_step:
+            step = self.protocol_steps[int(self.selected_step) - 1]
+            AddBleProtocolStep(self, self.root, edit=True, dur=step[0],
+                               motor_1=step[1], motor_2=step[2])
+
+    def next_protocol_step(self, current_time):
+        if current_time == 1:
+            self.selected_step = 0
+            self.__update_ble_protocol()
+        if (self.step_time - current_time) == 0:
+            self.selected_step += 1
+            self.__update_ble_protocol()
+
+    def __update_ble_protocol(self):
+        if self.selected_step + 1 == len(self.protocol_steps):
+            return
+        self.selected_command = self.protocol_steps[self.selected_step]
+        self.step_duration = self.selected_command[0]
+        self.step_time += self.step_duration
+        self.r_ble_1_3_value = (self.selected_command[1] / 100) * self.right_ble_thresh
+        # self.r_ble_4_6_value = self.selected_command[2]
+        # self.r_ble_7_9_value = self.selected_command[3]
+        # self.r_ble_10_12_value = self.selected_command[4]
+        self.l_ble_1_3_value = (self.selected_command[2] / 100) * self.left_ble_thresh
+        # self.l_ble_4_6_value = self.selected_command[2]
+        # self.l_ble_7_9_value = self.selected_command[3]
+        # self.l_ble_10_12_value = self.selected_command[4]
+        self.__update_ble()
+
+    def __update_ble(self):
+        for slider in self.slider_objects:
+            slider.set(self.l_ble_1_3_value)
+        # for i in range(3, 6):
+        #     self.slider_objects[i].set(self.l_ble_4_6_value)
+        # for i in range(6, 9):
+        #     self.slider_objects[i].set(self.l_ble_7_9_value)
+        # for i in range(9, 12):
+        #     self.slider_objects[i].set(self.l_ble_10_12_value)
+        self.right_vta.write_all_motors(int(self.r_ble_1_3_value))
+        self.left_vta.write_all_motors(int(self.l_ble_1_3_value))
+
+    def select_protocol_step(self, event):
+        selection = self.prot_treeview.identify_row(event.y)
+        if selection:
+            self.selected_step = int(selection)
+
+    def populate_protocol_steps(self):
+        if self.protocol_steps:
+            for i in range(0, len(self.protocol_steps)):
+                self.prot_treeview_parents.append(
+                    self.prot_treeview.insert("", 'end', str(i + 1), text=str(self.protocol_steps[i][0]),
+                                              values=(self.protocol_steps[i][1], self.protocol_steps[i][2]),
+                                              tags=(treeview_tags[(i + 1) % 2])))
+
+    def __load_protocol_from_file(self, selected_file=None):
+        try:
+            if selected_file:
+                self.prot_file = selected_file
+                with open(self.prot_file, 'r') as f:
+                    self.protocol_steps = json.load(f)['Steps']
+                self.repopulate_treeview()
+            else:
+                selected_file = filedialog.askopenfilename(filetypes=(("JSON Files", "*.json"),))
+                if selected_file:
+                    self.prot_file = selected_file
+                    with open(self.prot_file, 'r') as f:
+                        self.protocol_steps = json.load(f)['Steps']
+                    self.repopulate_treeview()
+                else:
+                    messagebox.showwarning("Warning", "No file selected, please try again!")
+        except Exception as ex:
+            messagebox.showerror("Exception Encountered", f"Error encountered when loading protocol file!\n{str(ex)}")
+
+    def __load_protocol(self, file):
+        self.prot_file = file
+        self.protocol_steps = json.loads(self.prot_file)
+
+    def popup_return(self, new_step, edit=False):
+        if edit:
+            if self.selected_step:
+                self.protocol_steps[int(self.selected_step) - 1] = new_step
+                self.repopulate_treeview()
+        else:
+            self.protocol_steps.append(new_step)
+            self.repopulate_treeview()
+        self.changed_protocol = True
+        self.prot_save_button['state'] = 'active'
+
+    def repopulate_treeview(self):
+        clear_treeview(self.prot_treeview)
+        self.prot_treeview_parents = []
+        self.populate_protocol_steps()
+
+    def __add_protocol_step(self):
+        AddBleProtocolStep(self, self.root)
+
+    def __delete_protocol_step(self):
+        if self.selected_step:
+            self.protocol_steps.pop(self.selected_step - 1)
+            self.repopulate_treeview()
+
+    def __save_protocol_to_file(self):
+        try:
+            if self.changed_protocol:
+                if self.prot_file:
+                    file_dir = os.path.join(self.session_dir, "BLE")
+                    file_count = len(glob.glob1(file_dir, "*.json"))
+                    if file_count > 1:
+                        new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                                pathlib.Path(self.prot_file).stem[:-3] + f"_V{file_count}.json")
+                    else:
+                        new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                                pathlib.Path(self.prot_file).stem + f"_V{file_count}.json")
+                    with open(new_file, 'w') as f:
+                        x = {"Steps": self.protocol_steps}
+                        json.dump(x, f)
+                    self.__load_protocol_from_file(selected_file=new_file)
+                    messagebox.showinfo("Success", "Protocol file saved!")
+                else:
+                    file_dir = os.path.join(self.session_dir, "BLE")
+                    if not os.path.exists(file_dir):
+                        os.mkdir(file_dir)
+                    new_file = os.path.join(file_dir, "ble_protocol.json")
+                    if new_file:
+                        self.prot_file = new_file
+                        with open(self.prot_file, 'w') as f:
+                            x = {"Steps": self.protocol_steps}
+                            json.dump(x, f)
+                        messagebox.showinfo("Success", "Protocol file saved!")
+                    else:
+                        messagebox.showwarning("Warning", "No filename supplied! Can't save, please try again!")
+        except Exception as ex:
+            messagebox.showerror("Exception Encountered", f"Error encountered when saving protocol file!\n{str(ex)}")
+
+    def disconnect_ble(self):
+        VibrotactorArray.disconnect_ble_devices(self.ble_instance)
+        self.__disable_ui_elements()
+
+    def __connect_to_ble(self):
+        self.ble_connect_thread = threading.Thread(target=self.__connect_ble_thread)
+        self.ble_connect_thread.daemon = 1
+        self.ble_connect_thread.start()
+
+    def __connect_ble_thread(self):
+        while True:
+            try:
+                self.left_vta = VibrotactorArray(self.ble_instance)
+                self.right_vta = VibrotactorArray(self.ble_instance)
+                if self.left_vta.is_connected() and self.left_vta.is_connected():
+                    if self.left_vta.get_side() != VibrotactorArraySide.LEFT:
+                        vta = self.left_vta
+                        self.left_vta = self.right_vta
+                        self.right_vta = vta
+                    else:
+                        vta = self.right_vta
+                        self.right_vta = self.left_vta
+                        self.left_vta = vta
+                    self.__enable_ui_elements()
+                    messagebox.showinfo("Success!", "Vibrotactor arrays are connected!")
+                    break
+                else:
+                    response = messagebox.askyesno("Error", "Could not connect to both vibrotactor arrays!\nTry again?")
+                    if not response:
+                        break
+            except Exception as ex:
+                messagebox.showerror("Error", f"Exception encountered:\n{str(ex)}")
+
+    def update_frequency(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.set_motor_frequency(int(value))
+            self.left_vta.set_motor_frequency(int(value))
+
+    def update_ble_1(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(0, int(value))
+            self.left_vta.write_motor_level(0, int(value))
+
+    def update_ble_2(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(1, int(value))
+            self.left_vta.write_motor_level(1, int(value))
+
+    def update_ble_3(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(2, int(value))
+            self.left_vta.write_motor_level(2, int(value))
+
+    def update_ble_4(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(3, int(value))
+            self.left_vta.write_motor_level(3, int(value))
+
+    def update_ble_5(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(4, int(value))
+            self.left_vta.write_motor_level(4, int(value))
+
+    def update_ble_6(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(5, int(value))
+            self.left_vta.write_motor_level(5, int(value))
+
+    def update_ble_7(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(6, int(value))
+            self.left_vta.write_motor_level(6, int(value))
+
+    def update_ble_8(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(7, int(value))
+            self.left_vta.write_motor_level(7, int(value))
+
+    def update_ble_9(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(8, int(value))
+            self.left_vta.write_motor_level(8, int(value))
+
+    def update_ble_10(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(9, int(value))
+            self.left_vta.write_motor_level(9, int(value))
+
+    def update_ble_11(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(10, int(value))
+            self.left_vta.write_motor_level(10, int(value))
+
+    def update_ble_12(self, value):
+        if self.right_vta and self.left_vta:
+            self.right_vta.write_motor_level(11, int(value))
+            self.left_vta.write_motor_level(11, int(value))
 
 
 class ViewVideo:

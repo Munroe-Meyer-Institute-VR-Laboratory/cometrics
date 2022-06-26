@@ -1,7 +1,11 @@
 import datetime
 import os
 import sys
+import gc
 # Custom library imports
+import traceback
+from tkinter import messagebox
+
 import imageio_ffmpeg
 
 from config_utils import ConfigUtils
@@ -37,16 +41,23 @@ if __name__ == "__main__":
     config = ConfigUtils()
     config.set_cwd(cwd)
     config.set_logs_dir(os.path.join(cometrics_ver_root, 'logs'))
+    if not os.path.exists(f"{cometrics_ver_root}/Projects"):
+        os.mkdir(f"{cometrics_ver_root}/Projects")
     while True:
         first_time = config.get_first_time()
         setup = ProjectSetupWindow(config, first_time)
         if setup.setup_complete:
             while True:
-                manager = SessionManagerWindow(config, setup)
-                if manager.setup_again:
-                    break
-                elif manager.close_program:
-                    break
+                try:
+                    manager = SessionManagerWindow(config, setup)
+                    if manager.setup_again:
+                        break
+                    elif manager.close_program:
+                        break
+                    del manager
+                    gc.collect()
+                except Exception as e:
+                    messagebox.showerror("Error", f"Exception encountered:\n{str(e)}\n{traceback.print_exc()}")
             if manager.close_program:
                 break
         else:

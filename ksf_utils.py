@@ -103,7 +103,7 @@ def cal_acc(prim_filename, reli_filename, window_size, output_dir):
             dur_bindings = []
             for dur in dur_b:
                 dur_bindings.append(dur[1])
-            prim_num, reli_num = int(prim_session["Session Number"]), int(reli_session["Session Number"])
+            prim_num, reli_num = prim_session["Session Number"], reli_session["Session Number"]
             warning = ""
             # Perform error checking before causing errors
             if prim_num != reli_num:

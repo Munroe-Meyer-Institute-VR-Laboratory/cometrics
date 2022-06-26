@@ -33,7 +33,8 @@ setup(name='cometrics',
           'matplotlib',
           'pyEmpatica',
           'openpyxl',
-          'logger-util'
+          'logger-util',
+          'pywoodway'
       ],
       include_package_data=True,
       zip_safe=False
