@@ -274,6 +274,7 @@ class ViewWoodway:
         self.woodway_speed_r, self.woodway_speed_l = 0, 0
         self.woodway_incline = 0
         self.session_started = False
+        self.changed_protocol = True
         if woodway_thresh:
             self.calibrated = True
             self.woodway_thresh = woodway_thresh
@@ -323,6 +324,7 @@ class ViewWoodway:
                                     y=(height - element_height_adj) + button_size[1],
                                     anchor=N,
                                     width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+        self.prot_save_button['state'] = 'disabled'
 
         self.prot_del_button = Button(parent, text="Delete", font=field_font,
                                       command=self.__delete_protocol_step)
@@ -427,6 +429,7 @@ class ViewWoodway:
         self.session_started = True
         self.woodway.belt_a.set_speed(self.woodway_speed_l)
         self.woodway.belt_b.set_speed(self.woodway_speed_r)
+        self.__save_protocol_to_file()
 
     def stop_session(self):
         self.session_started = False
@@ -509,33 +512,36 @@ class ViewWoodway:
 
     def __save_protocol_to_file(self):
         try:
-            if self.prot_file:
-                file_dir = os.path.join(self.session_dir, "Woodway")
-                file_count = len(glob.glob1(file_dir, "*.json"))
-                if file_count > 1:
-                    new_file = os.path.join(pathlib.Path(self.prot_file).parent,
-                                            pathlib.Path(self.prot_file).stem[:-3] + f"_V{file_count}.json")
-                else:
-                    new_file = os.path.join(pathlib.Path(self.prot_file).parent,
-                                            pathlib.Path(self.prot_file).stem + f"_V{file_count}.json")
-                with open(new_file, 'w') as f:
-                    x = {"Steps": self.protocol_steps}
-                    json.dump(x, f)
-                self.__load_protocol_from_file(selected_file=new_file)
-                messagebox.showinfo("Success", "Protocol file saved!")
-            else:
-                file_dir = os.path.join(self.session_dir, "Woodway")
-                if not os.path.exists(file_dir):
-                    os.mkdir(file_dir)
-                new_file = os.path.join(file_dir, "woodway_protocol.json")
-                if new_file:
-                    self.prot_file = new_file
-                    with open(self.prot_file, 'w') as f:
+            if self.changed_protocol:
+                if self.prot_file:
+                    file_dir = os.path.join(self.session_dir, "Woodway")
+                    file_count = len(glob.glob1(file_dir, "*.json"))
+                    if file_count > 1:
+                        new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                                pathlib.Path(self.prot_file).stem[:-3] + f"_V{file_count}.json")
+                    else:
+                        new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                                pathlib.Path(self.prot_file).stem + f"_V{file_count}.json")
+                    with open(new_file, 'w') as f:
                         x = {"Steps": self.protocol_steps}
                         json.dump(x, f)
-                    messagebox.showinfo("Success", "Protocol file saved!")
+                    self.__load_protocol_from_file(selected_file=new_file)
+                    if not self.changed_protocol:
+                        messagebox.showinfo("Success", "Protocol file saved!")
                 else:
-                    messagebox.showwarning("Warning", "No filename supplied! Can't save, please try again!")
+                    file_dir = os.path.join(self.session_dir, "Woodway")
+                    if not os.path.exists(file_dir):
+                        os.mkdir(file_dir)
+                    new_file = os.path.join(file_dir, "woodway_protocol.json")
+                    if new_file:
+                        self.prot_file = new_file
+                        with open(self.prot_file, 'w') as f:
+                            x = {"Steps": self.protocol_steps}
+                            json.dump(x, f)
+                        if not self.changed_protocol:
+                            messagebox.showinfo("Success", "Protocol file saved!")
+                    else:
+                        messagebox.showwarning("Warning", "No filename supplied! Can't save, please try again!")
         except Exception as ex:
             messagebox.showerror("Exception Encountered", f"Error encountered when saving protocol file!\n{str(ex)}")
 
@@ -547,6 +553,8 @@ class ViewWoodway:
         else:
             self.protocol_steps.append(new_step)
             self.repopulate_treeview()
+        self.changed_protocol = True
+        self.prot_save_button['state'] = 'active'
 
     def repopulate_treeview(self):
         clear_treeview(self.prot_treeview)
@@ -634,6 +642,7 @@ class ViewBLE:
         self.step_duration = 0
         self.step_time = 0
         self.session_started = False
+        self.changed_protocol = True
         self.r_ble_1_3_value, self.r_ble_4_6_value, self.r_ble_7_9_value, self.r_ble_10_12_value = 0, 0, 0, 0
         self.l_ble_1_3_value, self.l_ble_4_6_value, self.l_ble_7_9_value, self.l_ble_10_12_value = 0, 0, 0, 0
         if ble_thresh[0] and ble_thresh[1]:
@@ -687,6 +696,7 @@ class ViewBLE:
                                     y=(height - element_height_adj) + button_size[1],
                                     anchor=N,
                                     width=(int(width * 0.5) - int(width * 0.05)) / 2, height=button_size[1])
+        self.prot_save_button['state'] = 'disabled'
 
         self.prot_del_button = Button(parent, text="Delete", font=field_font,
                                       command=self.__delete_protocol_step)
@@ -802,6 +812,7 @@ class ViewBLE:
         self.left_vta.write_all_motors(self.left_ble_thresh)
         self.right_vta.start_imu()
         self.left_vta.start_imu()
+        self.__save_protocol_to_file()
 
     def stop_session(self):
         self.session_started = False
@@ -911,6 +922,8 @@ class ViewBLE:
         else:
             self.protocol_steps.append(new_step)
             self.repopulate_treeview()
+        self.changed_protocol = True
+        self.prot_save_button['state'] = 'active'
 
     def repopulate_treeview(self):
         clear_treeview(self.prot_treeview)
@@ -927,33 +940,34 @@ class ViewBLE:
 
     def __save_protocol_to_file(self):
         try:
-            if self.prot_file:
-                file_dir = os.path.join(self.session_dir, "BLE")
-                file_count = len(glob.glob1(file_dir, "*.json"))
-                if file_count > 1:
-                    new_file = os.path.join(pathlib.Path(self.prot_file).parent,
-                                            pathlib.Path(self.prot_file).stem[:-3] + f"_V{file_count}.json")
-                else:
-                    new_file = os.path.join(pathlib.Path(self.prot_file).parent,
-                                            pathlib.Path(self.prot_file).stem + f"_V{file_count}.json")
-                with open(new_file, 'w') as f:
-                    x = {"Steps": self.protocol_steps}
-                    json.dump(x, f)
-                self.__load_protocol_from_file(selected_file=new_file)
-                messagebox.showinfo("Success", "Protocol file saved!")
-            else:
-                file_dir = os.path.join(self.session_dir, "BLE")
-                if not os.path.exists(file_dir):
-                    os.mkdir(file_dir)
-                new_file = os.path.join(file_dir, "ble_protocol.json")
-                if new_file:
-                    self.prot_file = new_file
-                    with open(self.prot_file, 'w') as f:
+            if self.changed_protocol:
+                if self.prot_file:
+                    file_dir = os.path.join(self.session_dir, "BLE")
+                    file_count = len(glob.glob1(file_dir, "*.json"))
+                    if file_count > 1:
+                        new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                                pathlib.Path(self.prot_file).stem[:-3] + f"_V{file_count}.json")
+                    else:
+                        new_file = os.path.join(pathlib.Path(self.prot_file).parent,
+                                                pathlib.Path(self.prot_file).stem + f"_V{file_count}.json")
+                    with open(new_file, 'w') as f:
                         x = {"Steps": self.protocol_steps}
                         json.dump(x, f)
+                    self.__load_protocol_from_file(selected_file=new_file)
                     messagebox.showinfo("Success", "Protocol file saved!")
                 else:
-                    messagebox.showwarning("Warning", "No filename supplied! Can't save, please try again!")
+                    file_dir = os.path.join(self.session_dir, "BLE")
+                    if not os.path.exists(file_dir):
+                        os.mkdir(file_dir)
+                    new_file = os.path.join(file_dir, "ble_protocol.json")
+                    if new_file:
+                        self.prot_file = new_file
+                        with open(self.prot_file, 'w') as f:
+                            x = {"Steps": self.protocol_steps}
+                            json.dump(x, f)
+                        messagebox.showinfo("Success", "Protocol file saved!")
+                    else:
+                        messagebox.showwarning("Warning", "No filename supplied! Can't save, please try again!")
         except Exception as ex:
             messagebox.showerror("Exception Encountered", f"Error encountered when saving protocol file!\n{str(ex)}")
 
