@@ -13,7 +13,7 @@ from pynput import keyboard
 from tkvideoutils import cp_rename
 from menu_bar import MenuBar
 from output_view_ui import OutputViewPanel
-from patient_data_fields import PatientDataFields
+from patient_data_fields import PatientDataFields, PatientDataVar
 from session_time_fields import SessionTimeFields
 from tkinter_utils import get_treeview_style, get_slider_style
 from ui_params import large_header_font, large_field_font, large_field_offset, medium_header_font, medium_field_font, \
@@ -146,7 +146,7 @@ class SessionManagerWindow:
                                      field_font=self.field_font,
                                      field_offset=self.field_offset,
                                      ksf=self.keystroke_file)
-        self.patient_name = self.pdf.patient_name
+        self.patient_name = self.pdf.patient_vars[PatientDataVar.PATIENT_NAME].get()
         # endregion
 
         # Setup key listener

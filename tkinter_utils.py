@@ -3,6 +3,7 @@ import pathlib
 import threading
 import time
 import tkinter
+import traceback
 from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk, LEFT, filedialog
 from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview, Entry
@@ -288,7 +289,8 @@ class ProjectPopup:
         self.entry.focus()
 
     def import_project(self):
-        chosen_project = filedialog.askdirectory(title='Select project folder')
+        chosen_project = filedialog.askdirectory(initialdir=rf'{cometrics_ver_root}\Projects',
+                                                 title='Select project folder')
         if chosen_project:
             if os.path.isdir(chosen_project):
                 if not os.path.exists(os.path.join(chosen_project, '.cometrics')):
@@ -345,8 +347,11 @@ class EntryPopup:
         self.entry.focus()
 
     def close_win(self):
-        self.caller.popup_return(self.entry.get(), self.popup_call)
-        self.popup_root.destroy()
+        try:
+            self.caller.popup_return(self.entry.get(), self.popup_call)
+            self.popup_root.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Exception encountered:\n{str(e)}\n{traceback.print_exc()}")
 
 
 class NewKeyPopup:

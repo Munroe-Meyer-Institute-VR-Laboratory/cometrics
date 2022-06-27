@@ -338,7 +338,9 @@ class PatientContainer:
         if patient_file:
             try:
                 self.update_fields(patient_file)
-            except KeyError or FileNotFoundError:
+            except KeyError:
+                self.populate_defaults()
+            except Exception:
                 self.populate_defaults()
 
     def update_fields(self, filepath):

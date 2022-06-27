@@ -58,7 +58,12 @@ if __name__ == "__main__":
                     gc.collect()
                 except Exception as e:
                     messagebox.showerror("Error", f"Exception encountered:\n{str(e)}\n{traceback.print_exc()}")
-            if manager.close_program:
+                    manager = None
+                    break
+            if manager:
+                if manager.close_program:
+                    break
+            else:
                 break
         else:
             break
