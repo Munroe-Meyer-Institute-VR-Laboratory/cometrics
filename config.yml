@@ -9,7 +9,7 @@ enable-e4: false
 enable-woodway: false
 first-time: true
 fps: 8
-logs-dir: C:\cometrics\1.1.0\logs
+logs-dir: C:\cometrics\1.1.1\logs
 patient-concerns: concerns.yml
 phases:
 - Assessment
