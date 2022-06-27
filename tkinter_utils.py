@@ -603,6 +603,7 @@ class CalibrateWoodway:
                     for i in range(0, 4):
                         time.sleep(0.25)
                         if not self.calibrating:
+                            self.calibrated_speed_increasing = np.average(self.woodway.get_speeds())
                             self.woodway.set_speed(float(0.0), float(0.0))
                             return
             else:
@@ -613,6 +614,7 @@ class CalibrateWoodway:
                     for i in range(0, 4):
                         time.sleep(0.25)
                         if not self.calibrating:
+                            self.calibrated_speed_decreasing = np.average(self.woodway.get_speeds())
                             self.woodway.set_speed(float(0.0), float(0.0))
                             if self.calibrated_speed_increasing and self.calibrated_speed_decreasing:
                                 self.calibrated_speed = np.average([self.calibrated_speed_increasing,

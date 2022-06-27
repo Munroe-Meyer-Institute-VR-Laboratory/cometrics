@@ -349,6 +349,10 @@ class SessionManagerWindow:
             ble_thresh_r, ble_thresh_l, woodway_thresh = None, None, None
             if self.config.get_ble():
                 if self.ovu.ble_view:
+                    if not self.ovu.ble_view.is_connected():
+                        messagebox.showwarning("Warning", "Vibrotactors must be connected before starting session!")
+                        print("WARNING: Vibrotactors must be connected before starting session")
+                        return
                     if not self.ovu.ble_view.is_calibrated():
                         messagebox.showwarning("Warning", "Vibrotactors must be calibrated before starting session!")
                         print("WARNING: Vibrotactors must be calibrated before starting session")
@@ -363,6 +367,10 @@ class SessionManagerWindow:
                     return
             if self.config.get_woodway():
                 if self.ovu.woodway_view:
+                    if not self.ovu.woodway_view.is_connected():
+                        messagebox.showwarning("Warning", "Woodway must be connected before starting session!")
+                        print("WARNING: Woodway must be connected before starting session")
+                        return
                     if not self.ovu.woodway_view.is_calibrated():
                         messagebox.showwarning("Warning", "Woodway must be calibrated before starting session!")
                         print("WARNING: Woodway must be calibrated before starting session")
