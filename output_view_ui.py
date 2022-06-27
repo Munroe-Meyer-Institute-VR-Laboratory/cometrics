@@ -158,11 +158,16 @@ class OutputViewPanel:
         if self.e4_view:
             self.e4_view.stop_plot()
             self.e4_view.disconnect_e4()
-        if self.video_view.player:
-            self.video_view.player.loading = False
-        if self.video_view.recorder:
-            self.video_view.recorder.stop_recording()
-            self.video_view.recorder.stop_playback()
+        if self.video_view:
+            if self.video_view.player:
+                self.video_view.player.loading = False
+            if self.video_view.recorder:
+                self.video_view.recorder.stop_recording()
+                self.video_view.recorder.stop_playback()
+        if self.ble_view:
+            self.ble_view.disconnect_ble()
+        if self.woodway_view:
+            self.woodway_view.disconnect_woodway()
 
     def start_session(self, recording_path=None):
         if self.e4_view:
@@ -405,6 +410,9 @@ class ViewWoodway:
         self.prot_load_button.config(state='disabled')
         self.calibrate_button.config(state='disabled')
 
+    def __enable_connect_button(self):
+        self.woodway_connect_button.config(state='active')
+
     def __disable_ui_elements(self):
         self.belt_incline_l.config(state='disabled')
         self.belt_speed_l.config(state='disabled')
@@ -432,10 +440,12 @@ class ViewWoodway:
         self.__save_protocol_to_file()
 
     def stop_session(self):
-        self.session_started = False
-        self.woodway.belt_a.set_speed(0.0)
-        self.woodway.belt_b.set_speed(0.0)
-        self.woodway.set_elevations(0.0)
+        if self.woodway:
+            self.session_started = False
+            self.woodway.belt_a.set_speed(0.0)
+            self.woodway.belt_b.set_speed(0.0)
+            self.woodway.set_elevations(0.0)
+            self.woodway.close()
 
     def next_protocol_step(self, current_time):
         if current_time == 1:
@@ -591,12 +601,11 @@ class ViewWoodway:
     def disconnect_woodway(self):
         if self.woodway:
             self.woodway.stop_belts()
-            self.woodway.set_elevations(0)
+            self.woodway.set_elevations(float(0.0))
             self.woodway.close()
             self.woodway = None
             self.__disable_ui_elements()
-        else:
-            messagebox.showwarning("Warning", "Connect to Woodway first!")
+            self.__enable_connect_button()
 
     def __write_speed(self):
         if self.session_started:
@@ -818,6 +827,7 @@ class ViewBLE:
         self.session_started = False
         self.right_vta.stop_imu()
         self.left_vta.stop_imu()
+        self.disconnect_ble()
 
     def is_calibrated(self):
         return self.calibrated
