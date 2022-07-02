@@ -1326,7 +1326,8 @@ class ViewVideo:
                                               keep_ratio=True,
                                               slider=self.video_slider,
                                               slider_var=self.frame_var,
-                                              override_slider=True)
+                                              override_slider=True,
+                                              cleanup_audio=True)
                     self.video_slider.config(state='active')
                     self.video_loaded = True
         except Exception as e:
