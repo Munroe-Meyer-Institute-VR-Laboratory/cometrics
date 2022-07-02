@@ -173,7 +173,9 @@ class OutputViewPanel:
         if self.e4_view:
             self.e4_view.session_started = True
         if self.video_view.recorder:
-            self.video_view.recorder.start_recording(output_path=recording_path)
+            self.recording_path = recording_path
+            audio_path = os.path.join(pathlib.Path(recording_path).parent, pathlib.Path(recording_path).stem + ".wav")
+            self.video_view.recorder.start_recording(video_output=recording_path, audio_output=audio_path)
         if self.ble_view:
             self.ble_view.start_session()
         if self.woodway_view:
@@ -194,10 +196,12 @@ class OutputViewPanel:
         if self.video_view.recorder:
             self.video_view.recorder.stop_recording()
             self.video_view.recorder.stop_playback()
-        if self.ble_view:
-            self.ble_view.stop_session()
+            self.video_view.recorder.merge_sources(output=self.recording_path,
+                                                   ffmpeg_path=os.environ['IMAGEIO_FFMPEG_EXE'])
         if self.woodway_view:
             self.woodway_view.stop_session()
+        if self.ble_view:
+            self.ble_view.stop_session()
 
     def check_event(self, key_char, start_time):
         # Make sure it is not None
@@ -1143,6 +1147,7 @@ class ViewVideo:
                                      anchor=E)
 
         self.camera_str_var = StringVar()
+        self.audio_str_var = StringVar()
         self.recorder = None
         self.player = None
         self.deleted_event = None
@@ -1150,11 +1155,15 @@ class ViewVideo:
         self.load_camera_box['state'] = 'readonly'
         self.load_camera_box.config(font=field_font)
         self.load_camera_box.place(x=(width / 2) + 10, y=5 + (self.video_height / 2), height=button_size[1],
-                                   width=button_size[0] * 2,
-                                   anchor=W)
+                                   width=button_size[0] * 2, anchor=W)
+
+        self.load_audio_box = Combobox(self.root, textvariable=self.audio_str_var, font=field_font)
+        self.load_audio_box['state'] = 'readonly'
+        self.load_camera_box.config(font=field_font)
+        self.load_audio_box.place(x=(width / 2) + 10, y=50 + (self.video_height / 2), height=button_size[1],
+                                   width=button_size[0] * 2, anchor=W)
 
         self.frame_var = IntVar(self.root)
-        # self.video_slider = Scale(self.root, orient=HORIZONTAL, variable=self.frame_var, command=slider_change_cb)
         self.video_slider = TickScale(self.root, orient=HORIZONTAL, variable=self.frame_var, command=slider_change_cb)
         self.video_slider.config(length=self.video_width)
         self.video_slider.place(x=5, y=self.video_height, anchor=NW)
@@ -1173,7 +1182,7 @@ class ViewVideo:
                                                             button_1_bind=self.select_event,
                                                             double_bind=self.edit_event)
         # Must be pushed to a thread otherwise the session timer thread will crash
-        load_cam_thread = threading.Thread(target=self.get_camera_sources)
+        load_cam_thread = threading.Thread(target=self.load_sources_thread)
         load_cam_thread.daemon = 1
         load_cam_thread.start()
 
@@ -1183,8 +1192,26 @@ class ViewVideo:
             selected_event = self.event_history[int(selection) - 1]
             print(selected_event)
 
+    def load_sources_thread(self):
+        self.get_camera_sources()
+        self.get_audio_sources()
+
+    def get_audio_sources(self):
+        self.audio_source = None
+        self.audio_sources = VideoRecorder.get_audio_sources()
+        self.selectable_audio_sources = []
+        for source in self.audio_sources:
+            self.selectable_audio_sources.append(source[1])
+        if not self.audio_sources:
+            self.audio_str_var.set("No Microphones Found")
+        else:
+            self.audio_str_var.set("Select Microphone")
+        self.load_audio_box['values'] = self.selectable_audio_sources
+        self.load_audio_box.bind("<<ComboboxSelected>>", self.check_load_camera)
+
     def get_camera_sources(self):
-        self.camera_sources = VideoRecorder.get_sources()
+        self.video_source = None
+        self.camera_sources = VideoRecorder.get_video_sources()
         self.selectable_sources = []
         for source in self.camera_sources:
             self.selectable_sources.append(f"Input {str(source[0])}")
@@ -1193,7 +1220,16 @@ class ViewVideo:
         else:
             self.camera_str_var.set("Select Camera")
         self.load_camera_box['values'] = self.selectable_sources
-        self.load_camera_box.bind("<<ComboboxSelected>>", self.load_camera)
+        self.load_camera_box.bind("<<ComboboxSelected>>", self.check_load_camera)
+
+    def check_load_camera(self, event):
+        try:
+            self.video_source = self.camera_sources[self.selectable_sources.index(self.camera_str_var.get())]
+            self.audio_source = self.audio_sources[self.selectable_audio_sources.index(self.audio_str_var.get())]
+            if self.video_source and self.audio_source:
+                self.load_camera()
+        except ValueError:
+            return
 
     def select_event(self, event):
         selection = self.event_treeview.identify_row(event.y)
@@ -1254,15 +1290,17 @@ class ViewVideo:
                                                                               values=(bind[1], bind[0]),
                                                                               tags=(treeview_bind_tags[i % 2])))
 
-    def load_camera(self, event):
-        if self.camera_sources[self.selectable_sources.index(self.camera_str_var.get())]:
+    def load_camera(self):
+        if self.video_source and self.audio_source:
             if not self.recorder:
                 try:
                     self.load_video_button.place_forget()
                     self.load_camera_box.place_forget()
-                    source = self.camera_sources[self.selectable_sources.index(self.camera_str_var.get())]
-                    self.recorder = VideoRecorder(source=source,
-                                                  path=None,
+                    self.load_audio_box.place_forget()
+                    self.recorder = VideoRecorder(video_source=self.video_source,
+                                                  audio_source=self.audio_source,
+                                                  video_path=None,
+                                                  audio_path=None,
                                                   fps=self.recording_fps,
                                                   label=self.video_label,
                                                   size=(self.video_width, self.video_height),
@@ -1275,19 +1313,20 @@ class ViewVideo:
 
     def load_video(self):
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
+        audio_file = os.path.join(pathlib.Path(video_file).parent, pathlib.Path(video_file).stem + ".wav")
         try:
             if video_file:
                 if pathlib.Path(video_file).suffix == ".mp4":
                     self.load_video_button.place_forget()
                     self.load_camera_box.place_forget()
+                    self.load_audio_box.place_forget()
                     self.video_file = video_file
-                    self.player = VideoPlayer(self.root, video_file, self.video_label,
+                    self.player = VideoPlayer(self.root, video_file, audio_file, self.video_label,
                                               size=(self.video_width, self.video_height),
                                               keep_ratio=True,
                                               slider=self.video_slider,
                                               slider_var=self.frame_var,
-                                              override_slider=True
-                                              )
+                                              override_slider=True)
                     self.video_slider.config(state='active')
                     self.video_loaded = True
         except Exception as e:
@@ -1306,11 +1345,12 @@ class ViewVideo:
         except Exception as e:
             print(f"ERROR: Error starting video:\n{str(e)}\n{traceback.print_exc()}")
 
-    def play_video(self, output_path=None):
+    def play_video(self, video_output=None, audio_output=None):
         try:
             if self.recorder:
-                self.recorder.start_recording(output_path=output_path)
-                self.video_file = self.recorder.output_path
+                self.recorder.start_recording(video_output=video_output, audio_output=audio_output)
+                self.video_file = self.recorder.video_output
+                self.audio_file = self.recorder.audio_output
                 return self.recorder.recording
             elif self.player:
                 self.player.play_video()

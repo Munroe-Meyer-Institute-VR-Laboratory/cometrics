@@ -1,10 +1,15 @@
-import datetime
 import os
 import sys
 import gc
 # Custom library imports
 import traceback
 from tkinter import messagebox
+
+# Setup environment variables
+cwd = os.getcwd()
+ffmpeg_path = os.path.join(cwd, r'external_bin\ffmpeg\ffmpeg-win64-v4.2.2.exe')
+if os.path.exists(ffmpeg_path):
+    os.environ['IMAGEIO_FFMPEG_EXE'] = os.path.join(cwd, r'external_bin\ffmpeg\ffmpeg-win64-v4.2.2.exe')
 
 import imageio_ffmpeg
 
@@ -30,11 +35,6 @@ if __name__ == "__main__":
     CreateLogger(os.path.join(cometrics_ver_root, 'logs'))
     # Log computer information
     log_startup()
-    # Setup environment variables
-    cwd = os.getcwd()
-    ffmpeg_path = os.path.join(cwd, r'external_bin\ffmpeg\ffmpeg-win64-v4.2.2.exe')
-    if os.path.exists(ffmpeg_path):
-        os.environ['IMAGEIO_FFMPEG_EXE'] = os.path.join(cwd, r'external_bin\ffmpeg\ffmpeg-win64-v4.2.2.exe')
     print(f"STARTUP: {cwd}")
     print(f"INFO: imageio_ffmpeg exe location - {imageio_ffmpeg.get_ffmpeg_exe()}")
     # Load our configuration
