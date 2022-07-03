@@ -317,13 +317,7 @@ class SessionTimeFields:
 class ReviewMode:
     def __init__(self, caller, parent, height, width, button_size,
                  header_font=('Purisa', 14), field_font=('Purisa', 11)):
-        self.session_str_var = StringVar(parent, value=f"Session {caller.prim_session_number}")
-        self.session_label = Label(parent, textvariable=self.session_str_var, font=field_font)
-        self.accept_button = Button(parent, text="Accept", bg='green', font=field_font)
-        self.reject_button = Button(parent, text="Reject", bg='red', font=field_font)
-
-        self.save_session_button = Button(parent, text="Save Session", font=field_font)
-
+        # region Session Load
         self.review_name_label = Label(parent, text="Reviewer Name", font=field_font)
         self.review_name_label.place(x=int(width / 2), y=5, anchor=N)
         self.review_name_var = StringVar(parent)
@@ -349,42 +343,109 @@ class ReviewMode:
         self.selected_session = 1
         self.forward_image = PhotoImage(file='images/go_next.png')
         self.backward_image = PhotoImage(file='images/go_previous.png')
-        self.forward_button = Button(parent, image=self.forward_image, command=self.next_session)
-        self.backward_button = Button(parent, image=self.backward_image, command=self.prev_session)
-        self.forward_button.place(x=(width / 2) + 70, y=110, anchor=N)
-        self.backward_button.place(x=(width / 2) - 70, y=110, anchor=N)
-        self.loaded_session_var = StringVar(parent, value=f"{self.selected_session} / {self.session_number}")
+        self.forward_session_button = Button(parent, image=self.forward_image, command=self.next_session)
+        self.backward_session_button = Button(parent, image=self.backward_image, command=self.prev_session)
+        self.forward_session_button.place(x=(width / 2) + 70, y=110, anchor=N)
+        self.backward_session_button.place(x=(width / 2) - 70, y=110, anchor=N)
+        self.loaded_session_var = StringVar(parent, value=f"Session\n{self.selected_session} / {self.session_number}")
         self.loaded_session = Label(parent, textvariable=self.loaded_session_var, font=header_font)
         self.loaded_session.place(x=int(width / 2), y=130, anchor=CENTER)
 
-        self.load_session_button = Button(parent, text="Load Session", font=field_font)
-        self.load_session_button.place(x=int(width / 2), y=160, width=button_size[0], height=button_size[1], anchor=N)
+        self.load_session_button = Button(parent, text="Load Session", font=field_font, command=self.load_session)
+        self.load_session_button.place(x=int(width / 2), y=160, width=button_size[0]*2, height=button_size[1], anchor=N)
+        # endregion
 
-        # freq_label = Label(parent, font=field_font, text="Frequency Key Association")
-        # freq_label.place(x=50, y=50)
-        # self.freq_var = StringVar(parent)
-        # freq_box = Combobox(parent, textvariable=self.freq_var, font=field_font)
-        # freq_box['values'] = ['None'] + caller.ovu.key_view.bindings
-        # freq_box['state'] = 'readonly'
-        # freq_box.config(font=field_font)
-        # freq_box.place(x=50, y=75, width=200)
-        # freq_box.option_add('*TCombobox*Listbox.font', field_font)
-        #
-        # dur_label = Label(parent, font=field_font, text="Duration Key Association")
-        # dur_label.place(x=50, y=100)
-        # self.dur_var = StringVar(parent)
-        # dur_box = Combobox(parent, textvariable=self.dur_var, font=field_font)
-        # dur_box['values'] = ['None'] + caller.ovu.key_view.dur_bindings
-        # dur_box['state'] = 'readonly'
-        # dur_box.config(font=field_font)
-        # dur_box.place(x=50, y=125, width=200)
-        # dur_box.option_add('*TCombobox*Listbox.font', field_font)
+        # region Event Review
+        self.event_number = 1
+        self.selected_event = 1
+        self.forward_event_button = Button(parent, image=self.forward_image, command=self.next_event)
+        self.backward_event_button = Button(parent, image=self.backward_image, command=self.prev_event)
+        self.forward_event_button.place(x=(width / 2) + 70, y=170+button_size[1], anchor=N)
+        self.backward_event_button.place(x=(width / 2) - 70, y=170+button_size[1], anchor=N)
+        self.loaded_event_var = StringVar(parent, value=f"Event\n0 / 0")
+        self.loaded_event = Label(parent, textvariable=self.loaded_event_var, font=header_font)
+        self.loaded_event.place(x=int(width / 2), y=(170+button_size[1])+20, anchor=CENTER)
+
+        freq_label = Label(parent, font=field_font, text="Frequency Key Association")
+        freq_label.place(x=int(width / 2), y=(170+button_size[1])+50, anchor=N)
+        self.freq_var = StringVar(parent)
+        self.freq_box = Combobox(parent, textvariable=self.freq_var, font=field_font)
+        self.freq_box['values'] = ['None'] + caller.ovu.key_view.bindings
+        self.freq_box.config(font=field_font)
+        self.freq_box.place(x=int(width / 2), y=(170+button_size[1])+75, anchor=N, width=200)
+        self.freq_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        dur_label = Label(parent, font=field_font, text="Duration Key Association")
+        dur_label.place(x=int(width / 2), y=(170+button_size[1])+100, anchor=N)
+        self.dur_var = StringVar(parent)
+        self.dur_box = Combobox(parent, textvariable=self.dur_var, font=field_font)
+        self.dur_box['values'] = ['None'] + caller.ovu.key_view.dur_bindings
+        self.dur_box.config(font=field_font)
+        self.dur_box.place(x=int(width / 2), y=(170+button_size[1])+125, anchor=N, width=200)
+        self.dur_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        self.accept_button = Button(parent, text="Accept", bg='green', font=field_font, command=self.accept_changes)
+        self.accept_button.place(x=int(width / 2), y=(170+button_size[1])+155,
+                                 width=button_size[0], height=button_size[1], anchor=NE)
+        self.reject_button = Button(parent, text="Reject", bg='red', font=field_font, command=self.reject_changes)
+        self.reject_button.place(x=int(width / 2), y=(170+button_size[1])+155,
+                                 width=button_size[0], height=button_size[1], anchor=NW)
+        self.save_session_button = Button(parent, text="Approve Session", font=field_font, command=self.approve_changes)
+        self.save_session_button.place(x=int(width / 2), y=(170+button_size[1]*2)+155,
+                                       width=button_size[0]*2, height=button_size[1], anchor=N)
+        self.disable_event_review()
+        # endregion
+
+    def disable_event_review(self):
+        self.dur_box['state'] = 'disabled'
+        self.freq_box['state'] = 'disabled'
+        self.accept_button['state'] = 'disabled'
+        self.reject_button['state'] = 'disabled'
+        self.save_session_button['state'] = 'disabled'
+        self.forward_event_button['state'] = 'disabled'
+        self.backward_event_button['state'] = 'disabled'
+
+    def enable_event_review(self):
+        self.dur_box['state'] = 'readonly'
+        self.freq_box['state'] = 'readonly'
+        self.accept_button['state'] = 'active'
+        self.reject_button['state'] = 'active'
+        self.save_session_button['state'] = 'active'
+        self.forward_event_button['state'] = 'active'
+        self.backward_event_button['state'] = 'active'
+        self.review_name_entry['state'] = 'disabled'
 
     def next_session(self):
-        pass
+        if self.selected_session + 1 > self.session_number:
+            self.selected_session = 1
+        else:
+            self.selected_session += 1
+        self.loaded_session_var.set(f"Session\n{self.selected_session} / {self.session_number}")
+        self.check_session()
 
     def prev_session(self):
-        pass
+        if self.selected_session - 1 < 1:
+            self.selected_session = self.session_number
+        else:
+            self.selected_session -= 1
+        self.loaded_session_var.set(f"Session\n{self.selected_session} / {self.session_number}")
+        self.check_session()
+
+    def next_event(self):
+        if self.selected_event + 1 > self.event_number:
+            self.selected_event = 1
+        else:
+            self.selected_event += 1
+        self.loaded_event_var.set(f"Event\n{self.selected_event} / {self.event_number}")
+        self.load_event()
+
+    def prev_event(self):
+        if self.selected_event - 1 < 1:
+            self.selected_event = self.event_number
+        else:
+            self.selected_event -= 1
+        self.loaded_event_var.set(f"Event\n{self.selected_event} / {self.event_number}")
+        self.load_event()
 
     def check_radio(self):
         if self.prim_var.get() == "Primary":
@@ -397,4 +458,22 @@ class ReviewMode:
             print(f"ERROR: Something went wrong assigning the session type "
                   f"{self.prim_var.get()}")
         self.selected_session = 1
-        self.loaded_session_var.set(f"{self.selected_session} / {self.session_number}")
+        self.loaded_session_var.set(f"Session\n{self.selected_session} / {self.session_number}")
+
+    def load_session(self):
+        pass
+
+    def load_event(self):
+        pass
+
+    def check_session(self):
+        pass
+
+    def accept_changes(self):
+        pass
+
+    def reject_changes(self):
+        pass
+
+    def approve_changes(self):
+        pass
