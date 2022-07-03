@@ -182,7 +182,7 @@ class ConfigPopup:
         self.config = config
         self.popup_root = popup_root = tkinter.Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x340")
+        popup_root.geometry("300x380")
         popup_root.title("Configuration Settings")
         fps_tag = tkinter.Label(popup_root, text="FPS", bg='white', font=('Purisa', 12))
         fps_tag.place(x=10, y=10)
@@ -216,17 +216,23 @@ class ConfigPopup:
         self.b_entry.insert(0, str(self.config.get_woodway_b()))
         self.b_entry.place(x=60, y=210)
 
+        self.review_var = tkinter.BooleanVar(popup_root, value=self.config.get_review())
+        review_checkbutton = tkinter.Checkbutton(popup_root, text="Review Mode Enabled", bg='white',
+                                                 variable=self.review_var, font=('Purisa', 12))
+        review_checkbutton.place(x=10, y=250)
+
         clear_projects = tkinter.Button(popup_root, text="Clear Recent Projects",
                                         font=('Purisa', 12), command=self.clear_projects)
-        clear_projects.place(x=10, y=250)
+        clear_projects.place(x=10, y=290)
         ok_button = tkinter.Button(popup_root, text="OK", command=self.on_closing, font=('Purisa', 12))
-        ok_button.place(x=150, y=290, anchor=N)
+        ok_button.place(x=150, y=330, anchor=N)
 
     def on_closing(self):
         self.update_fps()
         self.update_e4()
         self.update_woodway()
         self.update_ble()
+        self.update_review()
         self.popup_root.destroy()
 
     def update_fps(self):
@@ -240,6 +246,9 @@ class ConfigPopup:
 
     def update_woodway(self):
         self.config.set_woodway(self.woodway_var.get())
+
+    def update_review(self):
+        self.config.set_review(self.review_var.get())
 
     def clear_projects(self):
         self.config.set_recent_projects([])
@@ -564,7 +573,8 @@ class CalibrateWoodway:
         label.place(x=10, y=10)
 
         # Create a Button Widget in the Toplevel Window
-        self.cal_button = tkinter.Button(popup_root, text="Calibrate", command=self.start_calibration_step, font=('Purisa', 12))
+        self.cal_button = tkinter.Button(popup_root, text="Calibrate", command=self.start_calibration_step,
+                                         font=('Purisa', 12))
         self.cal_button.place(x=400, y=280, anchor=tkinter.SE, width=150, height=30)
         self.stop_button = tkinter.Button(popup_root, text="Stop", command=self.stop_calibration_step,
                                           font=('Purisa', 12))

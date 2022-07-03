@@ -1311,6 +1311,22 @@ class ViewVideo:
                     messagebox.showerror("Error", f"Error loading camera:\n{str(e)}")
                     print(f"ERROR: Error loading camera:\n{str(e)}\n" + traceback.print_exc())
 
+    def set_clip(self, start_frame, end_frame):
+        if self.player:
+            if not self.player.playing:
+                self.player.set_clip(start_frame, end_frame)
+            else:
+                messagebox.showwarning("Warning", "Pause video first to set a clip!")
+                print("WARNING: Pause video first to set a clip")
+
+    def clear_clip(self):
+        if self.player:
+            if not self.player.playing:
+                self.player.clear_clip()
+            else:
+                messagebox.showwarning("Warning", "Pause video first to clear a clip!")
+                print("WARNING: Pause video first to clear a clip")
+
     def load_video(self):
         video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
         audio_file = os.path.join(pathlib.Path(video_file).parent, pathlib.Path(video_file).stem + ".wav")
