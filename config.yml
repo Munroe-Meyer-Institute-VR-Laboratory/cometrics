@@ -1,4 +1,4 @@
-cwd: D:\GitHub Repos\KeystrokeAnnotator
+cwd: null
 data-folders:
 - Graph
 - Raw Data
@@ -6,19 +6,16 @@ data-folders:
 - Export
 enable-ble: false
 enable-e4: false
-enable-review: true
+enable-review: false
 enable-woodway: false
-first-time: false
+first-time: true
 fps: 8
 logs-dir: C:\cometrics\1.2.0\logs
 patient-concerns: concerns.yml
 phases:
 - Assessment
 - Treatment
-recent-projects:
-- C:\Users\wsarc\Desktop\Project Directory\Example Project
-window-size:
-- 864
-- 1536
+recent-projects: []
+window-size: []
 woodway-a-sn: FTHCUWVAA
 woodway-b-sn: FTHCUQ9IA
