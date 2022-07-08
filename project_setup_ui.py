@@ -31,6 +31,7 @@ class ProjectSetupWindow:
             config.set_screen_size(self.window_height, self.window_width)
             self.window_width = int(self.window_width * window_ratio)
             self.window_height = int(self.window_height * window_ratio)
+        self.main_root.iconify()
         # Check configuration
         try:
             print(f"INFO: {os.environ['IMAGEIO_FFMPEG_EXE']}")
@@ -172,7 +173,6 @@ class ProjectSetupWindow:
                                  width=self.button_size[0], height=self.button_size[1])
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))
-        center(self.main_root)
         self.main_root.title(ui_title)
         self.icon = PhotoImage(file=r'images/cometrics_icon.png')
         self.main_root.iconphoto(True, self.icon)
@@ -185,6 +185,8 @@ class ProjectSetupWindow:
                                            "Would you like to open the user guide for cometrics?")
             if response:
                 MenuBar.open_user_guide()
+        self.main_root.deiconify()
+        center(self.main_root)
         self.main_root.mainloop()
 
     # region External Data Entry

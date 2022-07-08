@@ -99,23 +99,31 @@ class SessionTimeFields:
         self.session_toggle_button = Button(self.session_frame, text="Start Session", bg='#4abb5f',
                                             font=field_font, width=13,
                                             command=self.caller.start_session)
-        self.session_toggle_button.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 9), anchor=CENTER)
+        self.session_toggle_button.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 10.5), anchor=CENTER)
+
+        self.double_speed_selection = BooleanVar()
+        self.double_speed_checkbutton = Checkbutton(self.session_frame, text="Double Speed Playback",
+                                                    variable=self.double_speed_selection,
+                                                    font=header_font,
+                                                    command=self.double_speed_toggle)
+        self.double_speed_checkbutton.place(x=10, y=self.start_y + ((field_offset / 2) * 8), anchor=W)
+
         self.key_explanation = Label(self.session_frame, text="Esc Key", font=field_font,
                                      justify=LEFT)
-        self.key_explanation.place(x=width * 0.75, y=self.start_y + ((field_offset / 2) * 9), anchor=W)
+        self.key_explanation.place(x=width * 0.75, y=self.start_y + ((field_offset / 2) * 10.5), anchor=W)
 
         self.session_pause_button = Button(self.session_frame, text="Pause Session", width=13,
                                            font=field_font, command=self.caller.pause_session)
-        self.session_pause_button.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 10.5), anchor=CENTER)
+        self.session_pause_button.place(x=width / 2, y=self.start_y + ((field_offset / 2) * 12), anchor=CENTER)
         self.key_explanation = Label(self.session_frame, text="Left Ctrl", font=field_font,
                                      justify=LEFT)
-        self.key_explanation.place(x=width * 0.75, y=self.start_y + ((field_offset / 2) * 10.5), anchor=W)
+        self.key_explanation.place(x=width * 0.75, y=self.start_y + ((field_offset / 2) * 12), anchor=W)
 
         self.play_image = PhotoImage(file='images/video-start.png')
         self.pause_image = PhotoImage(file='images/video-pause.png')
         self.forward_image = PhotoImage(file='images/skip_forward.png')
         self.backward_image = PhotoImage(file='images/skip_backward.png')
-        #
+
         self.play_button = Button(self.session_frame, image=self.play_image,
                                   command=self.caller.start_session)
         self.forward_button = Button(self.session_frame, image=self.forward_image)
@@ -193,6 +201,18 @@ class SessionTimeFields:
             if not self.session_paused and self.session_started:
                 self.beep_th = threading.Thread(target=self.beep_thread)
                 self.beep_th.start()
+
+    def double_speed_toggle(self):
+        if self.double_speed_selection.get():
+            if not self.ovu.video_view.double_speed_on():
+                messagebox.showwarning("Warning", "Video needs to be loaded first!")
+                print("WARNING: Video needs to be loaded first")
+                self.double_speed_selection.set(False)
+        else:
+            if not self.ovu.video_view.double_speed_off():
+                messagebox.showwarning("Warning", "Video needs to be loaded first!")
+                print("WARNING: Video needs to be loaded first")
+                self.double_speed_selection.set(True)
 
     def show_session_time(self):
         if self.session_dur_selection.get():
@@ -657,8 +677,10 @@ class ReviewMode:
             start_time, end_time = int((float(start_frame) / self.caller.ovu.video_view.player.fps)), \
                                    int((float(end_frame) / self.caller.ovu.video_view.player.fps))
             if self.caller.ovu.video_view.player.audio_loaded:
-                start_audio, end_audio = int((len(self.caller.ovu.video_view.player.audio_data) * start_frame) / self.caller.ovu.video_view.player.nframes), \
-                                         int((len(self.caller.ovu.video_view.player.audio_data) * end_frame) / self.caller.ovu.video_view.player.nframes)
+                start_audio, end_audio = int((
+                                                         len(self.caller.ovu.video_view.player.audio_data) * start_frame) / self.caller.ovu.video_view.player.nframes), \
+                                         int((
+                                                         len(self.caller.ovu.video_view.player.audio_data) * end_frame) / self.caller.ovu.video_view.player.nframes)
             else:
                 start_audio, end_audio = None, None
             start_e4, end_e4 = None, None
@@ -675,11 +697,13 @@ class ReviewMode:
             start_frame = int(self.to_frame.get())
             start_time = int((float(start_frame) / self.caller.ovu.video_view.player.fps))
             if self.caller.ovu.video_view.player.audio_loaded:
-                start_audio = int((len(self.caller.ovu.video_view.player.audio_data) * start_frame) / self.caller.ovu.video_view.player.nframes)
+                start_audio = int((
+                                              len(self.caller.ovu.video_view.player.audio_data) * start_frame) / self.caller.ovu.video_view.player.nframes)
             else:
                 start_audio = None
             start_e4 = None
-            self.session_events[int(self.selected_event) - 1] = (new_event_tag, start_time, start_frame, start_e4, start_audio)
+            self.session_events[int(self.selected_event) - 1] = (
+            new_event_tag, start_time, start_frame, start_e4, start_audio)
 
             self.caller.ovu.video_view.add_event_history(self.session_events)
             self.caller.ovu.video_view.populate_event_treeview_review()

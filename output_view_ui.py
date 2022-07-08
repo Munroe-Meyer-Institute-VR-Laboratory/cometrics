@@ -1388,6 +1388,18 @@ class ViewVideo:
                 messagebox.showwarning("Warning", "Pause video first to clear a clip!")
                 print("WARNING: Pause video first to clear a clip")
 
+    def double_speed_on(self):
+        if self.player:
+            self.player.frame_duration = float(1 / (self.player.fps * 2))
+            return True
+        return False
+
+    def double_speed_off(self):
+        if self.player:
+            self.player.frame_duration = float(1 / self.player.fps)
+            return True
+        return False
+
     def load_video(self, ask=True, video_filepath=None):
         if not video_filepath and self.video_file:
             video_file = self.video_file
