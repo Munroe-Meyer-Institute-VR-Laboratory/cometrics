@@ -11,7 +11,6 @@ from tkinter import messagebox
 import openpyxl
 from openpyxl import Workbook
 from openpyxl.cell import MergedCell, Cell
-from logger_util import *
 
 
 def import_ksf(filename, ksf_dir):
@@ -202,7 +201,7 @@ def cal_acc(prim_filename, reli_filename, window_size, output_dir):
                 "Reliability Session Therapist": reli_session["Session Therapist"],
                 "Window Size (seconds)": str(window_size) + " seconds"
             }
-            path_to_file = path.join(output_dir, f"{prim_ksf}_IOA_{prim_num}.xlsx")
+            path_to_file = path.join(output_dir, f"{prim_ksf}_IOA_{prim_num}_{reli_num}.xlsx")
             wb = openpyxl.Workbook()
             ws = wb.active
             wb.create_sheet("Primary Data")
@@ -344,6 +343,23 @@ def convert_json_csv(json_files, existing_files, output_dir):
             session = json.load(f)
         session_data = {k: v for k, v in session.items() if k in list(session.keys())[:15]}
         event_history = session["Event History"]
+        updated = False
+        for i in range(0, len(event_history)):
+            # Fix sessions that are old format
+            if len(event_history[i]) < 5:
+                updated = True
+                add = 5 - len(event_history[i])
+                if type(event_history[i][1]) is list:
+                    event_history[i] = event_history[i] + [[None, None]] * add
+                else:
+                    event_history[i] = event_history[i] + [None] * add
+        if updated:
+            with open(file, 'w') as f:
+                json.dump(session, f)
+            with open(file, 'r') as f:
+                session = json.load(f)
+            session_data = {k: v for k, v in session.items() if k in list(session.keys())[:15]}
+            event_history = session["Event History"]
         # TODO: Export E4 data to CSV... somehow
         e4_data = session["E4 Data"]
         # Open output file and write session to it
@@ -355,17 +371,26 @@ def convert_json_csv(json_files, existing_files, output_dir):
             for key in session_data:
                 writer.writerow([key, session[key]])
             # Write out the event history
-            writer.writerow(['Tag', 'Onset', 'Offset', 'Frame', 'E4 Window'])
+            writer.writerow(['Tag', 'Time Onset', 'Time Offset', 'Frame Onset', 'Frame Offset', 'E4 Window Onset', 'E4 Window Offset', 'Audio Onset', 'Audio Offset'])
             for event in event_history:
                 row = [event[0]]
-                if type(event[1]) is list:
-                    row.append(event[1][0])
-                    row.append(event[1][1])
-                else:
-                    row.append(event[1])
-                    row.append('')
-                row.append(event[2])
-                row.append(event[3])
+                for data in event[1:]:
+                    if type(data) is list:
+                        if data[0] is None:
+                            row.append('None')
+                        else:
+                            row.append(data[0])
+                        if data[1] is None:
+                            row.append('None')
+                        else:
+                            row.append(data[1])
+                    else:
+                        if data is None:
+                            row.append('None')
+                            row.append('None')
+                        else:
+                            row.append(data)
+                            row.append('None')
                 writer.writerow(row)
 
 
@@ -434,7 +459,6 @@ def get_key_cells(data_wb):
                     if int(row_value) == 3:
                         if compare_cells(col_value, dur_end_value) != 1 and compare_cells(col_value, freq_start_value) != -1:
                             try:
-                                # TODO: Assuming it's a str, which is excluding the number keystrokes
                                 # If it's a str check it
                                 if type(row[i].value) is str and len(row[i].value) > 1:
                                     messagebox.showwarning("Warning",

@@ -12,7 +12,7 @@ if os.path.exists(ffmpeg_path):
     os.environ['IMAGEIO_FFMPEG_EXE'] = os.path.join(cwd, r'external_bin\ffmpeg\ffmpeg-win64-v4.2.2.exe')
 
 import imageio_ffmpeg
-
+from tkinter_utils import LoadingWindow
 from config_utils import ConfigUtils
 from session_manager_ui import SessionManagerWindow
 from logger_util import CreateLogger, log_startup
@@ -50,12 +50,9 @@ if __name__ == "__main__":
             while True:
                 try:
                     manager = SessionManagerWindow(config, setup)
-                    if manager.setup_again:
+                    if manager.close_program:
                         break
-                    elif manager.close_program:
-                        break
-                    del manager
-                    gc.collect()
+                    LoadingWindow(objects=manager)
                 except Exception as e:
                     messagebox.showerror("Error", f"Exception encountered:\n{str(e)}\n{traceback.print_exc()}")
                     manager = None

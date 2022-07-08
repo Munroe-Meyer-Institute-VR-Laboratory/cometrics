@@ -1,3 +1,5 @@
+import _tkinter
+import gc
 import glob
 import json
 import os
@@ -7,7 +9,7 @@ import threading
 import time
 import traceback
 from tkinter import *
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from tkinter.ttk import Combobox
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
@@ -20,14 +22,14 @@ from matplotlib.figure import Figure
 from ttkwidgets import TickScale
 from pywoodway.treadmill import SplitBelt, find_treadmills
 from tkinter_utils import build_treeview, clear_treeview, AddWoodwayProtocolStep, AddBleProtocolStep, \
-    CalibrateVibrotactors, CalibrateWoodway, select_focus
+    CalibrateVibrotactors, CalibrateWoodway, select_focus, scroll_to, EditEventPopup
 from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags, crossmark, checkmark
 from pytactor import VibrotactorArray, VibrotactorArraySide
 from pyempatica.empaticae4 import EmpaticaE4, EmpaticaDataStreams, EmpaticaClient, EmpaticaServerConnectError
 
 
 class OutputViewPanel:
-    def __init__(self, parent, x, y, height, width, button_size, ksf,
+    def __init__(self, caller, parent, x, y, height, width, button_size, ksf,
                  field_font, header_font, video_import_cb, slider_change_cb, config, session_dir,
                  thresholds):
         self.KEY_VIEW, self.E4_VIEW, self.VIDEO_VIEW, self.WOODWAY_VIEW, self.BLE_VIEW = 0, 1, 2, 3, 4
@@ -120,11 +122,11 @@ class OutputViewPanel:
         self.VIDEO_VIEW = len(self.view_buttons) - 1
         self.view_buttons[self.VIDEO_VIEW].place(x=(len(self.view_buttons) - 1) * button_size[0], y=0,
                                                  width=button_size[0], height=button_size[1])
-        self.video_view = ViewVideo(self.view_frames[self.VIDEO_VIEW],
+        self.video_view = ViewVideo(caller, self.view_frames[self.VIDEO_VIEW],
                                     height=self.height - self.button_size[1], width=self.width,
                                     field_font=field_font, header_font=header_font, button_size=button_size,
                                     video_import_cb=video_import_cb, slider_change_cb=slider_change_cb,
-                                    fps=self.config.get_fps())
+                                    fps=self.config.get_fps(), kdf=self.key_view)
         self.event_history = []
 
     def switch_key_frame(self):
@@ -207,9 +209,12 @@ class OutputViewPanel:
         # Make sure it is not None
         if key_char:
             current_frame = None
+            current_audio_frame = None
             # Get the current frame of the video if it's playing
             if self.video_view.player:
                 current_frame = self.video_view.player.current_frame
+                if self.video_view.player.audio_loaded:
+                    current_audio_frame = self.video_view.player.audio_index
             elif self.video_view.recorder:
                 current_frame = self.video_view.recorder.current_frame
             current_window = None
@@ -221,7 +226,7 @@ class OutputViewPanel:
                     self.e4_view.windowed_readings[-1][-2].append(key_char)
                     current_window = len(self.e4_view.windowed_readings) - 1
             # Get the appropriate key event
-            key_events = self.key_view.check_key(key_char, start_time, current_frame, current_window)
+            key_events = self.key_view.check_key(key_char, start_time, current_frame, current_window, current_audio_frame)
             # Add to session history
             if key_events:
                 self.key_view.add_session_event(key_events)
@@ -460,6 +465,7 @@ class ViewWoodway:
             self.selected_step += 1
             self.__update_woodway_protocol()
         select_focus(self.prot_treeview, self.prot_treeview_parents[self.selected_step])
+        scroll_to(self.prot_treeview, self.selected_step)
 
     def __update_woodway_protocol(self):
         if self.selected_step == len(self.protocol_steps):
@@ -543,7 +549,8 @@ class ViewWoodway:
                     file_count = len(glob.glob1(file_dir, "*.json"))
                     if file_count > 0:
                         new_file = os.path.join(pathlib.Path(self.prot_file).parent,
-                                                '_'.join(pathlib.Path(self.prot_file).stem.split('_')[:-1]) + f"_V{file_count}.json")
+                                                '_'.join(pathlib.Path(self.prot_file).stem.split('_')[
+                                                         :-1]) + f"_V{file_count}.json")
                     else:
                         new_file = os.path.join(pathlib.Path(self.prot_file).parent,
                                                 pathlib.Path(self.prot_file).stem + f"_V{file_count}.json")
@@ -776,7 +783,8 @@ class ViewBLE:
             label.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h, anchor=N)
             temp_slider = Scale(parent, orient="vertical", variable=slider_vars[i][1], showvalue=False,
                                 command=slider_vars[i][0], length=int(height * 0.35), from_=255, to=0)
-            temp_slider.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h + 25, anchor=N)
+            temp_slider.place(x=int(width * 0.6) + int(slider_count * slider_separation), y=slider_separation_h + 25,
+                              anchor=N)
             self.slider_objects.append(temp_slider)
             slider_count += 1
         slider_separation_h = 40
@@ -872,7 +880,8 @@ class ViewBLE:
             if self.right_vta.is_connected() and self.left_vta.is_connected():
                 CalibrateVibrotactors(self, self.root, self.left_vta, self.right_vta)
             else:
-                messagebox.showerror("Error", "Something went wrong connecting to the vibrotactors!\nCannot be calibrated!")
+                messagebox.showerror("Error",
+                                     "Something went wrong connecting to the vibrotactors!\nCannot be calibrated!")
         else:
             messagebox.showerror("Error", "Connect to vibrotactors first!\nCannot be calibrated!")
 
@@ -890,6 +899,7 @@ class ViewBLE:
             self.selected_step += 1
             self.__update_ble_protocol()
         select_focus(self.prot_treeview, self.prot_treeview_parents[self.selected_step])
+        scroll_to(self.prot_treeview, self.selected_step)
 
     def __update_ble_protocol(self):
         if self.selected_step + 1 == len(self.protocol_steps):
@@ -1127,24 +1137,24 @@ class ViewBLE:
 
 
 class ViewVideo:
-    def __init__(self, root, height, width, field_font, header_font, button_size, fps, field_offset=60,
+    def __init__(self, caller, root, height, width, field_font, header_font, button_size, fps, kdf, field_offset=60,
                  video_import_cb=None, slider_change_cb=None):
-        # TODO: incorporate checkmark and crossmark
         self.recording_fps = fps
+        self.kdf = kdf
+        self.caller = caller
         self.height, self.width = height, width
         self.event_history = []
         self.root = root
         self.video_loaded = False
         self.video_file = None
-        #
+
         self.video_label = Label(self.root, bg='white')
-        self.video_height, self.video_width = height - 200, width - 10
-        self.video_label.place(x=width / 2, y=5, width=width - 10, height=height - 200, anchor=N)
-        #
+        self.video_height, self.video_width = int((width - 10) * (1080 / 1920)), width - 10
+        self.video_label.place(x=width / 2, y=5, width=self.video_width, height=self.video_height, anchor=N)
+
         self.load_video_button = Button(self.root, text="Load Video", font=field_font, command=video_import_cb)
         self.load_video_button.place(x=(width / 2) - 10, y=5 + (self.video_height / 2), height=button_size[1],
-                                     width=button_size[0],
-                                     anchor=E)
+                                     width=button_size[0], anchor=E)
 
         self.camera_str_var = StringVar()
         self.audio_str_var = StringVar()
@@ -1161,12 +1171,14 @@ class ViewVideo:
         self.load_audio_box['state'] = 'readonly'
         self.load_camera_box.config(font=field_font)
         self.load_audio_box.place(x=(width / 2) + 10, y=50 + (self.video_height / 2), height=button_size[1],
-                                   width=button_size[0] * 2, anchor=W)
+                                  width=button_size[0] * 2, anchor=W)
 
         self.frame_var = IntVar(self.root)
-        self.video_slider = TickScale(self.root, orient=HORIZONTAL, variable=self.frame_var, command=slider_change_cb)
+        slider_style = self.__create_slider_style()
+        self.video_slider = TickScale(self.root, orient=HORIZONTAL, variable=self.frame_var, command=slider_change_cb,
+                                      style=slider_style)
         self.video_slider.config(length=self.video_width)
-        self.video_slider.place(x=5, y=self.video_height, anchor=NW)
+        self.video_slider.place(x=5, y=self.video_height + 5, anchor=NW)
         self.video_slider.config(state='disabled')
         # Event treeview shows all events in relation to the video
         event_header_dict = {"#0": ["Event Time", 'w', 1, YES, 'w']}
@@ -1174,7 +1186,7 @@ class ViewVideo:
                              "2": ["Event Frame", 'w', 1, YES, 'w']}
         self.event_treeview_parents = []
         self.event_treeview, self.event_fs = build_treeview(self.root,
-                                                            x=20, y=self.video_height + 40,
+                                                            x=20, y=self.video_height + 45,
                                                             height=self.height - self.video_height - 20,
                                                             width=width - 25,
                                                             heading_dict=event_header_dict,
@@ -1186,15 +1198,45 @@ class ViewVideo:
         load_cam_thread.daemon = 1
         load_cam_thread.start()
 
+    def __create_slider_style(self):
+        """
+        Creates the style for the slider
+        :return: string: Name of style
+        """
+        try:
+            fig_color = '#%02x%02x%02x' % (240, 240, 237)
+            self.style = ttk.Style(self.root)
+            self.style.theme_use('clam')
+            # create custom layout
+            self.style.layout('custom.Horizontal.TScale',
+                              [('Horizontal.Scale.trough',
+                                {'sticky': 'nswe',
+                                 'children': [('custom.Horizontal.Scale.slider',
+                                               {'side': 'left', 'sticky': ''})]})])
+            self.style.configure('custom.Horizontal.TScale', background=fig_color)
+        except _tkinter.TclError:
+            print("INFO: Style already exists!")
+            return 'custom.Horizontal.TScale'
+        return 'custom.Horizontal.TScale'
+
     def edit_event(self, event):
         selection = self.event_treeview.identify_row(event.y)
         if selection:
-            selected_event = self.event_history[int(selection) - 1]
-            print(selected_event)
+            selected_event = self.event_history[int(selection)]
+            EditEventPopup(self.root, self, self.kdf.dur_bindings, self.kdf.bindings, selected_event, selection)
+
+    def popup_return(self, selection, new_value):
+        if selection:
+            self.event_history[int(selection)] = new_value
+            self.populate_event_treeview_review()
+            self.caller.pdf.save_updated_session(self.event_history)
 
     def load_sources_thread(self):
-        self.get_camera_sources()
-        self.get_audio_sources()
+        try:
+            self.get_camera_sources()
+            self.get_audio_sources()
+        except RuntimeError:
+            pass
 
     def get_audio_sources(self):
         self.audio_source = None
@@ -1282,6 +1324,9 @@ class ViewVideo:
                                                                                       len(self.event_history) % 2])))
             self.event_treeview.see(self.event_treeview_parents[-1])
 
+    def add_event_history(self, event_history):
+        self.event_history = event_history
+
     def populate_event_treeview(self):
         if self.event_history:
             for i in range(0, len(self.event_history)):
@@ -1289,6 +1334,22 @@ class ViewVideo:
                 self.event_treeview_parents.append(self.event_treeview.insert("", 'end', str(i), text=str(bind[2]),
                                                                               values=(bind[1], bind[0]),
                                                                               tags=(treeview_bind_tags[i % 2])))
+
+    def clear_event_treeview(self):
+        clear_treeview(self.event_treeview)
+
+    def populate_event_treeview_review(self):
+        self.clear_event_treeview()
+        if self.event_history:
+            for i in range(0, len(self.event_history)):
+                bind = self.event_history[i]
+                self.event_treeview_parents.append(self.event_treeview.insert("", 'end', str(i), text=str(bind[1]),
+                                                                              values=(bind[0], bind[2]),
+                                                                              tags=(treeview_bind_tags[i % 2])))
+
+    def focus_on_event(self, index):
+        select_focus(self.event_treeview, self.event_treeview_parents[index])
+        scroll_to(self.event_treeview, index)
 
     def load_camera(self):
         if self.video_source and self.audio_source:
@@ -1327,8 +1388,14 @@ class ViewVideo:
                 messagebox.showwarning("Warning", "Pause video first to clear a clip!")
                 print("WARNING: Pause video first to clear a clip")
 
-    def load_video(self):
-        video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
+    def load_video(self, ask=True, video_filepath=None):
+        if not video_filepath and self.video_file:
+            video_file = self.video_file
+        else:
+            if ask:
+                video_file = filedialog.askopenfilename(filetypes=(("Videos", "*.mp4"),))
+            else:
+                video_file = video_filepath
         audio_file = os.path.join(pathlib.Path(video_file).parent, pathlib.Path(video_file).stem + ".wav")
         try:
             if video_file:
@@ -1337,14 +1404,27 @@ class ViewVideo:
                     self.load_camera_box.place_forget()
                     self.load_audio_box.place_forget()
                     self.video_file = video_file
-                    self.player = VideoPlayer(self.root, video_file, audio_file, self.video_label,
-                                              size=(self.video_width, self.video_height),
-                                              keep_ratio=True,
-                                              slider=self.video_slider,
-                                              slider_var=self.frame_var,
-                                              override_slider=True,
-                                              cleanup_audio=True)
-                    self.video_slider.config(state='active')
+                    if type(self.player) is VideoPlayer:
+                        self.player.setup_streams(video_file, audio_file, self.video_label,
+                                                  size=(self.video_width, self.video_height),
+                                                  keep_ratio=True,
+                                                  slider=None,
+                                                  slider_var=self.frame_var,
+                                                  override_slider=True,
+                                                  cleanup_audio=True,
+                                                  loading_gif='images/loading.gif')
+                    else:
+                        self.player = VideoPlayer(self.root, video_file, audio_file, self.video_label,
+                                                  size=(self.video_width, self.video_height),
+                                                  keep_ratio=True,
+                                                  slider=self.video_slider,
+                                                  slider_var=self.frame_var,
+                                                  override_slider=True,
+                                                  cleanup_audio=True,
+                                                  loading_gif='images/loading.gif')
+                        self.video_slider.config(state='active')
+                        print(
+                            f"INFO: ({self.video_width}, {self.video_height}) {self.player.size} {self.player.aspect_ratio}")
                     self.video_loaded = True
         except Exception as e:
             messagebox.showerror("Error", f"Error loading video:\n{str(e)}")
@@ -1881,6 +1961,9 @@ class KeystrokeDataFields:
         self.populate_dur_bindings()
         self.populate_sh_bindings()
 
+    def clear_sh_treeview(self):
+        clear_treeview(self.sh_treeview)
+
     def add_session_event(self, events):
         for event in events:
             if type(event[1]) is list:
@@ -1937,27 +2020,32 @@ class KeystrokeDataFields:
                 self.sticky_start[i] = 0
                 self.dur_treeview.set(str(i), column="2", value=self.sticky_dur[i])
 
-    def check_key(self, key_char, start_time, current_frame, current_window):
+    def check_key(self, key_char, start_time, current_frame, current_window, current_audio_frame):
         return_bindings = []
         for i in range(0, len(self.bindings)):
             if self.bindings[i][0] == key_char:
                 self.bindings_freq[i] += 1
                 self.freq_treeview.set(str(i), column="1", value=self.bindings_freq[i])
-                return_bindings.append((self.bindings[i][1], start_time, current_frame, current_window))
+                return_bindings.append((self.bindings[i][1], start_time, current_frame,
+                                        current_window, current_audio_frame))
         for i in range(0, len(self.dur_bindings)):
             if self.dur_bindings[i][0] == key_char:
                 if self.dur_sticky[i]:
                     self.dur_treeview.item(str(i), tags=treeview_bind_tags[i % 2])
                     self.dur_sticky[i] = False
-                    duration = [self.sticky_start[i], start_time]
-                    return_bindings.append((self.dur_bindings[i][1], duration, current_frame, current_window))
-                    self.sticky_dur[i] += start_time - self.sticky_start[i]
+                    duration = [self.sticky_start[i][0], start_time]
+                    frame = [self.sticky_start[i][1], current_frame]
+                    window = [self.sticky_start[i][2], current_window]
+                    audio = [self.sticky_start[i][3], current_audio_frame]
+                    return_bindings.append((self.dur_bindings[i][1], duration, frame,
+                                            window, audio))
+                    self.sticky_dur[i] += start_time - self.sticky_start[i][0]
                     self.sticky_start[i] = 0
                     self.dur_treeview.set(str(i), column="2", value=self.sticky_dur[i])
                 else:
                     self.dur_treeview.item(str(i), tags=treeview_bind_tags[2])
                     self.dur_sticky[i] = True
-                    self.sticky_start[i] = start_time
+                    self.sticky_start[i] = (start_time, current_frame, current_window, current_audio_frame)
         if return_bindings:
             # Clear deleted event buffer when a new event is added
             if self.deleted_event:

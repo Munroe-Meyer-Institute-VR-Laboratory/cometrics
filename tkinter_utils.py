@@ -1,3 +1,5 @@
+import _tkinter
+import gc
 import os.path
 import pathlib
 import threading
@@ -7,7 +9,7 @@ import traceback
 from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk, LEFT, filedialog
 from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview, Entry
-
+from tkvideoutils import ImageLabel
 import numpy as np
 from PIL import ImageTk as itk
 from ui_params import treeview_default_tag_dict, cometrics_ver_root
@@ -102,6 +104,10 @@ def clear_treeview(widget: Treeview):
         widget.delete(children)
 
 
+def scroll_to(widget: Treeview, selection):
+    widget.yview_moveto(int(selection) / (len(widget.get_children())))
+
+
 def select_focus(widget: Treeview, selection):
     selection = str(selection)
     widget.selection_set(selection)
@@ -121,6 +127,52 @@ def fixed_map(option):
     style = Style()
     return [elm for elm in style.map('Treeview', query_opt=option) if
             elm[:2] != ('!disabled', '!selected')]
+
+
+class LoadingWindow:
+    def __init__(self, objects):
+        self.objects = objects
+        self.root = root = tkinter.Tk()
+        root.config(bd=-2)
+        root.overrideredirect(True)
+        root.geometry("250x100")
+        center(self.root, y_offset=0)
+        self.label_var = tkinter.StringVar(root, value='Cleaning up resources')
+        self.text_label = tkinter.Label(root, textvariable=self.label_var, font=('Purisa', 11))
+        self.label = tkinter.Label(root)
+        self.label.place(x=10, y=50, anchor=tkinter.W)
+        self.text_label.place(x=70, y=50, anchor=tkinter.W)
+        self.image_label = ImageLabel(os.path.join(os.getcwd(), r'images\loading.gif'), self.label, (100, 100))
+        root.after(500, self.update_text)
+        self.dots = 0
+        self.done = False
+        gc_thread = threading.Thread(target=self.perform_gc)
+        gc_thread.daemon = True
+        gc_thread.start()
+        root.mainloop()
+
+    def perform_gc(self):
+        del self.objects
+        gc.collect()
+        self.done = True
+
+    def update_text(self):
+        try:
+            self.dots += 1
+            if self.dots > 3:
+                self.dots = 0
+            self.label_var.set(f"Cleaning up resources{'.' * self.dots}")
+            if self.done:
+                self.close()
+            self.root.after(500, self.update_text)
+        except _tkinter.TclError:
+            pass
+
+    def close(self):
+        self.image_label.unload()
+        self.label.destroy()
+        self.root.destroy()
+        time.sleep(1)
 
 
 class ExternalButtonPopup:
@@ -174,6 +226,83 @@ class ExternalButtonPopup:
                 if self.freq_var.get() != 'None':
                     self.caller.ext_freq_val = self.freq_var.get()[0]
         self.caller.button_input_handler = None
+        self.popup_root.destroy()
+
+
+class EditEventPopup:
+    def __init__(self, root, caller, dur_bindings, freq_bindings, selected_event, selection,
+                 field_font=('Purisa', 12)):
+        self.caller = caller
+        self.selection = selection
+        self.selected_event = selected_event
+        self.dur_bindings, self.freq_bindings = dur_bindings, freq_bindings
+        self.key = None
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("300x200")
+        popup_root.title("Edit Event")
+        center(popup_root)
+
+        freq_label = tkinter.Label(popup_root, font=field_font, text="Frequency Key Association", bg='white')
+        freq_label.place(x=50, y=20)
+        self.freq_var = tkinter.StringVar(popup_root)
+        freq_box = Combobox(popup_root, textvariable=self.freq_var, font=field_font)
+        freq_box['values'] = ['None'] + freq_bindings
+        freq_box['state'] = 'readonly'
+        freq_box.config(font=field_font)
+        freq_box.place(x=50, y=45, width=200)
+        freq_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        dur_label = tkinter.Label(popup_root, font=field_font, text="Duration Key Association", bg='white')
+        dur_label.place(x=50, y=70)
+        self.dur_var = tkinter.StringVar(popup_root)
+        dur_box = Combobox(popup_root, textvariable=self.dur_var, font=field_font)
+        dur_box['values'] = ['None'] + dur_bindings
+        dur_box['state'] = 'readonly'
+        dur_box.config(font=field_font)
+        dur_box.place(x=50, y=95, width=200)
+        dur_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        if type(selected_event[1]) is list:
+            freq_val, dur_val = self.get_key_binding(selected_event)
+            self.freq_var.set(freq_val)
+            self.dur_var.set(str(dur_val[0]) + " {" + str(dur_val[1]) + "}")
+            freq_box['state'] = 'disabled'
+        else:
+            freq_val, dur_val = self.get_key_binding(selected_event)
+            self.freq_var.set(str(freq_val[0]) + " {" + str(freq_val[1]) + "}")
+            self.dur_var.set(dur_val)
+            dur_box['state'] = 'disabled'
+
+        ok_button = tkinter.Button(popup_root, text="OK", command=self.on_closing, font=field_font)
+        ok_button.place(x=150, y=130, anchor=N)
+
+    def get_key_binding(self, event):
+        if type(event[1]) is list:
+            for bind in self.dur_bindings:
+                if event[0] == bind[1]:
+                    return 'None', bind
+        else:
+            for bind in self.freq_bindings:
+                if event[0] == bind[1]:
+                    return bind, 'None'
+        messagebox.showerror("Error", f"Something was wrong with selected event!\n{event}")
+        return 'None', 'None'
+
+    def on_closing(self):
+        if self.dur_var.get() != 'None' and self.freq_var.get() != 'None':
+            messagebox.showerror("Error", "Event cannot have two tags! Set either duration or frequency to 'None'!")
+            self.popup_root.focus_force()
+            return
+        elif self.dur_var.get() == 'None' and self.freq_var.get() == 'None':
+            messagebox.showerror("Error", "Event must have a value! Set either duration or frequency to an event!")
+            self.popup_root.focus_force()
+            return
+        elif self.dur_var.get() != 'None':
+            self.selected_event[0] = ' '.join(self.dur_var.get().split(' ')[1:]).replace('{', '').replace('}', '')
+        elif self.freq_var.get() != 'None':
+            self.selected_event[0] = ' '.join(self.freq_var.get().split(' ')[1:]).replace('{', '').replace('}', '')
+        self.caller.popup_return(self.selection, self.selected_event)
         self.popup_root.destroy()
 
 

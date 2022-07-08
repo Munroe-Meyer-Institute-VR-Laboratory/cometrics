@@ -11,7 +11,7 @@ from tkinter.ttk import Combobox
 from ksf_utils import import_ksf, create_new_ksf_revision, compare_keystrokes
 from patient_data_fields import PatientContainer
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
-    NewKeyPopup, clear_treeview, get_slider_style, ProjectPopup
+    NewKeyPopup, clear_treeview, get_slider_style, ProjectPopup, scroll_to
 from ui_params import project_treeview_params as ptp, treeview_tags, window_ratio, large_field_font, medium_field_font, \
     small_field_font, large_treeview_font, \
     medium_treeview_font, small_treeview_font, large_treeview_rowheight, medium_treeview_rowheight, \
@@ -205,6 +205,7 @@ class ProjectSetupWindow:
                 self.project_treeview.insert("", 'end', str((int(self.project_treeview_parents[-1]) + 1)), text=self.project_name,
                                              tags=treeview_tags[(int(self.project_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.project_treeview, self.project_treeview_parents[-1])
+            scroll_to(self.project_treeview, len(self.project_treeview_parents))
             # Save recent path to config
             if not self.recent_projects:
                 self.recent_projects = []
@@ -220,6 +221,7 @@ class ProjectSetupWindow:
                 self.patient_treeview.insert("", 'end', str((int(self.patient_treeview_parents[-1]) + 1)), text=data,
                                              tags=treeview_tags[(int(self.patient_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.patient_treeview, self.patient_treeview_parents[-1])
+            scroll_to(self.patient_treeview, len(self.patient_treeview_parents))
             self.load_patient(self.patient_dir)
         elif caller == 2:
             self.concerns.append(data)
@@ -228,6 +230,7 @@ class ProjectSetupWindow:
                 self.concern_treeview.insert("", 'end', str((int(self.concern_treeview_parents[-1]) + 1)), text=data,
                                              tags=treeview_tags[(int(self.concern_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.concern_treeview, self.concern_treeview_parents[-1])
+            scroll_to(self.concern_treeview, len(self.concern_treeview_parents))
             self.load_concern(len(self.concerns))
     # endregion
 
