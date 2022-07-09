@@ -6,14 +6,14 @@ import threading
 import time
 import tkinter
 import traceback
-from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk, LEFT, filedialog
+from tkinter import TOP, W, N, NW, messagebox, END, ttk, filedialog
 from tkinter.ttk import Style, Combobox
-from tkinter.ttk import Treeview, Entry
+from tkinter.ttk import Treeview
 
-from PIL import Image
-from tkvideoutils import ImageLabel
 import numpy as np
 from PIL import ImageTk as itk
+from tkvideoutils import ImageLabel
+
 from ui_params import treeview_default_tag_dict, cometrics_ver_root
 
 

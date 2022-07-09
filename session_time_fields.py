@@ -458,18 +458,20 @@ class ReviewMode:
         self.load_session_json()
 
     def enable_session_select(self):
+        self.load_session_button['text'] = 'Load Session'
+        self.load_session_button['command'] = self.load_session
         self.review_name_entry['state'] = 'normal'
         self.forward_session_button['state'] = 'normal'
         self.backward_session_button['state'] = 'normal'
-        self.load_session_button['state'] = 'normal'
         self.prim_data_radio['state'] = 'normal'
         self.rel_data_radio['state'] = 'normal'
 
     def disable_session_select(self):
+        self.load_session_button['text'] = 'Close Session'
+        self.load_session_button['command'] = self.reset_session
         self.review_name_entry['state'] = 'disabled'
         self.forward_session_button['state'] = 'disabled'
         self.backward_session_button['state'] = 'disabled'
-        self.load_session_button['state'] = 'disabled'
         self.prim_data_radio['state'] = 'disabled'
         self.rel_data_radio['state'] = 'disabled'
 
@@ -727,6 +729,12 @@ class ReviewMode:
         self.caller.ovu.video_view.populate_event_treeview_review()
         self.load_event()
         self.next_event()
+
+    def reset_session(self):
+        self.enable_session_select()
+        self.disable_event_review()
+        self.caller.ovu.video_view.player.close()
+        self.load_session_json()
 
     def approve_changes(self):
         self.session_json['Reviewer'] = self.review_name_var.get()

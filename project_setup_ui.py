@@ -114,9 +114,10 @@ class ProjectSetupWindow:
         self.ksf_setup_label = Label(self.main_root, text="Keystroke File Setup", font=self.header_font)
         self.ksf_setup_label.place(x=10 + self.window_width / 2, y=ptp[1] / 2, anchor=W)
         self.ksf_path = Label(self.main_root, text="Select Concern and Phase to Load",
-                              font=(self.header_font[0], self.header_font[1], 'italic'),
+                              font=(self.field_font[0], self.field_font[1], 'italic'),
                               bg='white', width=30, anchor='w')
-        self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1], anchor=NW, width=int(self.window_width * 0.3))
+        self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1], anchor=NW,
+                            width=int(self.window_width * 0.3), height=self.button_size[1])
 
         self.ksf_import = Button(self.main_root, text="Import", font=self.field_font, width=10,
                                  command=self.import_concern_ksf)
@@ -179,14 +180,14 @@ class ProjectSetupWindow:
         self.main_root.resizable(width=False, height=False)
         self.main_root.protocol("WM_DELETE_WINDOW", self.on_closing)
         # self.main_root.overrideredirect(1)
+        self.main_root.deiconify()
+        center(self.main_root)
         if first_time_user:
             # Display link to user guide
             response = messagebox.askyesno("Welcome to cometrics!",
                                            "Would you like to open the user guide for cometrics?")
             if response:
                 MenuBar.open_user_guide()
-        self.main_root.deiconify()
-        center(self.main_root)
         self.main_root.mainloop()
 
     # region External Data Entry
