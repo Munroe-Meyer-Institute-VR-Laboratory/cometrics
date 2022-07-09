@@ -39,8 +39,8 @@
 # Introduction 
 cometrics has been designed to integrate directly into the workflow of the Severe Behavior Department at the Munroe-Meyer Institute in the University of Nebraska Medical Center, while simplifying multiple manual steps into a few mouse clicks.  By using a tracker spreadsheet, a patient's entire history can be collected into a single document from the software with your own specified graphs and format within that spreadsheet.  You can find an example of a tracker spreadsheet [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/reference/Reference_Tracker.xlsx).  
 
-## Windows 11 Installation
-Currently, there is a problem with installing cometrics on Windows 11, you can track this problem [here](https://github.com/marcelotduarte/cx_Freeze/issues/1530).
+## Installation Issues
+If there are installation issues with cometrics, such as error messages saying that the "Installer failed prematurely", then uninstall all previous versions of cometrics and try again.
 
 ## License
 Distributed under the MIT License. See the [LICENSE](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/LICENSE) file for more information.
