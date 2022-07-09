@@ -49,6 +49,7 @@ if __name__ == "__main__":
         if setup.setup_complete:
             while True:
                 try:
+                    config = ConfigUtils()
                     manager = SessionManagerWindow(config, setup)
                     if manager.close_program:
                         break

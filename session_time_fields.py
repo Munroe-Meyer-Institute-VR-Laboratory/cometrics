@@ -128,6 +128,15 @@ class SessionTimeFields:
                                   command=self.caller.start_session)
         self.forward_button = Button(self.session_frame, image=self.forward_image)
         self.backward_button = Button(self.session_frame, image=self.backward_image)
+        self.play_button.place(x=self.width / 2,
+                               y=self.start_y + ((self.field_offset / 2) * 14), anchor=N)
+        self.forward_button.place(x=(self.width / 2) + 60,
+                                  y=self.start_y + ((self.field_offset / 2) * 14), anchor=N)
+        self.backward_button.place(x=(self.width / 2) - 60,
+                                   y=self.start_y + ((self.field_offset / 2) * 14), anchor=N)
+        self.forward_button.config(state='disabled')
+        self.backward_button.config(state='disabled')
+        self.play_button.config(state='disabled')
 
         self.session_duration = None
         self.beep_th = None
@@ -168,14 +177,7 @@ class SessionTimeFields:
         self.switch_frame(self.REVIEW_VIEW)
 
     def video_control(self, nframes):
-        self.play_button.place(x=self.width / 2,
-                               y=self.start_y + ((self.field_offset / 2) * 12.0), anchor=N)
-        self.forward_button.place(x=(self.width / 2) + 60,
-                                  y=self.start_y + ((self.field_offset / 2) * 12.0), anchor=N)
-        self.backward_button.place(x=(self.width / 2) - 60,
-                                   y=self.start_y + ((self.field_offset / 2) * 12.0), anchor=N)
-        self.forward_button.config(state='disabled')
-        self.backward_button.config(state='disabled')
+        self.play_button.config(state='active')
         self.session_dur_selection.set(True)
         self.show_session_time()
         set_entry_text(self.session_dur_input, str(int(math.ceil(nframes))))

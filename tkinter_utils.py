@@ -9,6 +9,8 @@ import traceback
 from tkinter import TOP, W, N, NW, CENTER, messagebox, END, ttk, LEFT, filedialog
 from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview, Entry
+
+from PIL import Image
 from tkvideoutils import ImageLabel
 import numpy as np
 from PIL import ImageTk as itk
@@ -137,6 +139,7 @@ class LoadingWindow:
         root.overrideredirect(True)
         root.geometry("250x100")
         center(self.root, y_offset=0)
+        self.checkmark_img = tkinter.PhotoImage(file=os.path.join(os.getcwd(), r'images/checkmark.png'))
         self.label_var = tkinter.StringVar(root, value='Cleaning up resources')
         self.text_label = tkinter.Label(root, textvariable=self.label_var, font=('Purisa', 11))
         self.label = tkinter.Label(root)
@@ -154,6 +157,10 @@ class LoadingWindow:
     def perform_gc(self):
         del self.objects
         gc.collect()
+        time.sleep(1)
+        self.image_label.unload()
+        self.image_label.label.config(image=self.checkmark_img)
+        time.sleep(1)
         self.done = True
 
     def update_text(self):
@@ -164,15 +171,16 @@ class LoadingWindow:
             self.label_var.set(f"Cleaning up resources{'.' * self.dots}")
             if self.done:
                 self.close()
-            self.root.after(500, self.update_text)
+            else:
+                self.root.after(500, self.update_text)
         except _tkinter.TclError:
             pass
 
     def close(self):
         self.image_label.unload()
         self.label.destroy()
+        self.root.quit()
         self.root.destroy()
-        time.sleep(1)
 
 
 class ExternalButtonPopup:

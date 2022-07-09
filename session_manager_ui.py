@@ -87,14 +87,14 @@ class SessionManagerWindow:
         root.title(ui_title)
 
         self.field_width = int(self.window_width * 0.2)
-        self.output_width = int(self.window_width * 0.58)
+        self.output_width = int(self.window_width * 0.575)
 
         self.logo_width = self.field_width
         self.logo_height = int(self.logo_width / 5.7)
         self.patient_field_height = int((self.window_height - self.logo_height - 10) * 0.85)
 
         self.logo_canvas = Canvas(root, width=self.logo_width, height=self.logo_height, bg="white", bd=-2)
-        self.logo_canvas.place(x=2, y=2)
+        self.logo_canvas.place(x=10, y=5)
         self.logo_img = ImageTk.PhotoImage(
             Image.open('images/cometrics_logo.png').resize((self.logo_width, self.logo_height), Image.ANTIALIAS))
         self.logo_canvas.create_image(0, 0, anchor=NW, image=self.logo_img)
@@ -109,7 +109,7 @@ class SessionManagerWindow:
                       self.patient_container.left_ble_thresh,
                       self.patient_container.woodway_thresh]
         self.ovu = OutputViewPanel(self, root,
-                                   x=(self.logo_width * 2) + 20,
+                                   x=(self.logo_width * 2) + 30,
                                    y=(self.logo_height + 10) - self.button_size[1],
                                    height=self.patient_field_height,
                                    width=self.output_width,
@@ -124,7 +124,7 @@ class SessionManagerWindow:
                                    thresholds=thresholds)
 
         self.stf = SessionTimeFields(self, root,
-                                     x=self.logo_width + 10,
+                                     x=self.logo_width + 20,
                                      y=(self.logo_height + 10) - self.button_size[1],
                                      height=self.patient_field_height,
                                      width=self.field_width,
@@ -136,7 +136,7 @@ class SessionManagerWindow:
                                      review_mode=self.config.get_review())
 
         self.pdf = PatientDataFields(root,
-                                     x=5,
+                                     x=10,
                                      y=self.logo_height + 10,
                                      height=self.patient_field_height,
                                      width=self.field_width,
