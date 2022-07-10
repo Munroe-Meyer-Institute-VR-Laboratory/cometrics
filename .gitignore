@@ -21,7 +21,7 @@ Labels/
 exe/
 # Mono auto generated files
 mono_crash.*
-
+.idea/
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/
