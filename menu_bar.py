@@ -12,26 +12,26 @@ class MenuBar(Frame):
         Frame.__init__(self, parent, *args, **kwargs)
         self.caller = caller
         self.parent = parent
-        menu = Menu(self.parent)
+        menu = Menu(self.parent, tearoff=0)
         self.parent.config(menu=menu)
 
-        file_menu = Menu(menu)
+        file_menu = Menu(menu, tearoff=0)
         file_menu.add_command(label="Start New Session", command=self.start_new_session)
         file_menu.add_command(label="Open New Project", command=self.open_new_project)
         file_menu.add_command(label="Connect External Input", command=self.connect_external_input)
         file_menu.add_command(label="Edit Config File", command=self.config_popup)
         menu.add_cascade(label="File", menu=file_menu)
 
-        export_menu = Menu(menu)
+        export_menu = Menu(menu, tearoff=0)
         export_menu.add_command(label="Export CSV", command=self.export_csv)
         menu.add_cascade(label="Export", menu=export_menu)
 
-        edit_menu = Menu(menu)
+        edit_menu = Menu(menu, tearoff=0)
         edit_menu.add_command(label="Analyze Sessions", command=self.load_sessions)
         edit_menu.add_command(label="Calculate Session Accuracy", command=self.get_session_acc)
         menu.add_cascade(label="Analyze", menu=edit_menu)
 
-        help_menu = Menu(menu)
+        help_menu = Menu(menu, tearoff=0)
         help_menu.add_command(label="Open Documentation", command=self.open_user_guide)
         help_menu.add_command(label="Open Logs", command=self.open_logs)
         help_menu.add_command(label="Open Current Directory", command=self.open_current_dir)

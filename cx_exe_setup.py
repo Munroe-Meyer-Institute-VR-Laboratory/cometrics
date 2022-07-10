@@ -39,7 +39,13 @@ shortcut_table = [
 
 msi_data = {
     "Directory": directory_table,
-    "Shortcut": shortcut_table
+    "Shortcut": shortcut_table,
+    "ProgId": [
+        ("Prog.Id", None, None, "cometrics", "IconId", None),
+    ],
+    "Icon": [
+        ("IconId", r'images\icon.ico'),
+    ],
 }
 
 
@@ -54,7 +60,8 @@ build_exe_options = dict(
 bdist_msi_options = {
     'add_to_path': False,
     'initial_target_dir': r'[ProgramFilesFolder]\%s\%s' % ("cometrics", cometrics_version),
-    'data': msi_data
+    'data': msi_data,
+    'upgrade_code': '{9DD1C082-2D1D-4AC5-9150-22CA5DF3D780}'
 }
 
 executable = [Executable("cometrics.py",
@@ -63,6 +70,7 @@ executable = [Executable("cometrics.py",
                          icon=r'images\icon.ico',
                          shortcutName="cometrics",
                          shortcutDir="MyProgramMenu",
+                         copyright="Walker Arce 2022",
                          ),]
 
 setup(name="cometrics",

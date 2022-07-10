@@ -1,7 +1,7 @@
 setuptools~=60.8.2
 opencv-python~=4.5.5.62
 pynput~=1.7.6
-tkvideoutils~=0.5.30
+tkvideoutils~=1.2.2
 pillow~=9.0.1
 numpy~=1.22.2
 WMI~=1.5.1
@@ -12,5 +12,5 @@ matplotlib==3.4.3
 logger-util~=0.2
 future~=0.18.2
 ttkwidgets~=0.12.1
-pyWoodway~=0.2.3
+pyWoodway~=0.2.4
 pyTactor~=0.1.4

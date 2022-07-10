@@ -1,4 +1,3 @@
-import datetime
 import os
 import sys
 import gc
@@ -6,11 +5,18 @@ import gc
 import traceback
 from tkinter import messagebox
 
-import imageio_ffmpeg
+# Setup environment variables
+cwd = os.getcwd()
+ffmpeg_path = os.path.join(cwd, r'external_bin\ffmpeg\ffmpeg-win64-v4.2.2.exe')
+if os.path.exists(ffmpeg_path):
+    os.environ['IMAGEIO_FFMPEG_EXE'] = os.path.join(cwd, r'external_bin\ffmpeg\ffmpeg-win64-v4.2.2.exe')
 
+import imageio_ffmpeg
+from tkinter_utils import LoadingWindow
 from config_utils import ConfigUtils
 from session_manager_ui import SessionManagerWindow
 from logger_util import CreateLogger, log_startup
+from logger_util.logger_util import get_process_memory
 from project_setup_ui import ProjectSetupWindow
 from ui_params import cometrics_data_root, cometrics_ver_root
 
@@ -30,11 +36,6 @@ if __name__ == "__main__":
     CreateLogger(os.path.join(cometrics_ver_root, 'logs'))
     # Log computer information
     log_startup()
-    # Setup environment variables
-    cwd = os.getcwd()
-    ffmpeg_path = os.path.join(cwd, r'external_bin\ffmpeg\ffmpeg-win64-v4.2.2.exe')
-    if os.path.exists(ffmpeg_path):
-        os.environ['IMAGEIO_FFMPEG_EXE'] = os.path.join(cwd, r'external_bin\ffmpeg\ffmpeg-win64-v4.2.2.exe')
     print(f"STARTUP: {cwd}")
     print(f"INFO: imageio_ffmpeg exe location - {imageio_ffmpeg.get_ffmpeg_exe()}")
     # Load our configuration
@@ -49,13 +50,12 @@ if __name__ == "__main__":
         if setup.setup_complete:
             while True:
                 try:
+                    config = ConfigUtils()
                     manager = SessionManagerWindow(config, setup)
-                    if manager.setup_again:
+                    get_process_memory()
+                    if manager.close_program:
                         break
-                    elif manager.close_program:
-                        break
-                    del manager
-                    gc.collect()
+                    LoadingWindow(objects=manager)
                 except Exception as e:
                     messagebox.showerror("Error", f"Exception encountered:\n{str(e)}\n{traceback.print_exc()}")
                     manager = None

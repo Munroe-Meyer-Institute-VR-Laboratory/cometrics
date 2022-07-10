@@ -114,6 +114,15 @@ class ConfigUtils:
             self.config['enable-ble'] = set_ble
             self.save_config()
 
+    def get_review(self):
+        if self.config:
+            return bool(self.config['enable-review'])
+
+    def set_review(self, set_review):
+        if self.config:
+            self.config['enable-review'] = set_review
+            self.save_config()
+
     def get_woodway_a(self):
         if self.config:
             return str(self.config['woodway-a-sn'])

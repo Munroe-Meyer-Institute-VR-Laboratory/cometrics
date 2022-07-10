@@ -1,8 +1,11 @@
 import json
 import math
+import os
+import pathlib
 from tkinter import *
+from tkinter import messagebox
 from tkinter.ttk import Combobox
-
+import re
 from ksf_utils import open_keystroke_file
 from tkinter_utils import build_treeview
 from ui_params import treeview_bind_tags
@@ -24,13 +27,14 @@ class PatientDataVar:
 
 class PatientDataFields:
     def __init__(self, parent, x, y, height, width, patient_file, prim_session_number, reli_session_number,
-                 session_date, session_time, conditions, ksf, field_offset=50,
+                 session_date, session_time, conditions, ksf, caller, field_offset=50,
                  header_font=('Purisa', 14), field_font=('Purisa', 12), debug=False):
-        # TODO: Load previous session data if data type and session number exist
         self.x, self.y = x, y
+        self.caller = caller
         self.conditions = conditions
         self.patient = PatientContainer(patient_file)
         self.prim_session_num, self.reli_session_num = prim_session_number, reli_session_number
+        self.session_loaded = False
 
         field_count = int(height / field_offset)
         if field_count < 13:
@@ -51,7 +55,7 @@ class PatientDataFields:
                                      command=self.prev_patient_field)
                 next_button.place(x=width - 15, y=height * 0.9, anchor=E)
                 prev_button.place(x=15, y=height * 0.9, anchor=W)
-                page_text = Label(self.patient_frames[-1], text=f"{i + 1}/{frame_count}", font=header_font)
+                page_text = Label(self.patient_frames[-1], text=f"{i + 1} / {frame_count}", font=header_font)
                 page_text.place(x=width / 2, y=height * 0.9, anchor=CENTER)
         print(f"INFO: Number of frames: {frame_count}")
         self.patient_vars = [
@@ -218,6 +222,9 @@ class PatientDataFields:
             self.bind_treeview.insert("", 'end', str(i), text=str(bind[0]),
                                       values=(bind[1],),
                                       tags=(treeview_bind_tags[i % 2]))
+
+        self.patient_vars[PatientDataVar.SESS_NUM].trace('w', self.check_load_session)
+
         if debug:
             self.patient_vars[PatientDataVar.SESS_LOC].set("Debug")
             self.patient_vars[PatientDataVar.ASSESS_NAME].set("Debug")
@@ -226,6 +233,76 @@ class PatientDataFields:
             self.patient_vars[PatientDataVar.SESS_THER].set("Debug")
             self.patient_vars[PatientDataVar.DATA_REC].set("Debug")
             self.patient_vars[PatientDataVar.PRIM_THER].set("Debug")
+
+    def check_load_session(self, *args):
+        session_number = self.patient_vars[PatientDataVar.SESS_NUM].get()
+        if bool(re.match('^[0-9]+$', session_number)):
+            session_number = int(session_number) - 1
+            if self.patient_vars[PatientDataVar.PRIM_DATA].get() == "Primary":
+                if session_number < len(self.caller.prim_files):
+                    print(f"INFO: Loading primary data session {self.patient_vars[PatientDataVar.SESS_NUM].get()}")
+                    self.session_file = session_file = self.caller.prim_files[session_number]
+                    session_video_file = os.path.join(pathlib.Path(session_file).parent, pathlib.Path(session_file).stem + ".mp4")
+                    if os.path.exists(session_video_file):
+                        self.caller.ovu.video_view.video_file = session_video_file
+                    with open(session_file, 'r') as f:
+                        self.session_json = session_json = json.load(f)
+                    session_json_events = session_json["Event History"]
+                    self.caller.ovu.key_view.clear_sh_treeview()
+                    self.caller.ovu.key_view.add_session_event(session_json_events)
+                    self.caller.ovu.video_view.add_event_history(session_json_events)
+                    self.caller.ovu.video_view.populate_event_treeview_review()
+                    self.session_loaded = True
+                else:
+                    self.caller.ovu.key_view.clear_sh_treeview()
+                    self.caller.ovu.video_view.clear_event_treeview()
+                    self.caller.ovu.video_view.video_file = None
+                    if self.caller.ovu.video_view.player:
+                        messagebox.showerror("Error", "Session video already loaded, restart session to start over!")
+                    else:
+                        self.session_loaded = False
+            elif self.patient_vars[PatientDataVar.PRIM_DATA].get() == "Reliability":
+                if session_number < len(self.caller.reli_files):
+                    print(f"INFO: Loading reliability data session {self.patient_vars[PatientDataVar.SESS_NUM].get()}")
+                    self.caller.ovu.key_view.clear_sh_treeview()
+                    self.session_file = session_file = self.caller.reli_files[session_number]
+                    session_video_file = os.path.join(pathlib.Path(session_file).parent,
+                                                      pathlib.Path(session_file).stem + ".mp4")
+                    if os.path.exists(session_video_file):
+                        self.caller.ovu.video_view.video_file = session_video_file
+                    with open(session_file, 'r') as f:
+                        self.session_json = session_json = json.load(f)
+                    session_json_events = session_json["Event History"]
+                    self.caller.ovu.key_view.add_session_event(session_json_events)
+                    self.caller.ovu.video_view.add_event_history(session_json_events)
+                    self.caller.ovu.video_view.populate_event_treeview_review()
+                    self.session_loaded = True
+                else:
+                    self.caller.ovu.key_view.clear_sh_treeview()
+                    self.caller.ovu.video_view.clear_event_treeview()
+                    self.caller.ovu.video_view.video_file = None
+                    if self.caller.ovu.video_view.player:
+                        messagebox.showerror("Error", "Session video already loaded, restart session to start over!")
+                    else:
+                        self.session_loaded = False
+            else:
+                print(f"ERROR: Something went wrong assigning the session type "
+                      f"{self.patient_vars[PatientDataVar.PRIM_DATA].get()}")
+        else:
+            self.caller.ovu.key_view.clear_sh_treeview()
+            self.caller.ovu.video_view.clear_event_treeview()
+            self.caller.ovu.video_view.video_file = None
+            if self.caller.ovu.video_view.player:
+                messagebox.showerror("Error", "Session video already loaded, restart session to start over!")
+            else:
+                self.session_loaded = False
+
+    def save_updated_session(self, events):
+        if self.session_loaded:
+            self.session_json['Event History'] = events
+            with open(self.session_file, 'w') as f:
+                json.dump(self.session_json, f)
+            messagebox.showinfo("Success", "Session history file has been updated!")
 
     def select_patient_fields(self, field):
         self.patient_frames[self.current_patient_field].place_forget()

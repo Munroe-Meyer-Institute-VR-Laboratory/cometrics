@@ -83,18 +83,19 @@ class SessionManagerWindow:
         print("INFO:", self.header_font, self.field_font, self.field_offset, self.window_width, self.window_height)
 
         root = self.root = Tk()
+        root.iconify()
         root.config(bg="white", bd=-2)
         root.title(ui_title)
 
         self.field_width = int(self.window_width * 0.2)
-        self.output_width = int(self.window_width * 0.58)
+        self.output_width = int(self.window_width * 0.575)
 
         self.logo_width = self.field_width
         self.logo_height = int(self.logo_width / 5.7)
         self.patient_field_height = int((self.window_height - self.logo_height - 10) * 0.85)
 
         self.logo_canvas = Canvas(root, width=self.logo_width, height=self.logo_height, bg="white", bd=-2)
-        self.logo_canvas.place(x=2, y=2)
+        self.logo_canvas.place(x=10, y=5)
         self.logo_img = ImageTk.PhotoImage(
             Image.open('images/cometrics_logo.png').resize((self.logo_width, self.logo_height), Image.ANTIALIAS))
         self.logo_canvas.create_image(0, 0, anchor=NW, image=self.logo_img)
@@ -104,20 +105,12 @@ class SessionManagerWindow:
                            rowheight=self.treeview_rowheight)
 
         self.menu = MenuBar(root, self)
-        self.stf = SessionTimeFields(self, root,
-                                     x=self.logo_width + 10,
-                                     y=(self.logo_height + 10) - self.button_size[1],
-                                     height=self.patient_field_height,
-                                     width=self.field_width,
-                                     header_font=self.header_font,
-                                     field_font=self.field_font,
-                                     field_offset=self.field_offset,
-                                     button_size=self.button_size)
+
         thresholds = [self.patient_container.right_ble_thresh,
                       self.patient_container.left_ble_thresh,
                       self.patient_container.woodway_thresh]
-        self.ovu = OutputViewPanel(root,
-                                   x=(self.logo_width * 2) + 20,
+        self.ovu = OutputViewPanel(self, root,
+                                   x=(self.logo_width * 2) + 30,
                                    y=(self.logo_height + 10) - self.button_size[1],
                                    height=self.patient_field_height,
                                    width=self.output_width,
@@ -130,9 +123,21 @@ class SessionManagerWindow:
                                    config=self.config,
                                    session_dir=self.session_dir,
                                    thresholds=thresholds)
-        self.stf.ovu = self.ovu
+
+        self.stf = SessionTimeFields(self, root,
+                                     x=self.logo_width + 20,
+                                     y=(self.logo_height + 10) - self.button_size[1],
+                                     height=self.patient_field_height,
+                                     width=self.field_width,
+                                     header_font=self.header_font,
+                                     field_font=self.field_font,
+                                     field_offset=self.field_offset,
+                                     button_size=self.button_size,
+                                     ovu=self.ovu,
+                                     review_mode=self.config.get_review())
+
         self.pdf = PatientDataFields(root,
-                                     x=5,
+                                     x=10,
                                      y=self.logo_height + 10,
                                      height=self.patient_field_height,
                                      width=self.field_width,
@@ -145,7 +150,8 @@ class SessionManagerWindow:
                                      header_font=self.header_font,
                                      field_font=self.field_font,
                                      field_offset=self.field_offset,
-                                     ksf=self.keystroke_file)
+                                     ksf=self.keystroke_file,
+                                     caller=self)
         self.patient_name = self.pdf.patient_vars[PatientDataVar.PATIENT_NAME].get()
         # endregion
 
@@ -175,7 +181,7 @@ class SessionManagerWindow:
         if self.ovu.video_view.player:
             if not self.ovu.video_view.player.playing:
                 self.ovu.video_view.player.load_frame(frame)
-            self.stf.change_time(int((float(frame) / self.ovu.video_view.player.fps) + 0.5))
+            self.stf.change_time(int((float(frame) / self.ovu.video_view.player.fps)))
 
     def start_video_control(self):
         self.ovu.video_view.load_video()
@@ -213,20 +219,24 @@ class SessionManagerWindow:
         self.close_program = True
 
     def get_reli_session(self, directory):
+        self.reli_files = []
         if path.isdir(directory):
             _, _, files = next(walk(directory))
             for file in files:
                 if pathlib.Path(file).suffix == ".json":
+                    self.reli_files.append(os.path.join(directory, file))
                     self.reli_session_number += 1
         else:
             messagebox.showerror("Error", "Reliability session folder could not be found!")
             print("ERROR: Reliability session folder could not be found")
 
     def get_prim_session(self, directory):
+        self.prim_files = []
         if path.isdir(directory):
             _, _, files = next(walk(directory))
             for file in files:
                 if pathlib.Path(file).suffix == ".json":
+                    self.prim_files.append(os.path.join(directory, file))
                     self.prim_session_number += 1
         else:
             messagebox.showerror("Error", "Primary session folder could not be found!")
@@ -255,8 +265,6 @@ class SessionManagerWindow:
                 # Only process key input if the main window has focus, otherwise ignore
                 if self.root.focus_get():
                     self.handle_global_press(key)
-                else:
-                    print("INFO: Typing outside window")
             except KeyError as e:
                 print(f"ERROR: Exception encountered when processing key {str(e)}")
 
@@ -281,9 +289,11 @@ class SessionManagerWindow:
                 elif key == "Pause Session":
                     self.pause_session()
                 elif key == "Delete Last Event":
-                    self.ovu.delete_last_event()
+                    if self.stf.session_started:
+                        self.ovu.delete_last_event()
                 elif key == "Undo Last Delete":
-                    self.ovu.undo_last_delete()
+                    if self.stf.session_started:
+                        self.ovu.undo_last_delete()
 
     def handle_key_press(self, key):
         try:
@@ -313,6 +323,8 @@ class SessionManagerWindow:
         session_fields["Event History"] = session_data
         session_fields["E4 Data"] = e4_data
         session_fields["KSF"] = self.ovu.key_view.keystroke_json
+        session_fields["Reviewer"] = ""
+        session_fields["Reviewed"] = False
         reli = '_R' if session_fields["Primary Data"] == "Reliability" else ''
         output_session_file = path.join(self.session_dir,
                                         self.config.get_data_folders()[1],

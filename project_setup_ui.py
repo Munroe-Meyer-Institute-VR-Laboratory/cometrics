@@ -11,7 +11,7 @@ from tkinter.ttk import Combobox
 from ksf_utils import import_ksf, create_new_ksf_revision, compare_keystrokes
 from patient_data_fields import PatientContainer
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
-    NewKeyPopup, clear_treeview, get_slider_style, ProjectPopup
+    NewKeyPopup, clear_treeview, get_slider_style, ProjectPopup, scroll_to
 from ui_params import project_treeview_params as ptp, treeview_tags, window_ratio, large_field_font, medium_field_font, \
     small_field_font, large_treeview_font, \
     medium_treeview_font, small_treeview_font, large_treeview_rowheight, medium_treeview_rowheight, \
@@ -31,6 +31,7 @@ class ProjectSetupWindow:
             config.set_screen_size(self.window_height, self.window_width)
             self.window_width = int(self.window_width * window_ratio)
             self.window_height = int(self.window_height * window_ratio)
+        self.main_root.iconify()
         # Check configuration
         try:
             print(f"INFO: {os.environ['IMAGEIO_FFMPEG_EXE']}")
@@ -113,9 +114,10 @@ class ProjectSetupWindow:
         self.ksf_setup_label = Label(self.main_root, text="Keystroke File Setup", font=self.header_font)
         self.ksf_setup_label.place(x=10 + self.window_width / 2, y=ptp[1] / 2, anchor=W)
         self.ksf_path = Label(self.main_root, text="Select Concern and Phase to Load",
-                              font=(self.header_font[0], self.header_font[1], 'italic'),
+                              font=(self.field_font[0], self.field_font[1], 'italic'),
                               bg='white', width=30, anchor='w')
-        self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1], anchor=NW, width=int(self.window_width * 0.3))
+        self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1], anchor=NW,
+                            width=int(self.window_width * 0.3), height=self.button_size[1])
 
         self.ksf_import = Button(self.main_root, text="Import", font=self.field_font, width=10,
                                  command=self.import_concern_ksf)
@@ -172,13 +174,14 @@ class ProjectSetupWindow:
                                  width=self.button_size[0], height=self.button_size[1])
         # Create window geometry, center, and display
         self.main_root.geometry("{0}x{1}+0+0".format(self.window_width, self.window_height))
-        center(self.main_root)
         self.main_root.title(ui_title)
         self.icon = PhotoImage(file=r'images/cometrics_icon.png')
         self.main_root.iconphoto(True, self.icon)
         self.main_root.resizable(width=False, height=False)
         self.main_root.protocol("WM_DELETE_WINDOW", self.on_closing)
         # self.main_root.overrideredirect(1)
+        self.main_root.deiconify()
+        center(self.main_root)
         if first_time_user:
             # Display link to user guide
             response = messagebox.askyesno("Welcome to cometrics!",
@@ -205,6 +208,7 @@ class ProjectSetupWindow:
                 self.project_treeview.insert("", 'end', str((int(self.project_treeview_parents[-1]) + 1)), text=self.project_name,
                                              tags=treeview_tags[(int(self.project_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.project_treeview, self.project_treeview_parents[-1])
+            scroll_to(self.project_treeview, len(self.project_treeview_parents))
             # Save recent path to config
             if not self.recent_projects:
                 self.recent_projects = []
@@ -220,6 +224,7 @@ class ProjectSetupWindow:
                 self.patient_treeview.insert("", 'end', str((int(self.patient_treeview_parents[-1]) + 1)), text=data,
                                              tags=treeview_tags[(int(self.patient_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.patient_treeview, self.patient_treeview_parents[-1])
+            scroll_to(self.patient_treeview, len(self.patient_treeview_parents))
             self.load_patient(self.patient_dir)
         elif caller == 2:
             self.concerns.append(data)
@@ -228,6 +233,7 @@ class ProjectSetupWindow:
                 self.concern_treeview.insert("", 'end', str((int(self.concern_treeview_parents[-1]) + 1)), text=data,
                                              tags=treeview_tags[(int(self.concern_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.concern_treeview, self.concern_treeview_parents[-1])
+            scroll_to(self.concern_treeview, len(self.concern_treeview_parents))
             self.load_concern(len(self.concerns))
     # endregion
 

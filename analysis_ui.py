@@ -100,7 +100,8 @@ class AccuracyPopup:
         self.popup.focus_force()
 
     def select_prim_file(self):
-        self.prim_filename = filedialog.askopenfilename(filetypes=(("Session Files", "*.json"), ("All Files", "*.*")))
+        self.prim_filename = filedialog.askopenfilename(initialdir=self.caller.data_dir,
+                                                        filetypes=(("Session Files", "*.json"), ("All Files", "*.*")))
         self.prim_file_var.set(pathlib.Path(self.prim_filename).stem)
         self.popup.focus_force()
 
@@ -110,7 +111,8 @@ class AccuracyPopup:
     #     self.popup.focus_force()
 
     def select_rel_file(self):
-        self.reli_filename = filedialog.askopenfilename(filetypes=(("Session Files", "*.json"), ("All Files", "*.*")))
+        self.reli_filename = filedialog.askopenfilename(initialdir=self.caller.data_dir,
+                                                        filetypes=(("Session Files", "*.json"), ("All Files", "*.*")))
         self.rel_file_var.set(pathlib.Path(self.reli_filename).stem)
         self.popup.focus_force()
 
