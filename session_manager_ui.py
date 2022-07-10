@@ -83,6 +83,7 @@ class SessionManagerWindow:
         print("INFO:", self.header_font, self.field_font, self.field_offset, self.window_width, self.window_height)
 
         root = self.root = Tk()
+        root.iconify()
         root.config(bg="white", bd=-2)
         root.title(ui_title)
 

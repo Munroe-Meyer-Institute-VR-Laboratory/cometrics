@@ -434,12 +434,12 @@ class ReviewMode:
         self.from_frame_entry.place(x=int(width / 2) + 10, y=(widget_offset * 15 + (button_size[1] / 2)),
                                     width=button_size[0] - 20, height=button_size[1], anchor=NW)
 
-        self.accept_button = Button(parent, text="Accept", bg='green', font=field_font, fg='white',
+        self.accept_button = Button(parent, text="Accept", bg='green', font=header_font, fg='white',
                                     command=self.accept_changes)
         self.accept_button.place(x=int(width / 2), y=(widget_offset * 16 + (button_size[1] / 2)),
                                  width=button_size[0], height=button_size[1] * 2, anchor=NE)
 
-        self.reject_button = Button(parent, text="Reject", bg='red', font=field_font, fg='white',
+        self.reject_button = Button(parent, text="Reject", bg='red', font=header_font, fg='white',
                                     command=self.reject_changes)
         self.reject_button.place(x=int(width / 2), y=(widget_offset * 16 + (button_size[1] / 2)),
                                  width=button_size[0], height=button_size[1] * 2, anchor=NW)
@@ -682,9 +682,9 @@ class ReviewMode:
                                    int((float(end_frame) / self.caller.ovu.video_view.player.fps))
             if self.caller.ovu.video_view.player.audio_loaded:
                 start_audio, end_audio = int((
-                                                         len(self.caller.ovu.video_view.player.audio_data) * start_frame) / self.caller.ovu.video_view.player.nframes), \
+                                                     len(self.caller.ovu.video_view.player.audio_data) * start_frame) / self.caller.ovu.video_view.player.nframes), \
                                          int((
-                                                         len(self.caller.ovu.video_view.player.audio_data) * end_frame) / self.caller.ovu.video_view.player.nframes)
+                                                     len(self.caller.ovu.video_view.player.audio_data) * end_frame) / self.caller.ovu.video_view.player.nframes)
             else:
                 start_audio, end_audio = None, None
             start_e4, end_e4 = None, None
@@ -702,12 +702,12 @@ class ReviewMode:
             start_time = int((float(start_frame) / self.caller.ovu.video_view.player.fps))
             if self.caller.ovu.video_view.player.audio_loaded:
                 start_audio = int((
-                                              len(self.caller.ovu.video_view.player.audio_data) * start_frame) / self.caller.ovu.video_view.player.nframes)
+                                          len(self.caller.ovu.video_view.player.audio_data) * start_frame) / self.caller.ovu.video_view.player.nframes)
             else:
                 start_audio = None
             start_e4 = None
             self.session_events[int(self.selected_event) - 1] = (
-            new_event_tag, start_time, start_frame, start_e4, start_audio)
+                new_event_tag, start_time, start_frame, start_e4, start_audio)
 
             self.caller.ovu.video_view.add_event_history(self.session_events)
             self.caller.ovu.video_view.populate_event_treeview_review()

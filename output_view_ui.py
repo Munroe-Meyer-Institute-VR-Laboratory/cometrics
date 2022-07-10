@@ -1374,6 +1374,12 @@ class ViewVideo:
 
     def set_clip(self, start_frame, end_frame):
         if self.player:
+            if start_frame < 0:
+                end_frame += abs(start_frame)
+                start_frame = 0
+            if end_frame > self.player.nframes - 1:
+                start_frame -= end_frame - self.player.nframes
+                end_frame = self.player.nframes
             if not self.player.playing:
                 self.player.set_clip(start_frame, end_frame)
             else:

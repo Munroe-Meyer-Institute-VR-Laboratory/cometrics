@@ -16,6 +16,7 @@ from tkinter_utils import LoadingWindow
 from config_utils import ConfigUtils
 from session_manager_ui import SessionManagerWindow
 from logger_util import CreateLogger, log_startup
+from logger_util.logger_util import get_process_memory
 from project_setup_ui import ProjectSetupWindow
 from ui_params import cometrics_data_root, cometrics_ver_root
 
@@ -51,6 +52,7 @@ if __name__ == "__main__":
                 try:
                     config = ConfigUtils()
                     manager = SessionManagerWindow(config, setup)
+                    get_process_memory()
                     if manager.close_program:
                         break
                     LoadingWindow(objects=manager)
