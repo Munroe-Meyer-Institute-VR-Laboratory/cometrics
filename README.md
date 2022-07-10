@@ -6,7 +6,7 @@
 	<p align="center">
     cometrics is a Windows-based computer program that allows for the real-time coregistration of frequency- and duration-based behavior metrics, physiological signals from an Empatica E4, and video data.
 	  <br />
-	  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics"><strong>Explore the docs »</strong></a>
+	  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/reference/Cometrics%20User%20Guide.pdf"><strong>Explore the docs »</strong></a>
 
 [![Download cometrics](https://img.shields.io/badge/download-cometrics.msi-blue?style=for-the-badge)](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/releases/download/v1.1.4/cometrics-1.1.4-win64.msi)
 	  <br />
