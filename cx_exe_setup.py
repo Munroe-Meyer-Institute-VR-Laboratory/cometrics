@@ -70,7 +70,7 @@ executable = [Executable("cometrics.py",
                          icon=r'images\icon.ico',
                          shortcutName="cometrics",
                          shortcutDir="MyProgramMenu",
-                         copyright="Walker Arce 2022",
+                         copyright="Copyright (C) 2022 Walker Arce",
                          ),]
 
 setup(name="cometrics",
