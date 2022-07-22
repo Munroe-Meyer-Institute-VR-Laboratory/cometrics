@@ -1145,6 +1145,7 @@ class ViewVideo:
         self.height, self.width = height, width
         self.event_history = []
         self.root = root
+        self.reviewing = False
         self.video_loaded = False
         self.video_file = None
 
@@ -1280,7 +1281,8 @@ class ViewVideo:
             if self.player:
                 # Only select event when paused
                 if not self.player.playing:
-                    self.player.load_frame(int(selected_event[0]))
+                    if not self.reviewing:
+                        self.player.load_frame(int(selected_event[0]))
 
     def delete_last_event(self):
         if self.event_history:
@@ -1339,6 +1341,7 @@ class ViewVideo:
         clear_treeview(self.event_treeview)
 
     def populate_event_treeview_review(self):
+        self.reviewing = True
         self.clear_event_treeview()
         if self.event_history:
             for i in range(0, len(self.event_history)):

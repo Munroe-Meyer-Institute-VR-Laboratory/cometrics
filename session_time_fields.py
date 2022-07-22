@@ -338,7 +338,7 @@ class ReviewMode:
                  header_font=('Purisa', 14), field_font=('Purisa', 11)):
         self.caller = caller
         self.parent = parent
-
+        self.dur_message_shown = False
         # region Session Load
         self.review_name_label = Label(parent, text="Reviewer Name", font=field_font)
         self.review_name_label.place(x=int(width / 2), y=5, anchor=N)
@@ -592,6 +592,7 @@ class ReviewMode:
                 if os.path.exists(self.session_video_file):
                     self.session_events = self.session_json["Event History"]
                     if len(self.session_events):
+                        self.dur_message_shown = False
                         self.selected_event = 1
                         self.event_number = len(self.session_events)
                         self.loaded_event_var.set(f"Event\n{self.selected_event} / {len(self.session_events)}")
@@ -611,6 +612,12 @@ class ReviewMode:
             self.selected_event_json = self.session_events[int(self.selected_event) - 1]
             if type(self.selected_event_json[1]) is list:
                 self.caller.ovu.video_view.focus_on_event(int(self.selected_event) - 1)
+                if not type(self.selected_event_json[2]) is list:
+                    cal_fps = 7
+                    # cal_fps = int(self.selected_event_json[2] / self.selected_event_json[1][1])
+                    new_event = [int(self.selected_event_json[1][0] * cal_fps), self.selected_event_json[2]]
+                    print(f"INFO: Updated incompatible duration event - {self.selected_event_json} | {new_event}")
+                    self.selected_event_json[2] = new_event
                 self.caller.ovu.video_view.set_clip(self.selected_event_json[2][0], self.selected_event_json[2][1])
                 freq_val, dur_val = self.get_key_binding(self.selected_event_json)
                 self.freq_var.set(freq_val)
