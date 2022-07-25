@@ -293,9 +293,11 @@ class ViewWoodway:
         if woodway_thresh:
             self.calibrated = True
             self.woodway_thresh = woodway_thresh
+            print(f"INFO: Woodway calibrated already - Thresh: {self.woodway_thresh} Calibrated: {self.calibrated}")
         else:
             self.calibrated = False
             self.woodway_thresh = None
+            print("INFO: Woodway is not calibrated!")
         # region EXPERIMENTAL PROTOCOL
         element_height_adj = 100
         self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)
@@ -687,10 +689,13 @@ class ViewBLE:
             self.calibrated = True
             self.right_ble_thresh = ble_thresh[0]
             self.left_ble_thresh = ble_thresh[1]
+            print(f"INFO: Vibrotactors already calibrated - Right: {self.right_ble_thresh} Left: {self.left_ble_thresh} "
+                  f"Calibrated: {self.calibrated}")
         else:
             self.calibrated = False
             self.right_ble_thresh = None
             self.left_ble_thresh = None
+            print("INFO: Vibrotactors not calibrated!")
         # region EXPERIMENTAL PROTOCOL
         element_height_adj = 100
         self.exp_prot_label = Label(parent, text="Experimental Protocol", font=header_font, anchor=CENTER)

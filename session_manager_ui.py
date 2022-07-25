@@ -109,6 +109,7 @@ class SessionManagerWindow:
         thresholds = [self.patient_container.right_ble_thresh,
                       self.patient_container.left_ble_thresh,
                       self.patient_container.woodway_thresh]
+        print(f"INFO: Thresholds {thresholds}")
         self.ovu = OutputViewPanel(self, root,
                                    x=(self.logo_width * 2) + 30,
                                    y=(self.logo_height + 10) - self.button_size[1],
