@@ -14,3 +14,5 @@ future~=0.18.2
 ttkwidgets~=0.12.1
 pyWoodway~=0.2.4
 pyTactor~=0.1.4
+neurokit2~=0.2.0
+pandas~=1.4.3
