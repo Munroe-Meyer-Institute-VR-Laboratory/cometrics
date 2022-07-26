@@ -8,7 +8,7 @@ from tkinter.ttk import Combobox
 import re
 from ksf_utils import open_keystroke_file
 from tkinter_utils import build_treeview
-from ui_params import treeview_bind_tags
+from ui_params import treeview_bind_tags, treeview_bind_tag_dict
 
 
 class PatientDataVar:
@@ -216,6 +216,7 @@ class PatientDataFields:
                                                                   column_dict=dur_column_dict,
                                                                   heading_dict=dur_heading_dict,
                                                                   anchor=N,
+                                                                  tag_dict=treeview_bind_tag_dict,
                                                                   fs_offset=(width / 2) - 7)
         for i in range(0, len(self.bindings)):
             bind = self.bindings[i]
@@ -233,6 +234,12 @@ class PatientDataFields:
             self.patient_vars[PatientDataVar.SESS_THER].set("Debug")
             self.patient_vars[PatientDataVar.DATA_REC].set("Debug")
             self.patient_vars[PatientDataVar.PRIM_THER].set("Debug")
+
+    def show_dur_key(self, i):
+        self.bind_treeview.item(str(len(self.freq_bindings) + i), tags=treeview_bind_tags[2])
+
+    def hide_dur_key(self, i):
+        self.bind_treeview.item(str(len(self.freq_bindings) + i), tags=treeview_bind_tags[(len(self.freq_bindings) + i) % 2])
 
     def check_load_session(self, *args):
         session_number = self.patient_vars[PatientDataVar.SESS_NUM].get()

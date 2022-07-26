@@ -13,7 +13,7 @@ from pynput import keyboard
 from tkvideoutils import cp_rename
 from menu_bar import MenuBar
 from output_view_ui import OutputViewPanel
-from patient_data_fields import PatientDataFields, PatientDataVar
+from patient_data_fields import PatientDataFields, PatientDataVar, PatientContainer
 from session_time_fields import SessionTimeFields
 from tkinter_utils import get_treeview_style, get_slider_style
 from ui_params import large_header_font, large_field_font, large_field_offset, medium_header_font, medium_field_font, \
@@ -30,7 +30,7 @@ class SessionManagerWindow:
         self.button_input_handler = None
         self.ext_raw, self.ext_dur_val, self.ext_freq_val = None, None, None
         self.patient_file = project_setup.patient_data_file
-        self.patient_container = project_setup.patient_container
+        self.patient_container = PatientContainer(project_setup.patient_data_file)
         self.keystroke_file = project_setup.ksf_file
         self.session_dir = project_setup.phase_dir
         self.tracker_file = project_setup.tracker_file
@@ -259,8 +259,6 @@ class SessionManagerWindow:
                     # Enforce lower case for all inputs that are characters
                     key_char = str(key_char).lower()
                     self.handle_key_press(key_char)
-                else:
-                    print("INFO: Typing outside window")
         except AttributeError:
             try:
                 # Only process key input if the main window has focus, otherwise ignore

@@ -53,18 +53,19 @@ if __name__ == "__main__":
                     config = ConfigUtils()
                     manager = SessionManagerWindow(config, setup)
                     get_process_memory()
+                    setup_again = manager.setup_again
                     if manager.close_program:
                         break
                     LoadingWindow(objects=manager)
+                    if setup_again:
+                        break
                 except Exception as e:
                     messagebox.showerror("Error", f"Exception encountered:\n{str(e)}\n{traceback.print_exc()}")
                     manager = None
-                    break
+                    sys.exit(1)
             if manager:
                 if manager.close_program:
-                    break
-            else:
-                break
+                    sys.exit(0)
         else:
             break
     sys.exit(0)

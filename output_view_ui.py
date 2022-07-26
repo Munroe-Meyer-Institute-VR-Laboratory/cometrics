@@ -64,7 +64,8 @@ class OutputViewPanel:
         self.view_buttons[self.KEY_VIEW].config(relief=SUNKEN)
         self.key_view = KeystrokeDataFields(self.view_frames[self.KEY_VIEW], ksf,
                                             height=self.height - self.button_size[1], width=self.width,
-                                            field_font=field_font, header_font=header_font, button_size=button_size)
+                                            field_font=field_font, header_font=header_font, button_size=button_size,
+                                            caller=caller)
 
         if self.config.get_e4():
             e4_output_button = Button(self.frame, text="E4 Streams", command=self.switch_e4_frame, width=12,
@@ -93,7 +94,8 @@ class OutputViewPanel:
             self.ble_view = ViewBLE(self.view_frames[self.BLE_VIEW],
                                     height=self.height - self.button_size[1], width=self.width,
                                     field_font=field_font, header_font=header_font, button_size=button_size,
-                                    session_dir=session_dir, ble_thresh=thresholds[0:2])
+                                    session_dir=session_dir, ble_thresh=thresholds[0:2],
+                                    ble_button=ble_output_button)
             ble_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(ble_frame)
         else:
@@ -110,7 +112,8 @@ class OutputViewPanel:
             self.woodway_view = ViewWoodway(self.view_frames[self.WOODWAY_VIEW],
                                             height=self.height - self.button_size[1], width=self.width,
                                             field_font=field_font, header_font=header_font, button_size=button_size,
-                                            config=config, session_dir=session_dir, woodway_thresh=thresholds[2])
+                                            config=config, session_dir=session_dir, woodway_thresh=thresholds[2],
+                                            woodway_button=woodway_output_button)
             woodway_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(woodway_frame)
         else:
@@ -126,7 +129,7 @@ class OutputViewPanel:
                                     height=self.height - self.button_size[1], width=self.width,
                                     field_font=field_font, header_font=header_font, button_size=button_size,
                                     video_import_cb=video_import_cb, slider_change_cb=slider_change_cb,
-                                    fps=self.config.get_fps(), kdf=self.key_view)
+                                    fps=self.config.get_fps(), kdf=self.key_view, video_button=video_button)
         self.event_history = []
 
     def switch_key_frame(self):
@@ -173,7 +176,7 @@ class OutputViewPanel:
 
     def start_session(self, recording_path=None):
         if self.e4_view:
-            self.e4_view.session_started = True
+            self.e4_view.start_session()
         if self.video_view.recorder:
             self.recording_path = recording_path
             audio_path = os.path.join(pathlib.Path(recording_path).parent, pathlib.Path(recording_path).stem + ".wav")
@@ -220,11 +223,8 @@ class OutputViewPanel:
             current_window = None
             # Add the frame and key to the latest E4 window reading if streaming
             if self.e4_view:
-                if self.e4_view.windowed_readings:
-                    if current_frame:
-                        self.e4_view.windowed_readings[-1][-1].append(current_frame)
-                    self.e4_view.windowed_readings[-1][-2].append(key_char)
-                    current_window = len(self.e4_view.windowed_readings) - 1
+                if self.e4_view.e4:
+                    current_window = float(float(len(self.e4_view.e4.bvp)) / 64.0)
             # Get the appropriate key event
             key_events = self.key_view.check_key(key_char, start_time, current_frame, current_window, current_audio_frame)
             # Add to session history
@@ -248,7 +248,21 @@ class OutputViewPanel:
             video_data = self.video_view.video_file
         e4_data = None
         if self.e4_view:
-            e4_data = self.e4_view.windowed_readings
+            if self.e4_view.e4:
+                e4_data = [
+                    self.e4_view.e4.acc_3d,
+                    self.e4_view.e4.acc_x,
+                    self.e4_view.e4.acc_y,
+                    self.e4_view.e4.acc_z,
+                    self.e4_view.e4.acc_timestamps,
+                    self.e4_view.e4.bvp, self.e4_view.e4.bvp_timestamps,
+                    self.e4_view.e4.gsr, self.e4_view.e4.gsr_timestamps,
+                    self.e4_view.e4.tmp, self.e4_view.e4.tmp_timestamps,
+                    self.e4_view.e4.tag, self.e4_view.e4.tag_timestamps,
+                    self.e4_view.e4.ibi, self.e4_view.e4.ibi_timestamps,
+                    self.e4_view.e4.bat, self.e4_view.e4.bat_timestamps,
+                    self.e4_view.e4.hr, self.e4_view.e4.hr_timestamps
+                ]
         return self.key_view.event_history, e4_data, video_data
 
     def save_session(self, filename, keystrokes):
@@ -274,8 +288,9 @@ class OutputViewPanel:
 
 class ViewWoodway:
     def __init__(self, parent, height, width, field_font, header_font, button_size, config, session_dir,
-                 woodway_thresh=None):
+                 woodway_button, woodway_thresh=None):
         self.woodway = None
+        self.tab_button = woodway_button
         self.session_dir = session_dir
         self.config = config
         self.root = parent
@@ -460,17 +475,21 @@ class ViewWoodway:
             self.disconnect_woodway()
 
     def next_protocol_step(self, current_time):
+        if self.selected_step >= len(self.protocol_steps):
+            return
         if current_time == 1:
             self.selected_step = 0
             self.__update_woodway_protocol()
         if (self.step_time - current_time) == 0:
             self.selected_step += 1
             self.__update_woodway_protocol()
-        select_focus(self.prot_treeview, self.prot_treeview_parents[self.selected_step])
-        scroll_to(self.prot_treeview, self.selected_step)
 
     def __update_woodway_protocol(self):
-        if self.selected_step == len(self.protocol_steps):
+        if self.selected_step >= len(self.protocol_steps):
+            self.woodway_speed_l = 0.0
+            self.woodway_speed_r = 0.0
+            self.woodway_incline = 0.0
+            self.__update_woodway()
             return
         self.selected_command = self.protocol_steps[self.selected_step]
         self.step_duration = self.selected_command[0]
@@ -479,6 +498,8 @@ class ViewWoodway:
         self.woodway_speed_r = self.woodway_thresh + self.selected_command[2]
         self.woodway_incline += self.selected_command[3]
         self.__update_woodway()
+        select_focus(self.prot_treeview, self.prot_treeview_parents[self.selected_step])
+        scroll_to(self.prot_treeview, self.selected_step)
 
     def __update_woodway(self):
         self.__write_incline(self.woodway_incline)
@@ -501,8 +522,10 @@ class ViewWoodway:
             else:
                 messagebox.showerror("Error",
                                      "Something went wrong connecting to the Woodway!\nCannot be calibrated!")
+                self.tab_button['text'] = 'Woodway' + crossmark
         else:
             messagebox.showerror("Error", "Connect to Woodway first!\nCannot be calibrated!")
+            self.tab_button['text'] = 'Woodway' + crossmark
 
     def select_protocol_step(self, event):
         selection = self.prot_treeview.identify_row(event.y)
@@ -521,6 +544,7 @@ class ViewWoodway:
     def __load_protocol_from_file(self, selected_file=None):
         try:
             if selected_file:
+                self.selected_step = 0
                 self.prot_file = selected_file
                 with open(self.prot_file, 'r') as f:
                     self.protocol_steps = json.load(f)['Steps']
@@ -528,6 +552,7 @@ class ViewWoodway:
             else:
                 selected_file = filedialog.askopenfilename(filetypes=(("JSON Files", "*.json"),))
                 if selected_file:
+                    self.selected_step = 0
                     self.prot_file = selected_file
                     with open(self.prot_file, 'r') as f:
                         self.protocol_steps = json.load(f)['Steps']
@@ -536,8 +561,10 @@ class ViewWoodway:
                     self.prot_save_button['state'] = 'active'
                 else:
                     messagebox.showwarning("Warning", "No file selected, please try again!")
+                    self.tab_button['text'] = 'Woodway' + checkmark
         except Exception as ex:
             messagebox.showerror("Exception Encountered", f"Error encountered when loading protocol file!\n{str(ex)}")
+            self.tab_button['text'] = 'Woodway' + crossmark
 
     def __save_protocol_to_file(self):
         try:
@@ -560,7 +587,6 @@ class ViewWoodway:
                         x = {"Steps": self.protocol_steps}
                         json.dump(x, f)
                     self.__load_protocol_from_file(selected_file=new_file)
-                    messagebox.showinfo("Success", "Protocol file saved!")
                     self.changed_protocol = False
                     self.prot_save_button['state'] = 'disabled'
                 else:
@@ -573,7 +599,6 @@ class ViewWoodway:
                         with open(self.prot_file, 'w') as f:
                             x = {"Steps": self.protocol_steps}
                             json.dump(x, f)
-                        messagebox.showinfo("Success", "Protocol file saved!")
                         self.changed_protocol = False
                         self.prot_save_button['state'] = 'disabled'
                     else:
@@ -621,11 +646,14 @@ class ViewWoodway:
                 self.__enable_ui_elements()
                 self.__connected = True
                 messagebox.showinfo("Success!", "Woodway Split Belt treadmill connected!")
+                self.tab_button['text'] = 'Woodway' + checkmark
             else:
                 messagebox.showerror("Error", "No treadmills found! Check serial numbers and connections!")
+                self.tab_button['text'] = 'Woodway' + crossmark
         except Exception as ex:
             messagebox.showerror("Exception Encountered",
                                  f"Encountered exception when connecting to Woodway!\n{str(ex)}")
+            self.tab_button['text'] = 'Woodway' + crossmark
 
     def disconnect_woodway(self):
         if self.woodway:
@@ -636,6 +664,7 @@ class ViewWoodway:
             self.__disable_ui_elements()
             self.__enable_connect_button()
             self.__connected = False
+            self.tab_button['text'] = 'Woodway'
 
     def __write_speed(self):
         if self.session_started:
@@ -669,8 +698,10 @@ class ViewWoodway:
 
 
 class ViewBLE:
-    def __init__(self, parent, height, width, field_font, header_font, button_size, session_dir, ble_thresh=None):
+    def __init__(self, parent, height, width, field_font, header_font, button_size,
+                 session_dir, ble_button, ble_thresh=None):
         self.root = parent
+        self.tab_button = ble_button
         self.session_dir = session_dir
         self.ble_instance = VibrotactorArray.get_ble_instance()
         self.left_vta, self.right_vta = None, None
@@ -837,6 +868,7 @@ class ViewBLE:
 
     def __disable_ui_elements(self):
         self.ble_disconnect_button.config(state='disabled')
+        self.__enable_connect_button()
         self.freq_slider.config(state='disabled')
         for slider in self.slider_objects:
             slider.config(state='disabled')
@@ -887,6 +919,7 @@ class ViewBLE:
             else:
                 messagebox.showerror("Error",
                                      "Something went wrong connecting to the vibrotactors!\nCannot be calibrated!")
+                self.tab_button['text'] = 'BLE Input' + crossmark
         else:
             messagebox.showerror("Error", "Connect to vibrotactors first!\nCannot be calibrated!")
 
@@ -897,40 +930,33 @@ class ViewBLE:
                                motor_1=step[1], motor_2=step[2])
 
     def next_protocol_step(self, current_time):
+        if self.selected_step >= len(self.protocol_steps):
+            return
         if current_time == 1:
             self.selected_step = 0
             self.__update_ble_protocol()
         if (self.step_time - current_time) == 0:
             self.selected_step += 1
             self.__update_ble_protocol()
-        select_focus(self.prot_treeview, self.prot_treeview_parents[self.selected_step])
-        scroll_to(self.prot_treeview, self.selected_step)
 
     def __update_ble_protocol(self):
-        if self.selected_step + 1 == len(self.protocol_steps):
+        if self.selected_step >= len(self.protocol_steps):
+            self.r_ble_1_3_value = 0
+            self.l_ble_1_3_value = 0
+            self.__update_ble()
             return
         self.selected_command = self.protocol_steps[self.selected_step]
         self.step_duration = self.selected_command[0]
         self.step_time += self.step_duration
         self.r_ble_1_3_value = (self.selected_command[1] / 100) * self.right_ble_thresh
-        # self.r_ble_4_6_value = self.selected_command[2]
-        # self.r_ble_7_9_value = self.selected_command[3]
-        # self.r_ble_10_12_value = self.selected_command[4]
         self.l_ble_1_3_value = (self.selected_command[2] / 100) * self.left_ble_thresh
-        # self.l_ble_4_6_value = self.selected_command[2]
-        # self.l_ble_7_9_value = self.selected_command[3]
-        # self.l_ble_10_12_value = self.selected_command[4]
         self.__update_ble()
+        select_focus(self.prot_treeview, self.prot_treeview_parents[self.selected_step])
+        scroll_to(self.prot_treeview, self.selected_step)
 
     def __update_ble(self):
         for slider in self.slider_objects:
             slider.set(self.l_ble_1_3_value)
-        # for i in range(3, 6):
-        #     self.slider_objects[i].set(self.l_ble_4_6_value)
-        # for i in range(6, 9):
-        #     self.slider_objects[i].set(self.l_ble_7_9_value)
-        # for i in range(9, 12):
-        #     self.slider_objects[i].set(self.l_ble_10_12_value)
         self.right_vta.write_all_motors(int(self.r_ble_1_3_value))
         self.left_vta.write_all_motors(int(self.l_ble_1_3_value))
 
@@ -950,6 +976,7 @@ class ViewBLE:
     def __load_protocol_from_file(self, selected_file=None):
         try:
             if selected_file:
+                self.selected_step = 0
                 self.prot_file = selected_file
                 with open(self.prot_file, 'r') as f:
                     self.protocol_steps = json.load(f)['Steps']
@@ -957,6 +984,7 @@ class ViewBLE:
             else:
                 selected_file = filedialog.askopenfilename(filetypes=(("JSON Files", "*.json"),))
                 if selected_file:
+                    self.selected_step = 0
                     self.prot_file = selected_file
                     with open(self.prot_file, 'r') as f:
                         self.protocol_steps = json.load(f)['Steps']
@@ -967,6 +995,7 @@ class ViewBLE:
                     messagebox.showwarning("Warning", "No file selected, please try again!")
         except Exception as ex:
             messagebox.showerror("Exception Encountered", f"Error encountered when loading protocol file!\n{str(ex)}")
+            self.tab_button['text'] = 'BLE Input' + crossmark
 
     def __load_protocol(self, file):
         self.prot_file = file
@@ -1019,7 +1048,6 @@ class ViewBLE:
                         x = {"Steps": self.protocol_steps}
                         json.dump(x, f)
                     self.__load_protocol_from_file(selected_file=new_file)
-                    messagebox.showinfo("Success", "Protocol file saved!")
                     self.changed_protocol = False
                     self.prot_save_button['state'] = 'disabled'
                 else:
@@ -1032,18 +1060,19 @@ class ViewBLE:
                         with open(self.prot_file, 'w') as f:
                             x = {"Steps": self.protocol_steps}
                             json.dump(x, f)
-                        messagebox.showinfo("Success", "Protocol file saved!")
                         self.changed_protocol = False
                         self.prot_save_button['state'] = 'disabled'
                     else:
                         messagebox.showwarning("Warning", "No filename supplied! Can't save, please try again!")
         except Exception as ex:
             messagebox.showerror("Exception Encountered", f"Error encountered when saving protocol file!\n{str(ex)}")
+            self.tab_button['text'] = 'BLE Input' + crossmark
 
     def disconnect_ble(self):
         VibrotactorArray.disconnect_ble_devices(self.ble_instance)
         self.__disable_ui_elements()
         self.__connected = False
+        self.tab_button['text'] = 'BLE Input'
 
     def __connect_to_ble(self):
         self.ble_connect_thread = threading.Thread(target=self.__connect_ble_thread)
@@ -1053,20 +1082,23 @@ class ViewBLE:
     def __connect_ble_thread(self):
         while True:
             try:
-                self.left_vta = VibrotactorArray(self.ble_instance)
-                self.right_vta = VibrotactorArray(self.ble_instance)
-                if self.left_vta.is_connected() and self.left_vta.is_connected():
-                    if self.left_vta.get_side() != VibrotactorArraySide.LEFT:
-                        vta = self.left_vta
-                        self.left_vta = self.right_vta
-                        self.right_vta = vta
+                left_vta = VibrotactorArray(self.ble_instance)
+                right_vta = VibrotactorArray(self.ble_instance)
+                # TODO: Doesn't seem to work correctly, returning the wrong byte value? No, it seems to be
+                # TODO: swapping when the order is correct
+                if left_vta.is_connected() and left_vta.is_connected():
+                    print(f"INFO: VTA Left - {left_vta.get_side()} VTA Right - {right_vta.get_side()}")
+                    if left_vta.get_side() != VibrotactorArraySide.LEFT:
+                        self.left_vta = right_vta
+                        self.right_vta = left_vta
                     else:
-                        vta = self.right_vta
-                        self.right_vta = self.left_vta
-                        self.left_vta = vta
+                        self.left_vta = left_vta
+                        self.right_vta = right_vta
+                    print(f"INFO: VTA Left - {self.left_vta.get_side()} VTA Right - {self.right_vta.get_side()}")
                     self.__enable_ui_elements()
                     messagebox.showinfo("Success!", "Vibrotactor arrays are connected!")
                     self.__connected = True
+                    self.tab_button['text'] = 'BLE Input' + checkmark
                     break
                 else:
                     response = messagebox.askyesno("Error", "Could not connect to both vibrotactor arrays!\nTry again?")
@@ -1074,6 +1106,7 @@ class ViewBLE:
                         break
             except Exception as ex:
                 messagebox.showerror("Error", f"Exception encountered:\n{str(ex)}")
+                self.tab_button['text'] = 'BLE Input' + crossmark
 
     def update_frequency(self, value):
         if self.right_vta and self.left_vta:
@@ -1142,9 +1175,10 @@ class ViewBLE:
 
 
 class ViewVideo:
-    def __init__(self, caller, root, height, width, field_font, header_font, button_size, fps, kdf, field_offset=60,
+    def __init__(self, caller, root, height, width, field_font, header_font, button_size, fps, kdf, video_button, field_offset=60,
                  video_import_cb=None, slider_change_cb=None):
         self.recording_fps = fps
+        self.tab_button = video_button
         self.kdf = kdf
         self.caller = caller
         self.height, self.width = height, width
@@ -1376,9 +1410,11 @@ class ViewVideo:
                                                   keep_ratio=True)
                     self.video_loaded = True
                     self.recorder.start_playback()
+                    self.tab_button['text'] = 'Video View' + checkmark
                 except Exception as e:
                     messagebox.showerror("Error", f"Error loading camera:\n{str(e)}")
                     print(f"ERROR: Error loading camera:\n{str(e)}\n" + traceback.print_exc())
+                    self.tab_button['text'] = 'Video View' + crossmark
 
     def set_clip(self, start_frame, end_frame):
         if self.player:
@@ -1452,9 +1488,11 @@ class ViewVideo:
                         print(
                             f"INFO: ({self.video_width}, {self.video_height}) {self.player.size} {self.player.aspect_ratio}")
                     self.video_loaded = True
+                    self.tab_button['text'] = 'Video View' + checkmark
         except Exception as e:
             messagebox.showerror("Error", f"Error loading video:\n{str(e)}")
             print(f"ERROR: Error loading video:\n{str(e)}\n" + traceback.print_exc())
+            self.tab_button['text'] = 'Video View' + crossmark
 
     def pause_video(self):
         try:
@@ -1467,6 +1505,7 @@ class ViewVideo:
             return False
         except Exception as e:
             print(f"ERROR: Error starting video:\n{str(e)}\n{traceback.print_exc()}")
+            self.tab_button['text'] = 'Video View' + crossmark
 
     def play_video(self, video_output=None, audio_output=None):
         try:
@@ -1481,6 +1520,7 @@ class ViewVideo:
             return False
         except Exception as e:
             print(f"ERROR: Error starting video:\n{str(e)}\n{traceback.print_exc()}")
+            self.tab_button['text'] = 'Video View' + crossmark
 
     def toggle_video(self):
         try:
@@ -1491,6 +1531,7 @@ class ViewVideo:
             return False
         except Exception as e:
             print(f"ERROR: Error starting video:\n{str(e)}\n{traceback.print_exc()}")
+            self.tab_button['text'] = 'Video View' + crossmark
 
 
 class ViewE4:
@@ -1680,7 +1721,7 @@ class ViewE4:
                     self.tab_button['text'] = "E4 Streams" + crossmark
                 else:
                     try:
-                        self.e4_client = EmpaticaE4(self.e4_address)
+                        self.e4_client = EmpaticaE4(self.e4_address, window_size=1)
                         if self.e4_client.connected:
                             if self.error_thread is None:
                                 self.error_thread = threading.Thread(target=self.check_e4_error)
@@ -1770,12 +1811,18 @@ class ViewE4:
             if self.e4_client.connected:
                 self.e4_client.save_readings(filename)
 
+    def start_session(self):
+        self.session_started = True
+        if self.e4:
+            self.e4.clear_readings()
+
     def stop_plot(self):
         self.streaming = False
         self.kill = True
 
     def start_plot(self, e4):
         self.e4 = e4
+        self.windowed_readings = self.e4.windowed_readings
         if not self.streaming:
             self.streaming = True
             self.update_thread.start()
@@ -1824,23 +1871,6 @@ class ViewE4:
         if self.streaming:
             if self.e4:
                 if self.e4.connected:
-                    if self.session_started:
-                        if self.save_reading:
-                            self.save_reading = False
-                            self.windowed_readings.append(
-                                (self.e4.acc_3d[-(32 * 3):],
-                                 self.e4.acc_x[-32:], self.e4.acc_y[-32:], self.e4.acc_z[-32:],
-                                 self.e4.acc_timestamps[-32:],
-                                 self.e4.bvp[-64:], self.e4.bvp_timestamps[-64:],
-                                 self.e4.gsr[-4:], self.e4.gsr_timestamps[-4:],
-                                 self.e4.tmp[-4:], self.e4.tmp_timestamps[-4:],
-                                 # Key tag
-                                 [],
-                                 # Frame index
-                                 [])
-                            )
-                        else:
-                            self.save_reading = True
                     if self.root.winfo_viewable():
                         # Limit x and y lists to 20 items
                         x_ys = self.e4.acc_x[-100:]
@@ -1896,7 +1926,7 @@ class ViewE4:
 
 class KeystrokeDataFields:
     def __init__(self, parent, keystroke_file, height, width,
-                 field_font, header_font, button_size):
+                 field_font, header_font, button_size, caller):
         # TODO: Add editing of event history by double clicking event
         separation_distance = 30
         fs_offset = 10 + ((width * 0.25) * 0.5)
@@ -1908,6 +1938,7 @@ class KeystrokeDataFields:
 
         self.height, self.width = height, width
         self.frame = parent
+        self.caller = caller
 
         keystroke_label = Label(self.frame, text="Frequency Bindings", font=header_font)
         keystroke_label.place(x=(width * 0.25) - 30, y=start_y, anchor=CENTER)
@@ -2058,6 +2089,7 @@ class KeystrokeDataFields:
             if self.dur_bindings[i][0] == key_char:
                 if self.dur_sticky[i]:
                     self.dur_treeview.item(str(i), tags=treeview_bind_tags[i % 2])
+                    self.caller.pdf.hide_dur_key(i)
                     self.dur_sticky[i] = False
                     duration = [self.sticky_start[i][0], start_time]
                     frame = [self.sticky_start[i][1], current_frame]
@@ -2070,6 +2102,7 @@ class KeystrokeDataFields:
                     self.dur_treeview.set(str(i), column="2", value=self.sticky_dur[i])
                 else:
                     self.dur_treeview.item(str(i), tags=treeview_bind_tags[2])
+                    self.caller.pdf.show_dur_key(i)
                     self.dur_sticky[i] = True
                     self.sticky_start[i] = (start_time, current_frame, current_window, current_audio_frame)
         if return_bindings:

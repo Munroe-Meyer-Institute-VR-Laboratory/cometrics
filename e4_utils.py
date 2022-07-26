@@ -15,8 +15,8 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
     reli_files = glob.glob(f'{reli_dir}/**/*.json', recursive=True)
     prim_filepaths = [_ for _ in prim_files if _.split("\\")[0]]
     reli_filepaths = [_ for _ in reli_files if _.split("\\")[0]]
-    eda_header = ['Time', 'Recorded Event', 'SCR_Peaks_N', 'SCR_Peaks_Amplitude_Mean']
-    ppg_header = ['Time', 'Recorded Event', 'PPG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_SDANN1', 'HRV_SDNNI1',
+    eda_header = ['SCR_Peaks_N', 'SCR_Peaks_Amplitude_Mean']
+    ppg_header = ['PPG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_SDANN1', 'HRV_SDNNI1',
                   'HRV_SDANN2', 'HRV_SDNNI2', 'HRV_SDANN5', 'HRV_SDNNI5', 'HRV_RMSSD', 'HRV_SDSD', 'HRV_CVNN',
                   'HRV_CVSD', 'HRV_MedianNN', 'HRV_MadNN', 'HRV_MCVNN', 'HRV_IQRNN', 'HRV_Prc20NN', 'HRV_Prc80NN',
                   'HRV_pNN50', 'HRV_pNN20', 'HRV_MinNN', 'HRV_MaxNN', 'HRV_HTI', 'HRV_TINN', 'HRV_ULF', 'HRV_VLF',
@@ -29,68 +29,80 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
                   'HRV_MFDFA_alpha1_Fluctuation', 'HRV_MFDFA_alpha1_Increment', 'HRV_ApEn', 'HRV_SampEn', 'HRV_ShanEn',
                   'HRV_FuzzyEn', 'HRV_MSEn', 'HRV_CMSEn', 'HRV_RCMSEn', 'HRV_CD', 'HRV_HFD', 'HRV_KFD', 'HRV_LZC']
 
-    for file in prim_filepaths + reli_filepaths:
-        with open(file, 'r') as f:
-            json_file = json.load(f)
-        e4_data = json_file['E4 Data']
-        date = datetime.today().strftime("%B %d, %Y")
-        time = datetime.now().strftime("%H:%M:%S")
-        if e4_data:
+    if prim_filepaths and reli_filepaths:
+        for file in prim_filepaths + reli_filepaths:
+            with open(file, 'r') as f:
+                json_file = json.load(f)
             try:
+                freq = json_file['KSF']['Frequency']
+                freq_header = []
+                for f_key in freq:
+                    freq_header.append(f_key[1])
+                dur = json_file['KSF']['Duration']
+                dur_header = []
+                for d_key in dur:
+                    dur_header.append(d_key[1])
                 with open(os.path.join(pathlib.Path(file).parent, "HR_Processing.csv"), 'w', newline='') as ppg_file:
+                    ksf_ppg_header = ['Time'] + freq_header + dur_header + ppg_header
                     ppg_f = csv.writer(ppg_file)
-                    ppg_f.writerow([pathlib.Path(file).parts[-4]])
+                    ppg_f.writerow([pathlib.Path(file).parts[-3]])
                     ppg_f.writerow([pathlib.Path(file).parts[-2]])
                     ppg_f.writerow([pathlib.Path(file).stem])
-                    ppg_f.writerow([date])
-                    ppg_f.writerow([time])
-                    ppg_f.writerow(ppg_header)
+                    ppg_f.writerow([str(datetime.now())])
+                    ppg_f.writerow(ksf_ppg_header)
 
                     with open(os.path.join(pathlib.Path(file).parent, "EDA_Processing.csv"), 'w', newline='') as eda_file:
+                        ksf_eda_header = ['Time'] + freq_header + dur_header + eda_header
                         eda_f = csv.writer(eda_file)
                         eda_f.writerow([pathlib.Path(file).parts[-3]])
                         eda_f.writerow([pathlib.Path(file).parts[-2]])
                         eda_f.writerow([pathlib.Path(file).stem])
-                        eda_f.writerow([date])
-                        eda_f.writerow([time])
-                        eda_f.writerow(eda_header)
+                        eda_f.writerow([str(datetime.now())])
+                        eda_f.writerow(ksf_eda_header)
 
-                        event_history = json_file['Event History']
-                        for i in range(int(time_period / 2), len(e4_data), time_period):
-                            recorded_event = None
-                            data_time = i - int(time_period / 2)
-                            ppg_data, eda_data = [], []
-                            ppg_csv_data, eda_csv_data = [], []
-                            for d in e4_data[i - int(time_period / 2):i + int(time_period / 2)]:
-                                ppg_data.extend(d[5])
-                                eda_data.extend(d[7])
-                            for event in event_history:
-                                if i - int(time_period / 2) <= event[1] < i + int(time_period / 2):
-                                    recorded_event = event[0]
-                            ppg_csv_data.append(data_time)
-                            eda_csv_data.append(data_time)
-                            ppg_csv_data.append(recorded_event)
-                            eda_csv_data.append(recorded_event)
+                        e4_data = json_file['E4 Data']
+                        if e4_data:
+                            event_history = json_file['Event History']
+                            for i in range(int(time_period / 2), len(e4_data), time_period):
+                                recorded_freq, recorded_dur = None, None
+                                dur_active = False
+                                data_time = i - int(time_period / 2)
+                                ppg_data, eda_data = [], []
+                                ppg_csv_data, eda_csv_data = [data_time] + len(freq_header) * [0] + len(dur_header) * [0], \
+                                                             [data_time] + len(freq_header) * [0] + len(dur_header) * [0]
+                                for d in e4_data[i - int(time_period / 2):i + int(time_period / 2)]:
+                                    ppg_data.extend(d[5])
+                                    eda_data.extend(d[7])
+                                for event in event_history:
+                                    if type(event[1]) is list:
+                                        if event[1][0] <= i < event[1][1]:
+                                            recorded_dur = event[0]
+                                            ppg_csv_data[dur_header.index(event[0]) + 1 + len(freq_header)] = 1
+                                            eda_csv_data[dur_header.index(event[0]) + 1 + len(freq_header)] = 1
+                                    else:
+                                        if i - int(time_period / 2) <= event[1] < i + int(time_period / 2):
+                                            recorded_freq = event[0]
+                                            ppg_csv_data[freq_header.index(event[0]) + 1] = 1
+                                            eda_csv_data[freq_header.index(event[0]) + 1] = 1
 
-                            ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
-                            ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
+                                ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
+                                ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
 
-                            eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
-                            eda_results = nk.eda_analyze(eda_signals, method='interval-related')
+                                eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
+                                eda_results = nk.eda_analyze(eda_signals, method='interval-related')
 
-                            eda_csv_data.extend(eda_results.values.ravel().tolist())
-                            eda_f.writerow(eda_csv_data)
-                            ppg_csv_data.extend(ppg_results.values.ravel().tolist())
-                            ppg_f.writerow(ppg_csv_data)
+                                eda_csv_data.extend(eda_results.values.ravel().tolist())
+                                eda_f.writerow(eda_csv_data)
+                                ppg_csv_data.extend(ppg_results.values.ravel().tolist())
+                                ppg_f.writerow(ppg_csv_data)
             except KeyError:
-                print(f"INFO: E4 Data key not found in {file}")
+                print(f"No E4 data found in {file}")
             except Exception as e:
-                print(f"ERROR: Something went wrong with {file}: {traceback.print_exc()}")
-        else:
-            print(f"INFO: No E4 data found in {file}")
-
-    messagebox.showinfo("E4 Metrics Computed", "E4 sessions have been successfully analyzed!\n"
-                                               "Check in raw data folders for output CSV files.")
+                print(f"Something went wrong with {file}: {traceback.print_exc()}")
+        messagebox.showinfo("E4 Metrics Computed", "E4 sessions have been successfully analyzed!\n"
+                                                   "Check in raw data folders for output CSV files.")
+    else:
+        messagebox.showwarning("Warning", "No E4 sessions found!")
 
 
 def eda_custom_process(eda_signal, sampling_rate=4, method="neurokit"):
