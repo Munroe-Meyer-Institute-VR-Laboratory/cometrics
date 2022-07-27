@@ -71,3 +71,5 @@ Don't forget to give the project a star! Thanks again!
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+## Contact
+The active developer and maintainer of this project is Walker Arce, reach out to him via email with any inquiries (walker.arce@unmc.edu).
