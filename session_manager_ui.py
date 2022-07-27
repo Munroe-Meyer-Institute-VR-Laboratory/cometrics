@@ -7,6 +7,7 @@ from tkinter import *
 from tkinter import messagebox
 
 from PIL import Image, ImageTk
+from pyempatica import EmpaticaE4
 from pynput import keyboard
 
 # Custom library imports
@@ -46,10 +47,10 @@ class SessionManagerWindow:
         # Log this for debugging
         print("INFO:", self.patient_file, self.keystroke_file, self.session_dir, self.prim_dir, self.reli_dir)
         # Generate session date and time
-        now = datetime.datetime.today()
+        self.now = now = datetime.datetime.today()
         self.session_date = now.strftime("%B %d, %Y")
         self.session_file_date = now.strftime("%B")[:3] + now.strftime("%d") + now.strftime("%Y")
-        self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+        self.session_time = now.strftime("%H:%M:%S")
         # Get the number of primary and reliability sessions collected so far
         self.prim_session_number = 1
         self.reli_session_number = 1
@@ -312,7 +313,9 @@ class SessionManagerWindow:
                 return
         x = {
             "Session Date": self.session_date,
-            "Session Start Time": self.session_time,
+            "Session Start Time": EmpaticaE4.get_unix_timestamp(self.now),
+            "Session Start Timestamp": EmpaticaE4.get_unix_timestamp(self.now),
+            "Session End Timestamp": EmpaticaE4.get_unix_timestamp(),
             "Session Time": self.stf.session_time,
             "Pause Time": self.stf.break_time,
             "Keystroke File": pathlib.Path(self.keystroke_file).stem,

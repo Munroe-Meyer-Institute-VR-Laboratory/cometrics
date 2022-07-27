@@ -224,7 +224,7 @@ class OutputViewPanel:
             # Add the frame and key to the latest E4 window reading if streaming
             if self.e4_view:
                 if self.e4_view.e4:
-                    current_window = float(float(len(self.e4_view.e4.bvp)) / 64.0)
+                    current_window = EmpaticaE4.get_unix_timestamp()
             # Get the appropriate key event
             key_events = self.key_view.check_key(key_char, start_time, current_frame, current_window, current_audio_frame)
             # Add to session history
@@ -649,7 +649,7 @@ class ViewWoodway:
     def __add_protocol_step(self):
         AddWoodwayProtocolStep(self, self.root)
 
-    def __delete_protocol_step(self):
+    def __delete_protocol_step(self, event=None):
         if self.selected_step:
             self.protocol_steps.pop(self.selected_step - 1)
             self.repopulate_treeview()
@@ -733,6 +733,7 @@ class ViewBLE:
         self.session_started = False
         self.changed_protocol = True
         self.__connected = False
+        self.paused = False
         self.r_ble_1_3_value, self.r_ble_4_6_value, self.r_ble_7_9_value, self.r_ble_10_12_value = 0, 0, 0, 0
         self.l_ble_1_3_value, self.l_ble_4_6_value, self.l_ble_7_9_value, self.l_ble_10_12_value = 0, 0, 0, 0
         if ble_thresh[0] and ble_thresh[1]:
@@ -1051,7 +1052,7 @@ class ViewBLE:
     def __add_protocol_step(self):
         AddBleProtocolStep(self, self.root)
 
-    def __delete_protocol_step(self):
+    def __delete_protocol_step(self, event=None):
         if self.selected_step:
             self.protocol_steps.pop(self.selected_step - 1)
             self.repopulate_treeview()
@@ -1750,7 +1751,7 @@ class ViewE4:
                     self.tab_button['text'] = "E4 Streams" + crossmark
                 else:
                     try:
-                        self.e4_client = EmpaticaE4(self.e4_address, window_size=1)
+                        self.e4_client = EmpaticaE4(self.e4_address)
                         if self.e4_client.connected:
                             if self.error_thread is None:
                                 self.error_thread = threading.Thread(target=self.check_e4_error)

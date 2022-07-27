@@ -341,7 +341,7 @@ def convert_json_csv(json_files, existing_files, output_dir):
         # Load session and split it up
         with open(file, 'r') as f:
             session = json.load(f)
-        session_data = {k: v for k, v in session.items() if k in list(session.keys())[:15]}
+        session_data = {k: v for k, v in session.items() if k in list(session.keys())[:17]}
         event_history = session["Event History"]
         updated = False
         for i in range(0, len(event_history)):
@@ -358,7 +358,7 @@ def convert_json_csv(json_files, existing_files, output_dir):
                 json.dump(session, f)
             with open(file, 'r') as f:
                 session = json.load(f)
-            session_data = {k: v for k, v in session.items() if k in list(session.keys())[:15]}
+            session_data = {k: v for k, v in session.items() if k in list(session.keys())[:17]}
             event_history = session["Event History"]
         # TODO: Export E4 data to CSV... somehow
         e4_data = session["E4 Data"]
