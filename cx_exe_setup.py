@@ -50,8 +50,8 @@ msi_data = {
 
 
 build_exe_options = dict(
-    packages=["os", "sys", "tkinter", 'logger_util'],
-    includes=['pynput', 'pynput.keyboard._win32', 'pynput.mouse._win32', 'logger_util'],
+    packages=["os", "sys", "tkinter", 'logger_util', 'scipy'],
+    includes=['pynput', 'pynput.keyboard._win32', 'pynput.mouse._win32', 'logger_util', 'scipy._lib.deprecation'],
     excludes=[],
     include_files=['external_bin', 'images', 'reference', 'config.yml', 'LICENSE',
                    (r'venv\Lib\site-packages\imageio', r'lib\imageio')],
