@@ -295,7 +295,7 @@ class ViewWoodway:
         self.config = config
         self.root = parent
         self.protocol_steps = []
-        self.selected_step = None
+        self.selected_step = 0
         self.load_protocol_thread = None
         self.prot_file = None
         self.step_time = 0
@@ -305,6 +305,7 @@ class ViewWoodway:
         self.session_started = False
         self.changed_protocol = True
         self.__connected = False
+        self.paused = False
         if woodway_thresh:
             self.calibrated = True
             self.woodway_thresh = woodway_thresh
@@ -323,13 +324,16 @@ class ViewWoodway:
                             "2": ["RS", 'c', 1, YES, 'c'],
                             "3": ["Incline", 'c', 1, YES, 'c']}
         treeview_offset = int(width * 0.03)
+
+        # TODO: When the session is paused the woodway and vibrotactors should stop, equalize speeds first??
         self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=treeview_offset, y=40,
                                                                   height=height - element_height_adj - 40,
                                                                   heading_dict=prot_heading_dict,
                                                                   column_dict=prot_column_dict,
                                                                   width=(int(width * 0.5) - int(width * 0.05)),
                                                                   button_1_bind=self.select_protocol_step,
-                                                                  double_bind=self.__edit_protocol_step)
+                                                                  double_bind=self.__edit_protocol_step,
+                                                                  button_3_bind=self.__delete_protocol_step)
         self.prot_add_button = Button(parent, text="Add", font=field_font, command=self.__add_protocol_step)
         self.prot_add_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
                                    y=(height - element_height_adj),
@@ -434,10 +438,10 @@ class ViewWoodway:
 
     def disable_ui_elements(self):
         self.__disable_ui_elements()
-        self.prot_add_button.config(state='disabled')
-        self.prot_del_button.config(state='disabled')
-        self.prot_save_button.config(state='disabled')
-        self.prot_load_button.config(state='disabled')
+        # self.prot_add_button.config(state='disabled')
+        # self.prot_del_button.config(state='disabled')
+        # self.prot_save_button.config(state='disabled')
+        # self.prot_load_button.config(state='disabled')
         self.calibrate_button.config(state='disabled')
 
     def __enable_connect_button(self):
@@ -483,6 +487,21 @@ class ViewWoodway:
         if (self.step_time - current_time) == 0:
             self.selected_step += 1
             self.__update_woodway_protocol()
+
+    def pause_woodway(self):
+        if self.session_started:
+            self.belt_speed_l.set(0.0)
+            self.belt_speed_r.set(0.0)
+        if self.woodway:
+            self.belt_speed_l_value.config(text=f"{float(0.0):.1f} MPH")
+            self.belt_speed_r_value.config(text=f"{float(0.0):.1f} MPH")
+            self.woodway.set_speed(0.0, 0.0)
+        self.__write_incline(0.0)
+        self.paused = True
+
+    def start_woodway(self):
+        self.paused = False
+        self.__update_woodway()
 
     def __update_woodway_protocol(self):
         if self.selected_step >= len(self.protocol_steps):
@@ -707,7 +726,7 @@ class ViewBLE:
         self.left_vta, self.right_vta = None, None
         self.ble_connect_thread = None
         self.protocol_steps = []
-        self.selected_step = None
+        self.selected_step = 0
         self.prot_file = None
         self.step_duration = 0
         self.step_time = 0
@@ -742,7 +761,8 @@ class ViewBLE:
                                                                   column_dict=prot_column_dict,
                                                                   width=(int(width * 0.5) - int(width * 0.05)),
                                                                   button_1_bind=self.select_protocol_step,
-                                                                  double_bind=self.__edit_protocol_step)
+                                                                  double_bind=self.__edit_protocol_step,
+                                                                  button_3_bind=self.__delete_protocol_step)
 
         self.prot_add_button = Button(parent, text="Add", font=field_font, command=self.__add_protocol_step)
         self.prot_add_button.place(x=(treeview_offset + ((int(width * 0.5) - int(width * 0.05)) * 0.25)),
@@ -857,10 +877,10 @@ class ViewBLE:
         for slider in self.slider_objects:
             slider.config(state='active')
         self.ble_disconnect_button.config(state='disabled')
-        self.prot_add_button.config(state='disabled')
-        self.prot_del_button.config(state='disabled')
-        self.prot_save_button.config(state='disabled')
-        self.prot_load_button.config(state='disabled')
+        # self.prot_add_button.config(state='disabled')
+        # self.prot_del_button.config(state='disabled')
+        # self.prot_save_button.config(state='disabled')
+        # self.prot_load_button.config(state='disabled')
         self.calibrate_button.config(state='disabled')
 
     def __enable_connect_button(self):
@@ -938,6 +958,17 @@ class ViewBLE:
         if (self.step_time - current_time) == 0:
             self.selected_step += 1
             self.__update_ble_protocol()
+
+    def pause_ble(self):
+        for slider in self.slider_objects:
+            slider.set(0.0)
+        self.right_vta.write_all_motors(int(0.0))
+        self.left_vta.write_all_motors(int(0.0))
+        self.paused = True
+
+    def start_ble(self):
+        self.paused = False
+        self.__update_ble()
 
     def __update_ble_protocol(self):
         if self.selected_step >= len(self.protocol_steps):
@@ -1084,8 +1115,6 @@ class ViewBLE:
             try:
                 left_vta = VibrotactorArray(self.ble_instance)
                 right_vta = VibrotactorArray(self.ble_instance)
-                # TODO: Doesn't seem to work correctly, returning the wrong byte value? No, it seems to be
-                # TODO: swapping when the order is correct
                 if left_vta.is_connected() and left_vta.is_connected():
                     print(f"INFO: VTA Left - {left_vta.get_side()} VTA Right - {right_vta.get_side()}")
                     if left_vta.get_side() != VibrotactorArraySide.LEFT:
