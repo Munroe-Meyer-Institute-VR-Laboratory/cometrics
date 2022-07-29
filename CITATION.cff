@@ -2,10 +2,16 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
 - family-names: "Arce"
-  given-names: "Walker"
+  given-names: "Walker S."
   orcid: "https://orcid.org/0000-0003-0819-0710"
+- family-names: "Walker"
+  given-names: "Seth G."
+  orcid: "https://orcid.org/0000-0003-3215-7670"
+- family-names: "Hurtz"
+  given-names: "Morgan L."
+  orcid: "https://orcid.org/0000-0003-3457-2288"
 - family-names: "Gehringer"
-  given-names: "James"
+  given-names: "James E."
   orcid: "https://orcid.org/0000-0003-3457-2288"
 title: "cometrics"
 version: v1.1.4
