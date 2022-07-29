@@ -43,7 +43,8 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
             dur_header = []
             for d_key in dur:
                 dur_header.append(d_key[1])
-            with open(os.path.join(pathlib.Path(file).parent, f"{pathlib.Path(file).stem}_HR.csv"), 'w', newline='') as ppg_file:
+            with open(os.path.join(pathlib.Path(file).parent, f"{pathlib.Path(file).stem}_HR.csv"), 'w',
+                      newline='') as ppg_file:
                 ksf_ppg_header = ['Event Time', 'E4 Time'] + freq_header + dur_header + ppg_header
                 ppg_f = csv.writer(ppg_file)
                 ppg_f.writerow([pathlib.Path(file).parts[-3]])
@@ -52,7 +53,8 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
                 ppg_f.writerow([str(datetime.now())])
                 ppg_f.writerow(ksf_ppg_header)
 
-                with open(os.path.join(pathlib.Path(file).parent, f"{pathlib.Path(file).stem}_EDA.csv"), 'w', newline='') as eda_file:
+                with open(os.path.join(pathlib.Path(file).parent, f"{pathlib.Path(file).stem}_EDA.csv"), 'w',
+                          newline='') as eda_file:
                     ksf_eda_header = ['Event Time', 'E4 Time'] + freq_header + dur_header + eda_header
                     eda_f = csv.writer(eda_file)
                     eda_f.writerow([pathlib.Path(file).parts[-3]])
@@ -61,12 +63,15 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
                     eda_f.writerow([str(datetime.now())])
                     eda_f.writerow(ksf_eda_header)
 
+                    e4_offset = 0
                     e4_data = json_file['E4 Data']
                     if e4_data:
                         if len(e4_data) > 19:
                             event_history = json_file['Event History']
                             for i in range(int(time_period / 2), len(e4_data), time_period):
                                 try:
+                                    recorded_freq, recorded_dur = None, None
+                                    dur_active = False
                                     data_time = i - int(time_period / 2)
                                     ppg_data, eda_data = [], []
                                     ppg_csv_data, eda_csv_data = [0, data_time] + len(freq_header) * [0] + len(
@@ -90,23 +95,25 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
                                                 eda_csv_data[0] = event[1]
                                                 ppg_csv_data[freq_header.index(event[0]) + 2] = 1
                                                 eda_csv_data[freq_header.index(event[0]) + 2] = 1
-
-                                    ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
-                                    ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
-
-                                    eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
-                                    eda_results = nk.eda_analyze(eda_signals, method='interval-related')
-
-                                    eda_csv_data.extend(eda_results.values.ravel().tolist())
-                                    eda_f.writerow(eda_csv_data)
-                                    ppg_csv_data.extend(ppg_results.values.ravel().tolist())
-                                    ppg_f.writerow(ppg_csv_data)
+                                    try:
+                                        ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
+                                        ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
+                                        ppg_csv_data.extend(ppg_results.values.ravel().tolist())
+                                    except Exception as e:
+                                        print(f"INFO: Could not process PPG signal in {file}")
+                                    try:
+                                        eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
+                                        eda_results = nk.eda_analyze(eda_signals, method='interval-related')
+                                        eda_csv_data.extend(eda_results.values.ravel().tolist())
+                                    except Exception as e:
+                                        print(f"INFO: Could not process EDA signal in {file}")
                                 except KeyError:
                                     print(f"No E4 data found in {file}")
-                                    continue
                                 except Exception as e:
                                     print(f"Something went wrong with {file}: {str(e)}")
-                                    continue
+                                finally:
+                                    eda_f.writerow(eda_csv_data)
+                                    ppg_f.writerow(ppg_csv_data)
                         else:
                             event_history = json_file['Event History']
                             for i in range(int(time_period / 2), int(json_file['Session Time']), time_period):
@@ -134,23 +141,25 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
                                                 eda_csv_data[0] = event[1]
                                                 ppg_csv_data[freq_header.index(event[0]) + 2] = 1
                                                 eda_csv_data[freq_header.index(event[0]) + 2] = 1
-
-                                    ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
-                                    ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
-
-                                    eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
-                                    eda_results = nk.eda_analyze(eda_signals, method='interval-related')
-
-                                    eda_csv_data.extend(eda_results.values.ravel().tolist())
-                                    eda_f.writerow(eda_csv_data)
-                                    ppg_csv_data.extend(ppg_results.values.ravel().tolist())
-                                    ppg_f.writerow(ppg_csv_data)
+                                    try:
+                                        ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
+                                        ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
+                                        ppg_csv_data.extend(ppg_results.values.ravel().tolist())
+                                    except Exception as e:
+                                        print(f"INFO: Could not process PPG signal in {file}")
+                                    try:
+                                        eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
+                                        eda_results = nk.eda_analyze(eda_signals, method='interval-related')
+                                        eda_csv_data.extend(eda_results.values.ravel().tolist())
+                                    except Exception as e:
+                                        print(f"INFO: Could not process EDA signal in {file}")
                                 except KeyError:
-                                    print(f"INFO: No E4 data found in {file}")
-                                    break
+                                    print(f"No E4 data found in {file}")
                                 except Exception as e:
                                     print(f"Something went wrong with {file}: {str(e)}")
-                                    continue
+                                finally:
+                                    eda_f.writerow(eda_csv_data)
+                                    ppg_f.writerow(ppg_csv_data)
         messagebox.showinfo("E4 Metrics Computed", "E4 sessions have been successfully analyzed!\n"
                                                    "Check in raw data folders for output CSV files.")
     else:
