@@ -43,7 +43,7 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
             dur_header = []
             for d_key in dur:
                 dur_header.append(d_key[1])
-            with open(os.path.join(pathlib.Path(file).parent, "HR_Processing.csv"), 'w', newline='') as ppg_file:
+            with open(os.path.join(pathlib.Path(file).parent, f"{pathlib.Path(file).stem}_HR.csv"), 'w', newline='') as ppg_file:
                 ksf_ppg_header = ['Event Time', 'E4 Time'] + freq_header + dur_header + ppg_header
                 ppg_f = csv.writer(ppg_file)
                 ppg_f.writerow([pathlib.Path(file).parts[-3]])
@@ -52,7 +52,7 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
                 ppg_f.writerow([str(datetime.now())])
                 ppg_f.writerow(ksf_ppg_header)
 
-                with open(os.path.join(pathlib.Path(file).parent, "EDA_Processing.csv"), 'w', newline='') as eda_file:
+                with open(os.path.join(pathlib.Path(file).parent, f"{pathlib.Path(file).stem}_EDA.csv"), 'w', newline='') as eda_file:
                     ksf_eda_header = ['Event Time', 'E4 Time'] + freq_header + dur_header + eda_header
                     eda_f = csv.writer(eda_file)
                     eda_f.writerow([pathlib.Path(file).parts[-3]])
