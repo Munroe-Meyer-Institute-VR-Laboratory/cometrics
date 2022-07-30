@@ -397,7 +397,11 @@ class SessionManagerWindow:
                                                     "Woodway view is not present when it should be!")
                     print("ERROR: Something went wrong with starting session, Woodway view is not present when it should be")
                     return
-            self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+            # self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+            self.now = now = datetime.datetime.today()
+            self.session_date = now.strftime("%B %d, %Y")
+            self.session_file_date = now.strftime("%B")[:3] + now.strftime("%d") + now.strftime("%Y")
+            self.session_time = now.strftime("%H:%M:%S")
             self.pdf.start_label['text'] = "Session Start Time: " + self.session_time
             self.pdf.save_patient_fields(ble_thresh_r, ble_thresh_l, woodway_thresh)
             self.pdf.lock_session_fields()
