@@ -313,7 +313,7 @@ class SessionManagerWindow:
                 return
         x = {
             "Session Date": self.session_date,
-            "Session Start Time": EmpaticaE4.get_unix_timestamp(self.now),
+            "Session Start Time": self.session_time,
             "Session Start Timestamp": EmpaticaE4.get_unix_timestamp(self.now),
             "Session End Timestamp": EmpaticaE4.get_unix_timestamp(),
             "Session Time": self.stf.session_time,

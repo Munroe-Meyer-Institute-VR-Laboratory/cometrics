@@ -3,7 +3,6 @@ import glob
 import json
 import os
 import pathlib
-import traceback
 from datetime import datetime
 from tkinter import messagebox
 import neurokit2 as nk
@@ -63,15 +62,12 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
                     eda_f.writerow([str(datetime.now())])
                     eda_f.writerow(ksf_eda_header)
 
-                    e4_offset = 0
                     e4_data = json_file['E4 Data']
                     if e4_data:
                         if len(e4_data) > 19:
                             event_history = json_file['Event History']
                             for i in range(int(time_period / 2), len(e4_data), time_period):
                                 try:
-                                    recorded_freq, recorded_dur = None, None
-                                    dur_active = False
                                     data_time = i - int(time_period / 2)
                                     ppg_data, eda_data = [], []
                                     ppg_csv_data, eda_csv_data = [0, data_time] + len(freq_header) * [0] + len(
