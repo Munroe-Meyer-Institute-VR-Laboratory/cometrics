@@ -4,11 +4,84 @@ import json
 import os
 import pathlib
 from datetime import datetime
+from enum import IntEnum
 from tkinter import messagebox
 import neurokit2 as nk
+import numpy as np
 import pandas as pd
 import warnings
+from pyempatica import EmpaticaE4
+
 warnings.filterwarnings('ignore')
+
+
+class EmpaticaData(IntEnum):
+    ACC_3D = 0
+    ACC_X = 1
+    ACC_Y = 2
+    ACC_Z = 3
+    ACC_TIMESTAMPS = 4
+    BVP = 5
+    BVP_TIMESTAMPS = 6
+    EDA = 7
+    EDA_TIMESTAMPS = 8
+    TMP = 9
+    TMP_TIMESTAMPS = 10
+    TAG = 11
+    TAG_TIMESTAMPS = 12
+    IBI = 13
+    IBI_TIMESTAMPS = 14
+    BAT = 15
+    BAT_TIMESTAMPS = 16
+    HR = 17
+    HR_TIMESTAMPS = 18
+
+
+date_format = "%B %d, %Y"
+time_format = "%H:%M:%S"
+datetime_format = date_format + time_format
+
+
+def find_indices(search_list, search_item):
+    indices = []
+    for (index, item) in enumerate(search_list):
+        if item in search_item:
+            indices.append(index)
+    return indices
+
+
+def convert_legacy_events_e4(legacy_events, session_start_time):
+    for legacy_event in legacy_events:
+        if type(legacy_event[1]) is list:
+            event_times = legacy_event[1]
+            legacy_event[3] = [session_start_time + event_times[0], session_start_time + event_times[1]]
+        else:
+            event_times = legacy_event[1]
+            legacy_event[3] = session_start_time + event_times
+
+
+def convert_legacy_e4_data(empatica_data):
+    converted_data = [[] for _ in range(19)]
+    for window in empatica_data:
+        for i in range(0, 13):
+            converted_data[i].extend(window[i])
+    return converted_data
+
+
+def convert_timezone(old_time_object):
+    new_value_timestamp = old_time_object.timestamp()
+    return datetime.utcfromtimestamp(new_value_timestamp)
+
+
+def convert_timestamps(empatica_data):
+    empatica_data[EmpaticaData.BAT_TIMESTAMPS] = [int(l) for l in empatica_data[EmpaticaData.BAT_TIMESTAMPS]]
+    empatica_data[EmpaticaData.TAG_TIMESTAMPS] = [int(l) for l in empatica_data[EmpaticaData.TAG_TIMESTAMPS]]
+    empatica_data[EmpaticaData.TMP_TIMESTAMPS] = [int(l) for l in empatica_data[EmpaticaData.TMP_TIMESTAMPS]]
+    empatica_data[EmpaticaData.HR_TIMESTAMPS] = [int(l) for l in empatica_data[EmpaticaData.HR_TIMESTAMPS]]
+    empatica_data[EmpaticaData.IBI_TIMESTAMPS] = [int(l) for l in empatica_data[EmpaticaData.IBI_TIMESTAMPS]]
+    empatica_data[EmpaticaData.ACC_TIMESTAMPS] = [int(l) for l in empatica_data[EmpaticaData.ACC_TIMESTAMPS]]
+    empatica_data[EmpaticaData.BVP_TIMESTAMPS] = [int(l) for l in empatica_data[EmpaticaData.BVP_TIMESTAMPS]]
+    empatica_data[EmpaticaData.EDA_TIMESTAMPS] = [int(l) for l in empatica_data[EmpaticaData.EDA_TIMESTAMPS]]
 
 
 def export_e4_metrics(prim_dir, reli_dir, time_period=20):
@@ -44,7 +117,7 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
                 dur_header.append(d_key[1])
             with open(os.path.join(pathlib.Path(file).parent, f"{pathlib.Path(file).stem}_HR.csv"), 'w',
                       newline='') as ppg_file:
-                ksf_ppg_header = ['Event Time', 'E4 Time'] + freq_header + dur_header + ppg_header
+                ksf_ppg_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + ppg_header
                 ppg_f = csv.writer(ppg_file)
                 ppg_f.writerow([pathlib.Path(file).parts[-3]])
                 ppg_f.writerow([pathlib.Path(file).parts[-2]])
@@ -54,7 +127,7 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
 
                 with open(os.path.join(pathlib.Path(file).parent, f"{pathlib.Path(file).stem}_EDA.csv"), 'w',
                           newline='') as eda_file:
-                    ksf_eda_header = ['Event Time', 'E4 Time'] + freq_header + dur_header + eda_header
+                    ksf_eda_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + eda_header
                     eda_f = csv.writer(eda_file)
                     eda_f.writerow([pathlib.Path(file).parts[-3]])
                     eda_f.writerow([pathlib.Path(file).parts[-2]])
@@ -63,99 +136,68 @@ def export_e4_metrics(prim_dir, reli_dir, time_period=20):
                     eda_f.writerow(ksf_eda_header)
 
                     e4_data = json_file['E4 Data']
+                    event_history = json_file['Event History']
                     if e4_data:
                         if len(e4_data) > 19:
-                            event_history = json_file['Event History']
-                            for i in range(int(time_period / 2), len(e4_data), time_period):
-                                try:
-                                    data_time = i - int(time_period / 2)
-                                    ppg_data, eda_data = [], []
-                                    ppg_csv_data, eda_csv_data = [0, data_time] + len(freq_header) * [0] + len(
-                                        dur_header) * [0], \
-                                                                 [0, data_time] + len(freq_header) * [0] + len(
-                                                                     dur_header) * [0]
-                                    for d in e4_data[i - int(time_period / 2):i + int(time_period / 2)]:
-                                        ppg_data.extend(d[5])
-                                        eda_data.extend(d[7])
-                                    for event in event_history:
-                                        if type(event[1]) is list:
-                                            if event[3] in list(
-                                                    range(i - int(time_period / 2), i + int(time_period / 2))):
-                                                ppg_csv_data[0] = event[1][1]
-                                                eda_csv_data[0] = event[1][1]
-                                                ppg_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                                                eda_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                                        else:
-                                            if i - int(time_period / 2) <= event[3] < i + int(time_period / 2):
-                                                ppg_csv_data[0] = event[1]
-                                                eda_csv_data[0] = event[1]
-                                                ppg_csv_data[freq_header.index(event[0]) + 2] = 1
-                                                eda_csv_data[freq_header.index(event[0]) + 2] = 1
-                                    try:
-                                        ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
-                                        ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
-                                        ppg_csv_data.extend(ppg_results.values.ravel().tolist())
-                                    except Exception as e:
-                                        print(f"INFO: Could not process PPG signal in {file}")
-                                    try:
-                                        eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
-                                        eda_results = nk.eda_analyze(eda_signals, method='interval-related')
-                                        eda_csv_data.extend(eda_results.values.ravel().tolist())
-                                    except Exception as e:
-                                        print(f"INFO: Could not process EDA signal in {file}")
-                                except KeyError:
-                                    print(f"No E4 data found in {file}")
-                                except Exception as e:
-                                    print(f"Something went wrong with {file}: {str(e)}")
-                                finally:
-                                    eda_f.writerow(eda_csv_data)
-                                    ppg_f.writerow(ppg_csv_data)
+                            start_time_datetime = convert_timezone(
+                                datetime.strptime(json_file['Session Date'] + json_file['Session Start Time'],
+                                                  datetime_format))
+                            start_time = int(EmpaticaE4.get_unix_timestamp(start_time_datetime))
+                            end_time = int(start_time + int(json_file['Session Time']))
+                            e4_data = convert_legacy_e4_data(e4_data)
+                            convert_legacy_events_e4(event_history, start_time)
                         else:
-                            event_history = json_file['Event History']
-                            for i in range(int(time_period / 2), int(json_file['Session Time']), time_period):
+                            start_time = int(json_file['Session Start Timestamp'])
+                            end_time = int(json_file['Session End Timestamp'])
+                        convert_timestamps(e4_data)
+                        for i in range(start_time + int(time_period / 2), end_time, time_period):
+                            try:
+                                data_time = i - int(time_period / 2)
+                                session_time = data_time - start_time
+                                data_range = (data_time, data_time + time_period)
+                                timestamp_list = np.arange(*data_range)
+
+                                ppg_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [0]
+                                eda_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [0]
+
+                                ppg_data_range = find_indices(e4_data[EmpaticaData.BVP_TIMESTAMPS], timestamp_list)
+                                ppg_data = e4_data[EmpaticaData.BVP][ppg_data_range[0]:ppg_data_range[-1]]
+
+                                eda_data_range = find_indices(e4_data[EmpaticaData.EDA_TIMESTAMPS], timestamp_list)
+                                eda_data = e4_data[EmpaticaData.EDA][eda_data_range[0]:eda_data_range[-1]]
+
+                                for event in event_history:
+                                    if type(event[1]) is list:
+                                        event_duration = np.arange(int(event[3][0]), int(event[3][1]))
+                                        if int(event[3][0]) in timestamp_list or int(event[3][1]) in timestamp_list:
+                                            ppg_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
+                                            eda_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
+                                        if i in event_duration:
+                                            ppg_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
+                                            eda_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
+                                    else:
+                                        if int(event[3]) in timestamp_list:
+                                            ppg_csv_data[freq_header.index(event[0]) + 2] = 1
+                                            eda_csv_data[freq_header.index(event[0]) + 2] = 1
                                 try:
-                                    data_time = i - int(time_period / 2)
-                                    ppg_csv_data, eda_csv_data = [0, data_time] + len(freq_header) * [0] + len(
-                                        dur_header) * [0], \
-                                                                 [0, data_time] + len(freq_header) * [0] + len(
-                                                                     dur_header) * [0]
-
-                                    ppg_data = e4_data[5][data_time * 64:(data_time + time_period) * 64]
-                                    eda_data = e4_data[7][data_time * 4:(data_time + time_period) * 4]
-
-                                    for event in event_history:
-                                        if type(event[1]) is list:
-                                            if event[3] in list(
-                                                    range(i - int(time_period / 2), i + int(time_period / 2))):
-                                                ppg_csv_data[0] = event[1][1]
-                                                eda_csv_data[0] = event[1][1]
-                                                ppg_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                                                eda_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                                        else:
-                                            if i - int(time_period / 2) <= event[1] < i + int(time_period / 2):
-                                                ppg_csv_data[0] = event[1]
-                                                eda_csv_data[0] = event[1]
-                                                ppg_csv_data[freq_header.index(event[0]) + 2] = 1
-                                                eda_csv_data[freq_header.index(event[0]) + 2] = 1
-                                    try:
-                                        ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
-                                        ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
-                                        ppg_csv_data.extend(ppg_results.values.ravel().tolist())
-                                    except Exception as e:
-                                        print(f"INFO: Could not process PPG signal in {file}")
-                                    try:
-                                        eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
-                                        eda_results = nk.eda_analyze(eda_signals, method='interval-related')
-                                        eda_csv_data.extend(eda_results.values.ravel().tolist())
-                                    except Exception as e:
-                                        print(f"INFO: Could not process EDA signal in {file}")
-                                except KeyError:
-                                    print(f"No E4 data found in {file}")
+                                    ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
+                                    ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
+                                    ppg_csv_data.extend(ppg_results.values.ravel().tolist())
                                 except Exception as e:
-                                    print(f"Something went wrong with {file}: {str(e)}")
-                                finally:
-                                    eda_f.writerow(eda_csv_data)
-                                    ppg_f.writerow(ppg_csv_data)
+                                    print(f"INFO: Could not process PPG signal in {file}")
+                                try:
+                                    eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
+                                    eda_results = nk.eda_analyze(eda_signals, method='interval-related')
+                                    eda_csv_data.extend(eda_results.values.ravel().tolist())
+                                except Exception as e:
+                                    print(f"INFO: Could not process EDA signal in {file}")
+                            except KeyError:
+                                print(f"No E4 data found in {file}")
+                            except Exception as e:
+                                print(f"Something went wrong with {file}: {str(e)}")
+                            finally:
+                                eda_f.writerow(eda_csv_data)
+                                ppg_f.writerow(ppg_csv_data)
         messagebox.showinfo("E4 Metrics Computed", "E4 sessions have been successfully analyzed!\n"
                                                    "Check in raw data folders for output CSV files.")
     else:
