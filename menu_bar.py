@@ -40,7 +40,7 @@ class MenuBar(Frame):
         menu.add_cascade(label="Help", menu=help_menu)
 
     def get_e4_metrics(self):
-        export_e4_metrics(self.caller.prim_dir, self.caller.reli_dir)
+        export_e4_metrics(self.caller.root, self.caller.prim_dir, self.caller.reli_dir, self.caller.export_dir)
 
     def config_popup(self):
         ConfigPopup(self.parent, self.caller.config)

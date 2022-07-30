@@ -1,8 +1,11 @@
+import _tkinter
 import csv
 import glob
 import json
 import os
 import pathlib
+import threading
+import tkinter
 from datetime import datetime
 from enum import IntEnum
 from tkinter import messagebox
@@ -10,7 +13,11 @@ import neurokit2 as nk
 import numpy as np
 import pandas as pd
 import warnings
+
 from pyempatica import EmpaticaE4
+from tkvideoutils import ImageLabel
+
+from tkinter_utils import center
 
 warnings.filterwarnings('ignore')
 
@@ -40,6 +47,19 @@ class EmpaticaData(IntEnum):
 date_format = "%B %d, %Y"
 time_format = "%H:%M:%S"
 datetime_format = date_format + time_format
+eda_header = ['SCR_Peaks_N', 'SCR_Peaks_Amplitude_Mean']
+ppg_header = ['PPG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_SDANN1', 'HRV_SDNNI1',
+                  'HRV_SDANN2', 'HRV_SDNNI2', 'HRV_SDANN5', 'HRV_SDNNI5', 'HRV_RMSSD', 'HRV_SDSD', 'HRV_CVNN',
+                  'HRV_CVSD', 'HRV_MedianNN', 'HRV_MadNN', 'HRV_MCVNN', 'HRV_IQRNN', 'HRV_Prc20NN', 'HRV_Prc80NN',
+                  'HRV_pNN50', 'HRV_pNN20', 'HRV_MinNN', 'HRV_MaxNN', 'HRV_HTI', 'HRV_TINN', 'HRV_ULF', 'HRV_VLF',
+                  'HRV_LF', 'HRV_HF', 'HRV_VHF', 'HRV_LFHF', 'HRV_LFn', 'HRV_HFn', 'HRV_LnHF', 'HRV_SD1', 'HRV_SD2',
+                  'HRV_SD1SD2', 'HRV_S', 'HRV_CSI', 'HRV_CVI', 'HRV_CSI_Modified', 'HRV_PIP', 'HRV_IALS', 'HRV_PSS',
+                  'HRV_PAS', 'HRV_GI', 'HRV_SI', 'HRV_AI', 'HRV_PI', 'HRV_C1d', 'HRV_C1a', 'HRV_SD1d', 'HRV_SD1a',
+                  'HRV_C2d', 'HRV_C2a', 'HRV_SD2d', 'HRV_SD2a', 'HRV_Cd', 'HRV_Ca', 'HRV_SDNNd', 'HRV_SDNNa',
+                  'HRV_DFA_alpha1', 'HRV_MFDFA_alpha1_Width', 'HRV_MFDFA_alpha1_Peak', 'HRV_MFDFA_alpha1_Mean',
+                  'HRV_MFDFA_alpha1_Max', 'HRV_MFDFA_alpha1_Delta', 'HRV_MFDFA_alpha1_Asymmetry',
+                  'HRV_MFDFA_alpha1_Fluctuation', 'HRV_MFDFA_alpha1_Increment', 'HRV_ApEn', 'HRV_SampEn', 'HRV_ShanEn',
+                  'HRV_FuzzyEn', 'HRV_MSEn', 'HRV_CMSEn', 'HRV_RCMSEn', 'HRV_CD', 'HRV_HFD', 'HRV_KFD', 'HRV_LZC']
 
 
 def find_indices(search_list, search_item):
@@ -84,124 +104,161 @@ def convert_timestamps(empatica_data):
     empatica_data[EmpaticaData.EDA_TIMESTAMPS] = [int(l) for l in empatica_data[EmpaticaData.EDA_TIMESTAMPS]]
 
 
-def export_e4_metrics(prim_dir, reli_dir, time_period=20):
+def export_e4_metrics(root, prim_dir, reli_dir, output_dir, time_period=20):
     prim_files = glob.glob(f'{prim_dir}/**/*.json', recursive=True)
     reli_files = glob.glob(f'{reli_dir}/**/*.json', recursive=True)
     prim_filepaths = [_ for _ in prim_files if _.split("\\")[0]]
     reli_filepaths = [_ for _ in reli_files if _.split("\\")[0]]
-    eda_header = ['SCR_Peaks_N', 'SCR_Peaks_Amplitude_Mean']
-    ppg_header = ['PPG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_SDANN1', 'HRV_SDNNI1',
-                  'HRV_SDANN2', 'HRV_SDNNI2', 'HRV_SDANN5', 'HRV_SDNNI5', 'HRV_RMSSD', 'HRV_SDSD', 'HRV_CVNN',
-                  'HRV_CVSD', 'HRV_MedianNN', 'HRV_MadNN', 'HRV_MCVNN', 'HRV_IQRNN', 'HRV_Prc20NN', 'HRV_Prc80NN',
-                  'HRV_pNN50', 'HRV_pNN20', 'HRV_MinNN', 'HRV_MaxNN', 'HRV_HTI', 'HRV_TINN', 'HRV_ULF', 'HRV_VLF',
-                  'HRV_LF', 'HRV_HF', 'HRV_VHF', 'HRV_LFHF', 'HRV_LFn', 'HRV_HFn', 'HRV_LnHF', 'HRV_SD1', 'HRV_SD2',
-                  'HRV_SD1SD2', 'HRV_S', 'HRV_CSI', 'HRV_CVI', 'HRV_CSI_Modified', 'HRV_PIP', 'HRV_IALS', 'HRV_PSS',
-                  'HRV_PAS', 'HRV_GI', 'HRV_SI', 'HRV_AI', 'HRV_PI', 'HRV_C1d', 'HRV_C1a', 'HRV_SD1d', 'HRV_SD1a',
-                  'HRV_C2d', 'HRV_C2a', 'HRV_SD2d', 'HRV_SD2a', 'HRV_Cd', 'HRV_Ca', 'HRV_SDNNd', 'HRV_SDNNa',
-                  'HRV_DFA_alpha1', 'HRV_MFDFA_alpha1_Width', 'HRV_MFDFA_alpha1_Peak', 'HRV_MFDFA_alpha1_Mean',
-                  'HRV_MFDFA_alpha1_Max', 'HRV_MFDFA_alpha1_Delta', 'HRV_MFDFA_alpha1_Asymmetry',
-                  'HRV_MFDFA_alpha1_Fluctuation', 'HRV_MFDFA_alpha1_Increment', 'HRV_ApEn', 'HRV_SampEn', 'HRV_ShanEn',
-                  'HRV_FuzzyEn', 'HRV_MSEn', 'HRV_CMSEn', 'HRV_RCMSEn', 'HRV_CD', 'HRV_HFD', 'HRV_KFD', 'HRV_LZC']
 
+    popup_root = tkinter.Toplevel(root)
+    popup_root.config(bd=-2)
+    popup_root.title("Processing")
+    popup_root.geometry("250x100")
+    popup_root.config(bg="white")
+    center(popup_root)
+    label_var = tkinter.StringVar(popup_root, value=f'Processing Session 0 / {len(prim_filepaths + reli_filepaths)}')
+    text_label = tkinter.Label(popup_root, textvariable=label_var, font=('Purisa', 11), bg="white")
+    text_label.place(x=125, y=50, anchor=tkinter.CENTER)
+
+    prim_export = os.path.join(output_dir, "Primary")
+    reli_export = os.path.join(output_dir, "Reliability")
+
+    # Create directories if they don't exist
+    if not os.path.exists(reli_export):
+        os.mkdir(reli_export)
+    if not os.path.exists(prim_export):
+        os.mkdir(prim_export)
+
+    e4_metrics_thread = threading.Thread(target=__e4_metrics_thread, args=(prim_filepaths, reli_filepaths, prim_export,
+                                                                           reli_export, time_period, label_var,
+                                                                           output_dir, popup_root))
+    e4_metrics_thread.daemon = True
+    e4_metrics_thread.start()
+
+
+def __e4_metrics_thread(prim_filepaths, reli_filepaths, prim_export, reli_export, time_period, label_var, output_dir,
+                        popup_root):
+    e4_data_found = False
+    file_count = 0
     if prim_filepaths and reli_filepaths:
-        for file in prim_filepaths + reli_filepaths:
-            with open(file, 'r') as f:
-                json_file = json.load(f)
-            freq = json_file['KSF']['Frequency']
-            freq_header = []
-            for f_key in freq:
-                freq_header.append(f_key[1])
-            dur = json_file['KSF']['Duration']
-            dur_header = []
-            for d_key in dur:
-                dur_header.append(d_key[1])
-            with open(os.path.join(pathlib.Path(file).parent, f"{pathlib.Path(file).stem}_HR.csv"), 'w',
-                      newline='') as ppg_file:
-                ksf_ppg_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + ppg_header
-                ppg_f = csv.writer(ppg_file)
-                ppg_f.writerow([pathlib.Path(file).parts[-3]])
-                ppg_f.writerow([pathlib.Path(file).parts[-2]])
-                ppg_f.writerow([pathlib.Path(file).stem])
-                ppg_f.writerow([str(datetime.now())])
-                ppg_f.writerow(ksf_ppg_header)
-
-                with open(os.path.join(pathlib.Path(file).parent, f"{pathlib.Path(file).stem}_EDA.csv"), 'w',
-                          newline='') as eda_file:
-                    ksf_eda_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + eda_header
-                    eda_f = csv.writer(eda_file)
-                    eda_f.writerow([pathlib.Path(file).parts[-3]])
-                    eda_f.writerow([pathlib.Path(file).parts[-2]])
-                    eda_f.writerow([pathlib.Path(file).stem])
-                    eda_f.writerow([str(datetime.now())])
-                    eda_f.writerow(ksf_eda_header)
-
-                    e4_data = json_file['E4 Data']
-                    event_history = json_file['Event History']
-                    if e4_data:
-                        if len(e4_data) > 19:
-                            start_time_datetime = convert_timezone(
-                                datetime.strptime(json_file['Session Date'] + json_file['Session Start Time'],
-                                                  datetime_format))
-                            start_time = int(EmpaticaE4.get_unix_timestamp(start_time_datetime))
-                            end_time = int(start_time + int(json_file['Session Time']))
-                            e4_data = convert_legacy_e4_data(e4_data)
-                            convert_legacy_events_e4(event_history, start_time)
-                        else:
-                            start_time = int(json_file['Session Start Timestamp'])
-                            end_time = int(json_file['Session End Timestamp'])
-                        convert_timestamps(e4_data)
-                        for i in range(start_time + int(time_period / 2), end_time, time_period):
-                            try:
-                                data_time = i - int(time_period / 2)
-                                session_time = data_time - start_time
-                                data_range = (data_time, data_time + time_period)
-                                timestamp_list = np.arange(*data_range)
-
-                                ppg_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [0]
-                                eda_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [0]
-
-                                ppg_data_range = find_indices(e4_data[EmpaticaData.BVP_TIMESTAMPS], timestamp_list)
-                                ppg_data = e4_data[EmpaticaData.BVP][ppg_data_range[0]:ppg_data_range[-1]]
-
-                                eda_data_range = find_indices(e4_data[EmpaticaData.EDA_TIMESTAMPS], timestamp_list)
-                                eda_data = e4_data[EmpaticaData.EDA][eda_data_range[0]:eda_data_range[-1]]
-
-                                for event in event_history:
-                                    if type(event[1]) is list:
-                                        event_duration = np.arange(int(event[3][0]), int(event[3][1]))
-                                        if int(event[3][0]) in timestamp_list or int(event[3][1]) in timestamp_list:
-                                            ppg_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                                            eda_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                                        if i in event_duration:
-                                            ppg_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                                            eda_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                                    else:
-                                        if int(event[3]) in timestamp_list:
-                                            ppg_csv_data[freq_header.index(event[0]) + 2] = 1
-                                            eda_csv_data[freq_header.index(event[0]) + 2] = 1
-                                try:
-                                    ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
-                                    ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
-                                    ppg_csv_data.extend(ppg_results.values.ravel().tolist())
-                                except Exception as e:
-                                    print(f"INFO: Could not process PPG signal in {file}")
-                                try:
-                                    eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
-                                    eda_results = nk.eda_analyze(eda_signals, method='interval-related')
-                                    eda_csv_data.extend(eda_results.values.ravel().tolist())
-                                except Exception as e:
-                                    print(f"INFO: Could not process EDA signal in {file}")
-                            except KeyError:
-                                print(f"No E4 data found in {file}")
-                            except Exception as e:
-                                print(f"Something went wrong with {file}: {str(e)}")
-                            finally:
-                                eda_f.writerow(eda_csv_data)
-                                ppg_f.writerow(ppg_csv_data)
-        messagebox.showinfo("E4 Metrics Computed", "E4 sessions have been successfully analyzed!\n"
-                                                   "Check in raw data folders for output CSV files.")
+        for file in prim_filepaths:
+            file_count += 1
+            label_var.set(f'Processing Session {file_count} / {len(prim_filepaths + reli_filepaths)}')
+            e4_data_found |= process_e4_data(file, prim_export, time_period)
+        for file in reli_filepaths:
+            file_count += 1
+            label_var.set(f'Processing Session {file_count} / {len(prim_filepaths + reli_filepaths)}')
+            e4_data_found |= process_e4_data(file, reli_export, time_period)
+        if e4_data_found:
+            messagebox.showinfo("E4 Metrics Computed", "E4 sessions have been successfully analyzed!\n"
+                                                       "Check in raw data folders for output CSV files.")
+            os.startfile(output_dir)
+        else:
+            messagebox.showwarning("Warning", "No E4 data found in sessions!")
     else:
-        messagebox.showwarning("Warning", "No E4 sessions found!")
+        messagebox.showwarning("Warning", "No sessions found!")
+    popup_root.destroy()
+
+
+def process_e4_data(file, output_dir, time_period):
+    with open(file, 'r') as f:
+        json_file = json.load(f)
+    e4_data = json_file['E4 Data']
+    if e4_data:
+        freq = json_file['KSF']['Frequency']
+        freq_header = []
+        for f_key in freq:
+            freq_header.append(f_key[1])
+        dur = json_file['KSF']['Duration']
+        dur_header = []
+        for d_key in dur:
+            dur_header.append(d_key[1])
+        with open(os.path.join(output_dir, f"{pathlib.Path(file).stem}_HR.csv"), 'w',
+                  newline='') as ppg_file:
+            ksf_ppg_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + ppg_header
+            ppg_f = csv.writer(ppg_file)
+            ppg_f.writerow([pathlib.Path(file).parts[-3]])
+            ppg_f.writerow([pathlib.Path(file).parts[-2]])
+            ppg_f.writerow([pathlib.Path(file).stem])
+            ppg_f.writerow([str(datetime.now())])
+            ppg_f.writerow(ksf_ppg_header)
+
+            with open(os.path.join(output_dir, f"{pathlib.Path(file).stem}_EDA.csv"), 'w',
+                      newline='') as eda_file:
+                ksf_eda_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + eda_header
+                eda_f = csv.writer(eda_file)
+                eda_f.writerow([pathlib.Path(file).parts[-3]])
+                eda_f.writerow([pathlib.Path(file).parts[-2]])
+                eda_f.writerow([pathlib.Path(file).stem])
+                eda_f.writerow([str(datetime.now())])
+                eda_f.writerow(ksf_eda_header)
+
+                event_history = json_file['Event History']
+                if len(e4_data) > 19:
+                    start_time_datetime = convert_timezone(
+                        datetime.strptime(json_file['Session Date'] + json_file['Session Start Time'],
+                                          datetime_format))
+                    start_time = int(EmpaticaE4.get_unix_timestamp(start_time_datetime))
+                    end_time = int(start_time + int(json_file['Session Time']))
+                    e4_data = convert_legacy_e4_data(e4_data)
+                    convert_legacy_events_e4(event_history, start_time)
+                else:
+                    start_time = int(json_file['Session Start Timestamp'])
+                    end_time = int(json_file['Session End Timestamp'])
+                convert_timestamps(e4_data)
+                for i in range(start_time + int(time_period / 2), end_time, time_period):
+                    try:
+                        data_time = i - int(time_period / 2)
+                        session_time = data_time - start_time
+                        data_range = (data_time, data_time + time_period)
+                        timestamp_list = np.arange(*data_range)
+
+                        ppg_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [
+                            0]
+                        eda_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [
+                            0]
+
+                        ppg_data_range = find_indices(e4_data[EmpaticaData.BVP_TIMESTAMPS], timestamp_list)
+                        ppg_data = e4_data[EmpaticaData.BVP][ppg_data_range[0]:ppg_data_range[-1]]
+
+                        eda_data_range = find_indices(e4_data[EmpaticaData.EDA_TIMESTAMPS], timestamp_list)
+                        eda_data = e4_data[EmpaticaData.EDA][eda_data_range[0]:eda_data_range[-1]]
+
+                        for event in event_history:
+                            if type(event[1]) is list:
+                                event_duration = np.arange(int(event[3][0]), int(event[3][1]))
+                                if int(event[3][0]) in timestamp_list or int(event[3][1]) in timestamp_list:
+                                    ppg_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
+                                    eda_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
+                                if i in event_duration:
+                                    ppg_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
+                                    eda_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
+                            else:
+                                if int(event[3]) in timestamp_list:
+                                    ppg_csv_data[freq_header.index(event[0]) + 2] = 1
+                                    eda_csv_data[freq_header.index(event[0]) + 2] = 1
+                        try:
+                            ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
+                            ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
+                            ppg_csv_data.extend(ppg_results.values.ravel().tolist())
+                        except Exception as e:
+                            print(f"INFO: Could not process PPG signal in {file}")
+                        try:
+                            eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
+                            eda_results = nk.eda_analyze(eda_signals, method='interval-related')
+                            eda_csv_data.extend(eda_results.values.ravel().tolist())
+                        except Exception as e:
+                            print(f"INFO: Could not process EDA signal in {file}")
+                    except KeyError:
+                        print(f"No E4 data found in {file}")
+                    except Exception as e:
+                        print(f"Something went wrong with {file}: {str(e)}")
+                    finally:
+                        eda_f.writerow(eda_csv_data)
+                        ppg_f.writerow(ppg_csv_data)
+        return True
+    else:
+        return False
 
 
 def eda_custom_process(eda_signal, sampling_rate=4, method="neurokit"):
