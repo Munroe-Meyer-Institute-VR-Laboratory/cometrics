@@ -247,11 +247,21 @@ class SessionTimeFields:
                         if self.session_time >= self.session_duration:
                             self.caller.stop_session()
                     if self.ovu.woodway_view:
+                        if self.ovu.woodway_view.paused:
+                            self.ovu.woodway_view.start_woodway()
                         self.ovu.woodway_view.next_protocol_step(self.session_time)
                     if self.ovu.ble_view:
+                        if self.ovu.ble_view.paused:
+                            self.ovu.ble_view.start_ble()
                         self.ovu.ble_view.next_protocol_step(self.session_time)
                 elif self.session_paused:
-                    if not self.caller.ovu.video_view.player:
+                    if self.ovu.ble_view:
+                        if not self.ovu.ble_view.paused:
+                            self.ovu.ble_view.pause_ble()
+                    if self.ovu.woodway_view:
+                        if not self.ovu.woodway_view.paused:
+                            self.ovu.woodway_view.pause_woodway()
+                    if not self.ovu.video_view.player:
                         self.break_time += 1
                 self.break_time_label['text'] = str(datetime.timedelta(seconds=self.break_time))
                 self.session_time_label['text'] = str(datetime.timedelta(seconds=self.session_time))

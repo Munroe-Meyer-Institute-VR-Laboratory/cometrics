@@ -7,13 +7,14 @@ from tkinter import *
 from tkinter import messagebox
 
 from PIL import Image, ImageTk
+from pyempatica import EmpaticaE4
 from pynput import keyboard
 
 # Custom library imports
 from tkvideoutils import cp_rename
 from menu_bar import MenuBar
 from output_view_ui import OutputViewPanel
-from patient_data_fields import PatientDataFields, PatientDataVar
+from patient_data_fields import PatientDataFields, PatientDataVar, PatientContainer
 from session_time_fields import SessionTimeFields
 from tkinter_utils import get_treeview_style, get_slider_style
 from ui_params import large_header_font, large_field_font, large_field_offset, medium_header_font, medium_field_font, \
@@ -30,7 +31,7 @@ class SessionManagerWindow:
         self.button_input_handler = None
         self.ext_raw, self.ext_dur_val, self.ext_freq_val = None, None, None
         self.patient_file = project_setup.patient_data_file
-        self.patient_container = project_setup.patient_container
+        self.patient_container = PatientContainer(project_setup.patient_data_file)
         self.keystroke_file = project_setup.ksf_file
         self.session_dir = project_setup.phase_dir
         self.tracker_file = project_setup.tracker_file
@@ -46,10 +47,10 @@ class SessionManagerWindow:
         # Log this for debugging
         print("INFO:", self.patient_file, self.keystroke_file, self.session_dir, self.prim_dir, self.reli_dir)
         # Generate session date and time
-        now = datetime.datetime.today()
+        self.now = now = datetime.datetime.today()
         self.session_date = now.strftime("%B %d, %Y")
         self.session_file_date = now.strftime("%B")[:3] + now.strftime("%d") + now.strftime("%Y")
-        self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+        self.session_time = now.strftime("%H:%M:%S")
         # Get the number of primary and reliability sessions collected so far
         self.prim_session_number = 1
         self.reli_session_number = 1
@@ -109,6 +110,7 @@ class SessionManagerWindow:
         thresholds = [self.patient_container.right_ble_thresh,
                       self.patient_container.left_ble_thresh,
                       self.patient_container.woodway_thresh]
+        print(f"INFO: Thresholds {thresholds}")
         self.ovu = OutputViewPanel(self, root,
                                    x=(self.logo_width * 2) + 30,
                                    y=(self.logo_height + 10) - self.button_size[1],
@@ -258,8 +260,6 @@ class SessionManagerWindow:
                     # Enforce lower case for all inputs that are characters
                     key_char = str(key_char).lower()
                     self.handle_key_press(key_char)
-                else:
-                    print("INFO: Typing outside window")
         except AttributeError:
             try:
                 # Only process key input if the main window has focus, otherwise ignore
@@ -314,6 +314,8 @@ class SessionManagerWindow:
         x = {
             "Session Date": self.session_date,
             "Session Start Time": self.session_time,
+            "Session Start Timestamp": EmpaticaE4.get_unix_timestamp(self.now),
+            "Session End Timestamp": EmpaticaE4.get_unix_timestamp(),
             "Session Time": self.stf.session_time,
             "Pause Time": self.stf.break_time,
             "Keystroke File": pathlib.Path(self.keystroke_file).stem,
@@ -395,7 +397,11 @@ class SessionManagerWindow:
                                                     "Woodway view is not present when it should be!")
                     print("ERROR: Something went wrong with starting session, Woodway view is not present when it should be")
                     return
-            self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+            # self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+            self.now = now = datetime.datetime.today()
+            self.session_date = now.strftime("%B %d, %Y")
+            self.session_file_date = now.strftime("%B")[:3] + now.strftime("%d") + now.strftime("%Y")
+            self.session_time = now.strftime("%H:%M:%S")
             self.pdf.start_label['text'] = "Session Start Time: " + self.session_time
             self.pdf.save_patient_fields(ble_thresh_r, ble_thresh_l, woodway_thresh)
             self.pdf.lock_session_fields()

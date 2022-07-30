@@ -5,6 +5,7 @@ from analysis_ui import AccuracyPopup
 from config_utils import ConfigUtils
 from ksf_utils import export_columnwise_csv, populate_spreadsheet
 from tkinter_utils import ConfigPopup, ExternalButtonPopup
+from e4_utils import export_e4_metrics
 
 
 class MenuBar(Frame):
@@ -29,6 +30,7 @@ class MenuBar(Frame):
         edit_menu = Menu(menu, tearoff=0)
         edit_menu.add_command(label="Analyze Sessions", command=self.load_sessions)
         edit_menu.add_command(label="Calculate Session Accuracy", command=self.get_session_acc)
+        edit_menu.add_command(label="Calculate E4 Metrics", command=self.get_e4_metrics)
         menu.add_cascade(label="Analyze", menu=edit_menu)
 
         help_menu = Menu(menu, tearoff=0)
@@ -36,6 +38,9 @@ class MenuBar(Frame):
         help_menu.add_command(label="Open Logs", command=self.open_logs)
         help_menu.add_command(label="Open Current Directory", command=self.open_current_dir)
         menu.add_cascade(label="Help", menu=help_menu)
+
+    def get_e4_metrics(self):
+        export_e4_metrics(self.caller.root, self.caller.prim_dir, self.caller.reli_dir, self.caller.export_dir)
 
     def config_popup(self):
         ConfigPopup(self.parent, self.caller.config)
