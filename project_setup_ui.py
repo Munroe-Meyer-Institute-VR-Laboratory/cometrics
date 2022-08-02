@@ -45,7 +45,7 @@ class ProjectSetupWindow:
             self.field_font = large_field_font
             self.treeview_rowheight = large_treeview_rowheight
             self.button_size = large_button_size
-        elif 1920 > config.get_screen_size()[1] > 1280:
+        elif 1920 > config.get_screen_size()[1] > 1440:
             self.header_font = medium_treeview_font
             self.field_font = medium_field_font
             self.treeview_rowheight = medium_treeview_rowheight

@@ -27,9 +27,9 @@ medium_tab_size = (120, 30)
 
 small_header_font = ('Purisa', 12)
 small_treeview_font = ('Purisa', 12, 'bold')
-small_treeview_rowheight = 18
+small_treeview_rowheight = 22
 small_field_font = ('Purisa', 10)
-small_field_offset = 50
+small_field_offset = 60
 small_button_size = (80, 25)
 small_tab_size = (110, 25)
 

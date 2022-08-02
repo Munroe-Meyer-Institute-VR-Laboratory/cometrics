@@ -67,7 +67,7 @@ class SessionManagerWindow:
             self.field_offset = large_field_offset
             self.button_size = large_tab_size
             self.treeview_rowheight = large_treeview_rowheight
-        elif 1920 > self.window_width > 1400:
+        elif 1920 > self.window_width > 1440:
             self.treeview_header = medium_treeview_font
             self.header_font = medium_header_font
             self.field_font = medium_field_font
