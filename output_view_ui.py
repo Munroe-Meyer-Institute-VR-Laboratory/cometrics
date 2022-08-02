@@ -263,7 +263,15 @@ class OutputViewPanel:
                     self.e4_view.e4.bat, self.e4_view.e4.bat_timestamps,
                     self.e4_view.e4.hr, self.e4_view.e4.hr_timestamps
                 ]
-        return self.key_view.event_history, e4_data, video_data
+        ble_prot = None
+        if self.ble_view:
+            if self.ble_view.prot_file:
+                ble_prot = self.ble_view.prot_file
+        woodway_prot = None
+        if self.woodway_view:
+            if self.woodway_view.prot_file:
+                woodway_prot = self.woodway_view.prot_file
+        return self.key_view.event_history, e4_data, video_data, ble_prot, woodway_prot
 
     def save_session(self, filename, keystrokes):
         if self.e4_view:

@@ -1,11 +1,14 @@
 import os
+import pathlib
 import webbrowser
 from tkinter import *
 from analysis_ui import AccuracyPopup
 from config_utils import ConfigUtils
 from ksf_utils import export_columnwise_csv, populate_spreadsheet
-from tkinter_utils import ConfigPopup, ExternalButtonPopup
+from tkinter_utils import ConfigPopup, ExternalButtonPopup, GitHubIssue
 from e4_utils import export_e4_metrics
+from pat import token
+from ui_params import cometrics_ver_root
 
 
 class MenuBar(Frame):
@@ -37,7 +40,28 @@ class MenuBar(Frame):
         help_menu.add_command(label="Open Documentation", command=self.open_user_guide)
         help_menu.add_command(label="Open Logs", command=self.open_logs)
         help_menu.add_command(label="Open Current Directory", command=self.open_current_dir)
+        help_menu.add_command(label="Download E4 Streaming Server", command=self.download_e4_ss)
+        help_menu.add_command(label="Open Source Code", command=self.open_source_code)
+        help_menu.add_command(label="Submit Feedback", command=self.submit_feedback)
         menu.add_cascade(label="Help", menu=help_menu)
+
+    def submit_feedback(self):
+        log_pattern = r'*.txt'
+        latest_log_file = max(pathlib.Path(os.path.join(cometrics_ver_root, 'logs')).glob(log_pattern),
+                              key=lambda f: f.stat().st_ctime)
+        GitHubIssue(self.caller.root, token, latest_log_file)
+
+    @staticmethod
+    def open_source_code():
+        source_code_link = 'https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics'
+        webbrowser.open_new_tab(source_code_link)
+
+    @staticmethod
+    def download_e4_ss():
+        e4_ss_link = 'http://get.empatica.com/win/EmpaticaBLEServer.html'
+        webbrowser.open_new_tab(e4_ss_link)
+        e4_doc_link = 'https://developer.empatica.com/windows-streaming-server-usage.html'
+        webbrowser.open_new_tab(e4_doc_link)
 
     def get_e4_metrics(self):
         export_e4_metrics(self.caller.root, self.caller.prim_dir, self.caller.reli_dir, self.caller.export_dir)

@@ -67,7 +67,7 @@ class SessionManagerWindow:
             self.field_offset = large_field_offset
             self.button_size = large_tab_size
             self.treeview_rowheight = large_treeview_rowheight
-        elif 1920 > self.window_width > 1280:
+        elif 1920 > self.window_width > 1400:
             self.treeview_header = medium_treeview_font
             self.header_font = medium_header_font
             self.field_font = medium_field_font
@@ -304,7 +304,7 @@ class SessionManagerWindow:
 
     def save_session(self):
         session_fields = self.pdf.get_session_fields()
-        session_data, e4_data, video_file = self.ovu.get_session_data()
+        session_data, e4_data, video_file, ble_prot, woodway_prot = self.ovu.get_session_data()
         # If no session data is recorded, ask before saving it
         if not session_data:
             response = messagebox.askyesno("Session Data Empty", "There was no session data recorded, "
@@ -327,6 +327,8 @@ class SessionManagerWindow:
         session_fields["KSF"] = self.ovu.key_view.keystroke_json
         session_fields["Reviewer"] = ""
         session_fields["Reviewed"] = False
+        session_fields["BLE Protocol"] = ble_prot
+        session_fields["Woodway Protocol"] = woodway_prot
         reli = '_R' if session_fields["Primary Data"] == "Reliability" else ''
         output_session_file = path.join(self.session_dir,
                                         self.config.get_data_folders()[1],
@@ -397,7 +399,7 @@ class SessionManagerWindow:
                                                     "Woodway view is not present when it should be!")
                     print("ERROR: Something went wrong with starting session, Woodway view is not present when it should be")
                     return
-            # self.session_time = datetime.datetime.now().strftime("%H:%M:%S")
+
             self.now = now = datetime.datetime.today()
             self.session_date = now.strftime("%B %d, %Y")
             self.session_file_date = now.strftime("%B")[:3] + now.strftime("%d") + now.strftime("%Y")

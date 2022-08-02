@@ -6,12 +6,14 @@ import threading
 import time
 import tkinter
 import traceback
-from tkinter import TOP, W, N, NW, messagebox, END, ttk, filedialog
+from tkinter import TOP, W, N, NW, messagebox, END, ttk, filedialog, INSERT
 from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview
 
 import numpy as np
 from PIL import ImageTk as itk
+from github import Github
+from logger_util import parse_log
 from tkvideoutils import ImageLabel
 
 from ui_params import treeview_default_tag_dict, cometrics_ver_root
@@ -948,4 +950,122 @@ class CalibrateVibrotactors:
         if self.calibrated_left and self.calibrated_right:
             self.caller.calibrate_return(self.calibrated_left, self.calibrated_right)
         self.calibrating = False
+        self.popup_root.destroy()
+
+
+class GitHubIssue:
+    def __init__(self, root, token, current_log_file):
+        self.log_file = parse_log(current_log_file)
+        self.token = token
+        self.entry = None
+        self.popup_root = None
+        self.label_options = [
+            'Bug',
+            'Enhancement',
+            'Documentation'
+        ]
+        self.name = "Submit Feedback to Developer"
+        self.popup_entry(root)
+
+    def popup_entry(self, root, field_font=('Purisa', 12)):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("800x350")
+        popup_root.title(self.name)
+
+        self.title_var = tkinter.StringVar(popup_root, value='Feedback Title')
+        self.title_entry = tkinter.Entry(popup_root, textvariable=self.title_var, font=field_font, bd=2, fg='grey')
+        self.title_entry.bind("<FocusIn>", self.title_handle_focus_in)
+        self.title_entry.bind("<FocusOut>", self.title_handle_focus_out)
+        self.title_entry.place(x=10, y=10)
+
+        self.label_var = tkinter.StringVar(popup_root, value='Select a Label')
+        dropdown_box = Combobox(popup_root, textvariable=self.label_var, font=field_font)
+        dropdown_box['values'] = self.label_options
+        dropdown_box['state'] = 'readonly'
+        dropdown_box.config(font=field_font)
+        dropdown_box.option_add('*TCombobox*Listbox.font', field_font)
+        dropdown_box.place(x=10, y=40)
+
+        self.default_desc_text = "Enter a description of the problem you encountered.\n"\
+                                 "Please be descriptive!\n"\
+                                 "If possible, include steps to recreate the problem and contact "\
+                                 "information if you would like the developer to reach out for more "\
+                                 "information and updates."
+        self.desc_var = tkinter.StringVar(popup_root)
+        self.description_entry = tkinter.Text(popup_root, bg="white", fg='grey',
+                                              cursor="arrow",
+                                              exportselection=0,
+                                              highlightcolor="black",
+                                              width=10,
+                                              xscrollcommand="scrollbar")
+        self.description_entry.bind("<FocusIn>", self.handle_focus_in)
+        self.description_entry.bind("<FocusOut>", self.handle_focus_out)
+        self.description_entry.insert(INSERT, self.default_desc_text)
+        self.description_entry.place(x=10, y=70, height=210, width=780)
+
+        cancel_button = tkinter.Button(popup_root, text='Cancel', command=self.cancel, font=field_font)
+        cancel_button.place(x=790, y=300, width=120, anchor=tkinter.NE)
+
+        submit_button = tkinter.Button(popup_root, text='Submit', command=self.submit_issue, font=field_font)
+        submit_button.place(x=660, y=300, width=120, anchor=tkinter.NE)
+
+        center(popup_root)
+        popup_root.focus_force()
+
+    def title_handle_focus_in(self, _):
+        title = self.title_var.get()
+        if title == "Feedback Title":
+            self.title_entry.delete(0, END)
+            self.title_entry.config(fg='black')
+
+    def title_handle_focus_out(self, _):
+        title = self.title_var.get()
+        if not title:
+            self.title_entry.delete(0, END)
+            self.title_entry.config(fg='grey')
+            self.title_entry.insert(0, "Feedback Title")
+
+    def handle_focus_in(self, _):
+        desc = self.description_entry.get('1.0', END)
+        if desc == self.default_desc_text + '\n':
+            self.description_entry.delete('1.0', END)
+            self.description_entry.config(fg='black')
+
+    def handle_focus_out(self, _):
+        desc = self.description_entry.get('1.0', END)
+        if desc == '\n':
+            self.description_entry.insert(INSERT, self.default_desc_text)
+            self.description_entry.config(fg='grey')
+
+    def cancel(self):
+        self.popup_root.destroy()
+
+    def submit_issue(self):
+        desc = self.description_entry.get('1.0', END)
+        if desc == '\n' or desc == self.default_desc_text + '\n':
+            messagebox.showerror("Error", "Enter a description of the issue encountered!")
+            return
+        desc = desc + '\n'.join(self.log_file[0]) + '\n'.join(self.log_file[3])
+        label_set = self.label_var.get()
+        if label_set == "Select a Label":
+            messagebox.showerror("Error", "Select a label for the issue encountered!")
+            return
+        title = self.title_var.get()
+        if not title or title == 'Feedback Title':
+            messagebox.showerror("Error", "Enter a title for the issue encountered!")
+            return
+
+        g = Github(self.token)
+        repo = g.get_repo("Munroe-Meyer-Institute-VR-Laboratory/cometrics")
+
+        repo.create_issue(
+            title=title,
+            body=desc,
+            labels=[
+                repo.get_label(label_set.lower())
+            ]
+        )
+        messagebox.showinfo("Success!", "Feedback has been submitted!")
         self.popup_root.destroy()
