@@ -72,4 +72,4 @@ Don't forget to give the project a star! Thanks again!
 5. Open a Pull Request
 
 ## Contact
-The active developer and maintainer of this project is Walker Arce, reach out to him via email with any inquiries (walker.arce@unmc.edu).
+The active developer and maintainer of this project is Walker Arce, reach out to him via email with any inquiries (wsarcera@gmail.com).
