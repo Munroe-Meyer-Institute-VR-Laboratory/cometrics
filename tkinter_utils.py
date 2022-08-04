@@ -9,13 +9,11 @@ import traceback
 from tkinter import TOP, W, N, NW, messagebox, END, ttk, filedialog, INSERT
 from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview
-
 import numpy as np
 from PIL import ImageTk as itk
 from github import Github
 from logger_util import parse_log
 from tkvideoutils import ImageLabel
-
 from ui_params import treeview_default_tag_dict, cometrics_ver_root
 
 
@@ -1047,7 +1045,6 @@ class GitHubIssue:
         if desc == '\n' or desc == self.default_desc_text + '\n':
             messagebox.showerror("Error", "Enter a description of the issue encountered!")
             return
-        desc = desc + '\n'.join(self.log_file[0]) + '\n'.join(self.log_file[3])
         label_set = self.label_var.get()
         if label_set == "Select a Label":
             messagebox.showerror("Error", "Select a label for the issue encountered!")
@@ -1057,15 +1054,25 @@ class GitHubIssue:
             messagebox.showerror("Error", "Enter a title for the issue encountered!")
             return
 
-        g = Github(self.token)
-        repo = g.get_repo("Munroe-Meyer-Institute-VR-Laboratory/cometrics")
+        response = messagebox.askyesno("Submit?", "You are submitting a feedback ticket to the developer.\n"
+                                                  "The feedback provided in the textbox will be posted to a public"
+                                                  "repository.\n"
+                                                  "Details of this feedback collection can be found in our Privacy Policy.\n"
+                                                  "Continue?")
+        if response:
+            try:
+                g = Github(self.token)
+                repo = g.get_repo('Munroe-Meyer-Institute-VR-Laboratory/cometrics')
 
-        repo.create_issue(
-            title=title,
-            body=desc,
-            labels=[
-                repo.get_label(label_set.lower())
-            ]
-        )
-        messagebox.showinfo("Success!", "Feedback has been submitted!")
+                repo.create_issue(
+                    title=title,
+                    body=desc,
+                    labels=[
+                        repo.get_label(label_set.lower())
+                    ]
+                )
+                messagebox.showinfo("Success!", "Feedback has been submitted!")
+            except Exception as e:
+                messagebox.showerror("Error", f"An exception was encountered!\n{str(e)}")
+                print(f"ERROR: An exception was encountered!\n{str(e)}")
         self.popup_root.destroy()

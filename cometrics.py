@@ -1,6 +1,5 @@
 import os
 import sys
-import gc
 # Custom library imports
 import traceback
 from tkinter import messagebox
@@ -18,7 +17,7 @@ from session_manager_ui import SessionManagerWindow
 from logger_util import CreateLogger, log_startup
 from logger_util.logger_util import get_process_memory
 from project_setup_ui import ProjectSetupWindow
-from ui_params import cometrics_data_root, cometrics_ver_root
+from ui_params import cometrics_data_root, cometrics_ver_root, cometrics_version
 
 
 def main(config_file, first_time_user):
@@ -36,7 +35,7 @@ if __name__ == "__main__":
     CreateLogger(os.path.join(cometrics_ver_root, 'logs'))
     # Log computer information
     log_startup()
-    print(f"STARTUP: {cwd}")
+    print(f"STARTUP: {cometrics_version}")
     print(f"INFO: imageio_ffmpeg exe location - {imageio_ffmpeg.get_ffmpeg_exe()}")
     # Load our configuration
     config = ConfigUtils()

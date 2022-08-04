@@ -183,6 +183,11 @@ class ProjectSetupWindow:
         self.main_root.deiconify()
         center(self.main_root)
         if first_time_user:
+            response = messagebox.askyesno("Privacy Policy", "Open privacy policy?\n"
+                                                             "By using cometrics, you hereby consent to this Privacy "
+                                                             "Policy and agree to its terms and conditions.")
+            if response:
+                MenuBar.view_privacy_policy()
             # Display link to user guide
             response = messagebox.askyesno("Welcome to cometrics!",
                                            "Would you like to open the user guide for cometrics?")

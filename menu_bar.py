@@ -42,8 +42,15 @@ class MenuBar(Frame):
         help_menu.add_command(label="Open Current Directory", command=self.open_current_dir)
         help_menu.add_command(label="Download E4 Streaming Server", command=self.download_e4_ss)
         help_menu.add_command(label="Open Source Code", command=self.open_source_code)
+        help_menu.add_command(label="View Privacy Policy", command=self.view_privacy_policy)
         help_menu.add_command(label="Submit Feedback", command=self.submit_feedback)
         menu.add_cascade(label="Help", menu=help_menu)
+
+    @staticmethod
+    def view_privacy_policy():
+        config = ConfigUtils()
+        cwd = config.get_cwd()
+        webbrowser.open_new_tab(os.path.join(cwd, 'reference/PRIVACY_POLICY.html'))
 
     def submit_feedback(self):
         log_pattern = r'*.txt'
