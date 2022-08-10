@@ -314,7 +314,7 @@ class SessionManagerWindow:
         x = {
             "Session Date": self.session_date,
             "Session Start Time": self.session_time,
-            "Session Start Timestamp": EmpaticaE4.get_unix_timestamp(self.now),
+            "Session Start Timestamp": self.session_start_timestamp,
             "Session End Timestamp": EmpaticaE4.get_unix_timestamp(),
             "Session Time": self.stf.session_time,
             "Pause Time": self.stf.break_time,
@@ -399,7 +399,20 @@ class SessionManagerWindow:
                                                     "Woodway view is not present when it should be!")
                     print("ERROR: Something went wrong with starting session, Woodway view is not present when it should be")
                     return
-
+            session_fields = self.pdf.get_session_fields()
+            reli = '_R' if session_fields["Primary Data"] == "Reliability" else ''
+            output_session_file = path.join(self.session_dir,
+                                            self.config.get_data_folders()[1],
+                                            session_fields["Primary Data"],
+                                            f"{session_fields['Session Number']}"
+                                            f"{session_fields['Assessment Name'][:2]}"
+                                            f"{session_fields['Condition Name'][:2]}"
+                                            f"{self.session_file_date}{reli}.json")
+            if os.path.exists(output_session_file):
+                messagebox.showerror("Session Exists", f"The selected session already exists!\n{output_session_file}")
+                print(f"ERROR: The selected session already exists {output_session_file}")
+                return
+            self.session_start_timestamp = EmpaticaE4.get_unix_timestamp()
             self.now = now = datetime.datetime.today()
             self.session_date = now.strftime("%B %d, %Y")
             self.session_file_date = now.strftime("%B")[:3] + now.strftime("%d") + now.strftime("%Y")
@@ -409,8 +422,6 @@ class SessionManagerWindow:
             self.pdf.lock_session_fields()
             self.stf.lock_session_fields()
             # Start the session
-            session_fields = self.pdf.get_session_fields()
-            reli = '_R' if session_fields["Primary Data"] == "Reliability" else ''
             self.ovu.start_session(recording_path=path.join(self.session_dir,
                                                             self.config.get_data_folders()[1],
                                                             session_fields["Primary Data"],

@@ -185,6 +185,10 @@ class OutputViewPanel:
             self.ble_view.start_session()
         if self.woodway_view:
             self.woodway_view.start_session()
+        if self.video_view:
+            self.video_view.clear_event_treeview()
+        if self.key_view:
+            self.key_view.clear_sh_treeview()
 
     def enable_video_slider(self):
         if self.video_view.player:
@@ -1416,10 +1420,11 @@ class ViewVideo:
 
     def clear_event_treeview(self):
         clear_treeview(self.event_treeview)
+        self.event_treeview_parents = []
+        self.event_history = []
 
     def populate_event_treeview_review(self):
         self.reviewing = True
-        self.clear_event_treeview()
         if self.event_history:
             for i in range(0, len(self.event_history)):
                 bind = self.event_history[i]
@@ -2058,6 +2063,8 @@ class KeystrokeDataFields:
 
     def clear_sh_treeview(self):
         clear_treeview(self.sh_treeview)
+        self.sh_treeview_parents = []
+        self.event_history = []
 
     def add_session_event(self, events):
         for event in events:
