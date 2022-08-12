@@ -8,7 +8,7 @@
 	  <br />
 	  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/reference/Cometrics%20User%20Guide.pdf"><strong>Explore the docs »</strong></a>
 
-[![Download cometrics](https://img.shields.io/badge/download-cometrics.msi-blue?style=for-the-badge)](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/releases/download/v1.3.1/cometrics-1.3.1-win64.msi)
+[![Download cometrics](https://img.shields.io/badge/download-cometrics.msi-blue?style=for-the-badge)](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/releases/download/v1.3.2/cometrics-1.3.2-win64.msi)
 	  <br />
 	  <a href="https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/issues">Report Bug</a>
 	  ·
