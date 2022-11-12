@@ -1,20 +1,20 @@
-12aMLMar222022,Generated on March 22 2022 14:00:38
-Field,Value
-Session Location,a
-Assessment Name,a
-Condition Name,MLCODING
-Primary Therapist,a
-Case Manager,a
-Session Therapist,a
-Data Recorder,a
-Primary Data,Primary
-Session Number,12
-Session Date,"March 22, 2022"
-Session Start Time,13:55:32
-Session Time,300
-Pause Time,0
-Keystroke File,Main Ml Coding
-Video File,video 12 -converted ptz.mp4
+12aMLMar222022,Generated on March 22 2022 14:00:38,,,
+Field,Value,,,
+Session Location,a,,,
+Assessment Name,a,,,
+Condition Name,MLCODING,,,
+Primary Therapist,a,,,
+Case Manager,a,,,
+Session Therapist,a,,,
+Data Recorder,a,,,
+Primary Data,Primary,,,
+Session Number,12,,,
+Session Date,March 22 2022,,,
+Session Start Time,13:55:32,,,
+Session Time,300,,,
+Pause Time,0,,,
+Keystroke File,Main Ml Coding,,,
+Video File,video 12 -converted ptz.mp4,,,
 Tag,Onset,Offset,Frame,E4 Window
 kick_hit object,12,,92,
 kick_hit object,12,,100,
