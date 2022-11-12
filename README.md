@@ -41,7 +41,11 @@
 ![cometrics GUI](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/gui_images/demo_image.png)
 
 # Introduction 
-cometrics has been designed to integrate directly into the workflow of the Severe Behavior Department at the Munroe-Meyer Institute in the University of Nebraska Medical Center, while simplifying multiple manual steps into a few mouse clicks.  By using a tracker spreadsheet, a patient's entire history can be collected into a single document from the software with your own specified graphs and format within that spreadsheet.  You can find an example of a tracker spreadsheet [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/reference/Reference_Tracker.xlsx).  
+Cometrics has been designed to integrate directly into the workflow of the Severe Behavior Department at the Munroe-Meyer Institute in the University of Nebraska Medical Center, while simplifying multiple manual steps into a few mouse clicks.  By using a tracker spreadsheet, a patient's entire history can be collected into a single document from the software with your own specified graphs and format within that spreadsheet.  You can find an example of a tracker spreadsheet [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/reference/Reference_Tracker.xlsx).  
+
+## Tutorials
+Common issues, approaches, and techniques are covered by our tutorials, which will be added to over time!
+- [Example Output and Keystroke File Setup](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/tutorials/tutorials/example_output_ksf_intro/example_output_ksf_intro_tutorial.md)
 
 ## License
 Distributed under the MIT License. See the [LICENSE](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/main/LICENSE) file for more information.
