@@ -3,7 +3,7 @@ Cometrics uses files called keystroke files (KSFs) to organize the associations 
 
 For an example of a correctly formatted KSF, [click here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/tutorials/tutorials/example_output_ksf_intro/ML_Coding_KSF.xlsx).  This is KSF is used for coding videos of severe behavior with the intention of training a machine learning model.  
 
-One of cometrics main development goals was the ability to directly code recorded video, which was not possible using existing tools to any level of repeatable accuracy.  So cometrics has an embedded video viewer that enables consistency between computers, coders, and locations.  An clip from one of our coder training videos is embedded below to show the type of behaviors the above KSF is intended for.
+One of cometrics main development goals was the ability to perform retroactive data analysis by coding recorded video, which was not possible using existing tools to any level of repeatable accuracy.  So cometrics has an embedded video viewer that enables consistency between computers, coders, and locations.  An clip from one of our coder training videos is embedded below to show the type of behaviors the above KSF is intended for.
 
 
 https://user-images.githubusercontent.com/22334349/201445560-1c20887b-3555-4df9-88d4-a6a7d826866f.mp4
