@@ -1,7 +1,7 @@
 ## Example Output and Keystroke File Setup
 Cometrics uses files called keystroke files (KSFs) to organize the associations between keystrokes and intended coded behaviors.  For instance, the key 'a' when pressed during a cometrics session would be encoded as 'hitting', if the KSF were to define it as such.  
 
-For an example of a correctly formatted KSF, [click here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/tutorials/tutorials/example_output_ksf_intro/ML_Coding_KSF.xlsx).  This is KSF is used for coding videos of severe behavior with the intention of training a machine learning model.  
+For an example of a correctly formatted KSF, [click here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/tutorials/tutorials/example_output_ksf_intro/ML_Coding_KSF.xlsx).  This is a KSF is used for coding videos of severe behavior with the intention of training a machine learning model.  
 
 One of cometrics main development goals was the ability to perform retroactive data analysis by coding recorded video, which was not possible using existing tools to any level of repeatable accuracy.  So cometrics has an embedded video viewer that enables consistency between computers, coders, and locations.  An clip from one of our coder training videos is embedded below to show the type of behaviors the above KSF is intended for.
 
