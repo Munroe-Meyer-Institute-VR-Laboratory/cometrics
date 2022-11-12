@@ -9,7 +9,68 @@ One of cometrics main development goals was the ability to perform retroactive d
 https://user-images.githubusercontent.com/22334349/201445560-1c20887b-3555-4df9-88d4-a6a7d826866f.mp4
 
 
-The full video is available [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/tutorials/tutorials/example_output_ksf_intro/Video_12.mp4).  Once a video is coded and the session is ended, a session file is generated in JSON format.  The session file for Video_12 can be found [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/tutorials/tutorials/example_output_ksf_intro/12aMLMar222022.json) and a readable CSV export of the same file can be found [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/tutorials/tutorials/example_output_ksf_intro/12aMLMar222022.csv).
+The full video is available [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/tutorials/tutorials/example_output_ksf_intro/Video_12.mp4).  Once a video is coded and the session is ended, a session file is generated in JSON format.  The session file for Video_12 can be found [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/tutorials/tutorials/example_output_ksf_intro/12aMLMar222022.json) and a readable CSV export of the same file can be found [here](https://github.com/Munroe-Meyer-Institute-VR-Laboratory/cometrics/blob/tutorials/tutorials/example_output_ksf_intro/12aMLMar222022.csv).  The session file is a JSON file with twenty-three fields that contain all session information, such as the keystroke file and patient information fields, which can be seen below.
+
+```
+{
+    "Session Location": "MMI Severe Behavior",
+    "Assessment Name": "FBT",
+    "Condition Name": "Condition 1",
+    "Primary Therapist": "WA",
+    "Case Manager": "WA",
+    "Session Therapist": "WA",
+    "Data Recorder": "WA",
+    "Primary Data": "WA",
+    "Session Number": "1",
+    "Session Date": "August 08, 2022",
+    "Session Start Time": "21:41:41",
+    "Session Start Timestamp": 1660012901.926967,
+    "Session End Timestamp": 1660012921.827977,
+    "Session Time": 20,
+    "Pause Time": 0,
+    "Keystroke File": "Reference_Tracker_V5",
+    "Video File": "",
+    "Event History": [
+        [ "Freq 1", 18, null, null, null ],
+        [ "Freq 1", 18, null, null, null ]
+    ],
+    "E4 Data": null,
+    "KSF": {
+        "Name": "Reference_Tracker_V5",
+        "Frequency": [
+            [ "q", "Freq 1" ],
+            [ "w", "Freq 2" ],
+            [ "e", "Freq 3" ],
+            [ "r", "Freq 4" ],
+            [ "t", "Freq 5" ],
+            [ "y", "Freq 6" ],
+            [ "u", "Freq 7" ],
+            [ "i", "Freq 8" ],
+            [ "o", "Freq 9" ]
+        ],
+        "Duration": [
+            [ "a", "Dur 1" ],
+            [ "b", "Dur 2" ],
+            [ "c", "Dur 3" ],
+            [ "d", "Dur 4" ],
+            [ "e", "Dur 5" ],
+            [ "f", "Dur 6" ]
+        ],
+        "Conditions": [
+            "Condition 1",
+            "Condition 2",
+            "Condition 3",
+            "Condition 4",
+            "Condition 5"
+        ]
+    },
+    "Reviewer": "WA",
+    "Reviewed": true,
+    "BLE Protocol": null,
+    "Woodway Protocol": null
+}
+
+```
 
 The format of the KSF file is strict and the following rules are detailed below for easy reference using the above KSF as the example:
 1. The 'Assessment' cell must consist of columns A, B, and C merged and placed on row 1,
