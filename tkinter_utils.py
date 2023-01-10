@@ -333,21 +333,26 @@ class ConfigPopup:
         self.woodway_var = tkinter.BooleanVar(popup_root, value=self.config.get_woodway())
         woodway_checkbutton = tkinter.Checkbutton(popup_root, text="Woodway Enabled", bg='white',
                                                   variable=self.woodway_var, font=('Purisa', 12))
-        woodway_checkbutton.place(x=10, y=90)
+        woodway_checkbutton.place(x=10, y=80)
         self.ble_var = tkinter.BooleanVar(popup_root, value=self.config.get_ble())
         ble_checkbutton = tkinter.Checkbutton(popup_root, text="BLE Enabled", bg='white',
                                               variable=self.ble_var, font=('Purisa', 12))
-        ble_checkbutton.place(x=10, y=130)
+        ble_checkbutton.place(x=10, y=110)
+
+        self.click_var = tkinter.BooleanVar(popup_root, value=self.config.get_clickmode())
+        clk_checkbutton = tkinter.Checkbutton(popup_root, text="Single Click Enabled", bg='white',
+                                              variable=self.click_var, font=('Purisa', 12))
+        clk_checkbutton.place(x=10, y=140)
 
         a_tag = tkinter.Label(popup_root, text="A", bg='white', font=('Purisa', 12))
-        a_tag.place(x=10, y=170)
+        a_tag.place(x=10, y=180)
 
         self.a_entry = tkinter.Entry(popup_root, bd=2, width=12, font=('Purisa', 12))
         self.a_entry.insert(0, str(self.config.get_woodway_a()))
-        self.a_entry.place(x=60, y=170)
+        self.a_entry.place(x=60, y=180)
 
         b_tag = tkinter.Label(popup_root, text="B", bg='white', font=('Purisa', 12))
-        b_tag.place(x=10, y=210)
+        b_tag.place(x=10, y=220)
 
         self.b_entry = tkinter.Entry(popup_root, bd=2, width=12, font=('Purisa', 12))
         self.b_entry.insert(0, str(self.config.get_woodway_b()))
@@ -370,6 +375,7 @@ class ConfigPopup:
         self.update_woodway()
         self.update_ble()
         self.update_review()
+        self.update_clickmode()
         self.popup_root.destroy()
 
     def update_fps(self):
@@ -383,6 +389,9 @@ class ConfigPopup:
 
     def update_woodway(self):
         self.config.set_woodway(self.woodway_var.get())
+
+    def update_clickmode(self):
+        self.config.set_clickmode(self.click_var.get())
 
     def update_review(self):
         self.config.set_review(self.review_var.get())
