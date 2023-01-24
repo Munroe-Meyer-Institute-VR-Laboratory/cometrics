@@ -518,7 +518,7 @@ class ProjectSetupWindow:
         if self._ksf:
             for i in range(0, len(self._ksf['Frequency'])):
                 self.frequency_treeview_parents.append(
-                    self.frequency_key_treeview.insert("", 'end', text=str(self._ksf['Frequency'][i][0]),
+                    self.frequency_key_treeview.insert("", 'end', str(i + 1), text=str(self._ksf['Frequency'][i][0]),
                                                        values=(str(self._ksf['Frequency'][i][1]),),
                                                        tags=(treeview_tags[i % 2])))
 
@@ -539,7 +539,7 @@ class ProjectSetupWindow:
         if self._ksf:
             for i in range(0, len(self._ksf['Duration'])):
                 self.duration_treeview_parents.append(
-                    self.duration_key_treeview.insert("", 'end', text=str(self._ksf['Duration'][i][0]),
+                    self.duration_key_treeview.insert("", 'end', str(i + 1), text=str(self._ksf['Duration'][i][0]),
                                                       values=(str(self._ksf['Duration'][i][1]),),
                                                       tags=(treeview_tags[i % 2])))
 
@@ -549,7 +549,7 @@ class ProjectSetupWindow:
             if selection == '0':
                 NewKeyPopup(self, self.main_root, 1)
             else:
-                self.delete_frequency_key(int(selection))
+                self.delete_frequency_key(int(selection) - 1)
 
     def select_duration_key(self, event):
         selection = self.duration_key_treeview.identify_row(event.y)
@@ -557,7 +557,7 @@ class ProjectSetupWindow:
             if selection == '0':
                 NewKeyPopup(self, self.main_root, 2)
             else:
-                self.delete_duration_key(int(selection))
+                self.delete_duration_key(int(selection) - 1)
 
     def create_frequency_key(self, tag, key):
         self._ksf['Frequency'].append([str(key), str(tag)])
