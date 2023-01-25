@@ -356,7 +356,7 @@ class ConfigPopup:
 
         self.b_entry = tkinter.Entry(popup_root, bd=2, width=12, font=('Purisa', 12))
         self.b_entry.insert(0, str(self.config.get_woodway_b()))
-        self.b_entry.place(x=60, y=210)
+        self.b_entry.place(x=60, y=220)
 
         self.review_var = tkinter.BooleanVar(popup_root, value=self.config.get_review())
         review_checkbutton = tkinter.Checkbutton(popup_root, text="Review Mode Enabled", bg='white',
