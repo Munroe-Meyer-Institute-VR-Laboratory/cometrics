@@ -71,11 +71,14 @@ class ProjectSetupWindow:
         self.project_treeview_parents, self.patient_treeview_parents, self.concern_treeview_parents = [], [], []
         project_treeview_height = int(self.window_height * 0.3)
         treeview_width = int(self.window_width * 0.45)
+        # Get single click mode
+        single_click_mode = config.get_clickmode()
         self.project_treeview, self.project_filescroll = build_treeview(self.main_root, ptp[0], ptp[1],
                                                                         project_treeview_height,
                                                                         treeview_width,
                                                                         project_heading_dict,
-                                                                        double_bind=self.select_project,
+                                                                        button_1_bind=self.select_project if single_click_mode else None,
+                                                                        double_bind=self.select_project if not single_click_mode else None,
                                                                         button_3_bind=self.delete_project)
         self.recent_projects = config.get_recent_projects()
         self.populate_recent_projects()
@@ -85,7 +88,10 @@ class ProjectSetupWindow:
                                                                         patient_treeview_height,
                                                                         treeview_width,
                                                                         patient_heading_dict,
-                                                                        double_bind=self.select_patient)
+                                                                        button_1_bind=self.select_patient if single_click_mode
+                                                                        else None,
+                                                                        double_bind=self.select_patient if not single_click_mode
+                                                                        else None)
 
         self.concern_treeview, self.concern_filescroll = build_treeview(self.main_root, ptp[0],
                                                                         ptp[1] + int(self.window_height * 0.35) + int(
@@ -93,7 +99,10 @@ class ProjectSetupWindow:
                                                                         patient_treeview_height,
                                                                         treeview_width,
                                                                         concern_heading_dict,
-                                                                        double_bind=self.select_concern)
+                                                                        button_1_bind=self.select_concern if single_click_mode
+                                                                        else None,
+                                                                        double_bind=self.select_concern if not single_click_mode
+                                                                        else None)
         # Get phases and create dropbox
         self.phases = config.get_phases()
         if self.phases:
@@ -137,7 +146,10 @@ class ProjectSetupWindow:
                                                                                     treeview_width,
                                                                                     freq_heading_dict,
                                                                                     key_column_dict,
-                                                                                    double_bind=self.select_frequency_key)
+                                                                                    button_1_bind=self.select_frequency_key if single_click_mode
+                                                                                    else None,
+                                                                                    double_bind=self.select_frequency_key if not single_click_mode
+                                                                                    else None)
         self.duration_treeview_parents = []
         self.duration_key_treeview, self.duration_key_filescroll = build_treeview(self.main_root,
                                                                                   20 + self.window_width / 2,
@@ -148,7 +160,10 @@ class ProjectSetupWindow:
                                                                                   treeview_width,
                                                                                   dur_heading_dict,
                                                                                   key_column_dict,
-                                                                                  double_bind=self.select_duration_key)
+                                                                                  button_1_bind=self.select_duration_key if single_click_mode
+                                                                                  else None,
+                                                                                  double_bind=self.select_duration_key if not single_click_mode
+                                                                                  else None)
         # Create KSF generation button
         self.generate_button = Button(self.main_root, text='Generate', width=12, command=self.generate_ksf,
                                       font=self.field_font)
@@ -210,7 +225,8 @@ class ProjectSetupWindow:
                 open(os.path.join(self.project_dir, '.cometrics'), 'w')
             # Add to treeview
             self.project_treeview_parents.append(
-                self.project_treeview.insert("", 'end', str((int(self.project_treeview_parents[-1]) + 1)), text=self.project_name,
+                self.project_treeview.insert("", 'end', str((int(self.project_treeview_parents[-1]) + 1)),
+                                             text=self.project_name,
                                              tags=treeview_tags[(int(self.project_treeview_parents[-1]) + 1) % 2]))
             select_focus(self.project_treeview, self.project_treeview_parents[-1])
             scroll_to(self.project_treeview, len(self.project_treeview_parents))
@@ -240,6 +256,7 @@ class ProjectSetupWindow:
             select_focus(self.concern_treeview, self.concern_treeview_parents[-1])
             scroll_to(self.concern_treeview, len(self.concern_treeview_parents))
             self.load_concern(len(self.concerns))
+
     # endregion
 
     # region Project UI Controls

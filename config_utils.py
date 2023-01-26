@@ -123,6 +123,15 @@ class ConfigUtils:
             self.config['enable-review'] = set_review
             self.save_config()
 
+    def get_clickmode(self):
+        if self.config:
+            return bool(self.config['enable-singleclick'])
+
+    def set_clickmode(self, set_clickmode):
+        if self.config:
+            self.config['enable-singleclick'] = set_clickmode
+            self.save_config()
+
     def get_woodway_a(self):
         if self.config:
             return str(self.config['woodway-a-sn'])
