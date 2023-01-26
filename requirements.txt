@@ -1,4 +1,4 @@
-setuptools~=60.8.2
+setuptools>=65.5.1
 opencv-python~=4.5.5.62
 pynput~=1.7.6
 tkvideoutils~=1.2.2
