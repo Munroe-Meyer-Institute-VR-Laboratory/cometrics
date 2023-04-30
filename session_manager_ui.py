@@ -439,7 +439,7 @@ class SessionManagerWindow:
 
     def stop_session(self):
         self.stf.stop_session()
-        self.ovu.stop_session()
+        self.ovu.stop_session(self.stf.session_time)
         self.save_session()
         self.listener.stop()
 

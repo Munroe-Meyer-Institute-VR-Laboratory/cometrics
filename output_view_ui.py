@@ -198,7 +198,9 @@ class OutputViewPanel:
         if self.video_view.player:
             self.video_view.video_slider.config(state='disabled')
 
-    def stop_session(self):
+    def stop_session(self, final_time):
+        if self.key_view:
+            self.check_duration_keys(final_time)
         if self.e4_view:
             self.e4_view.session_started = False
             self.e4_view.streaming = False
@@ -237,6 +239,11 @@ class OutputViewPanel:
                 self.video_view.add_event(key_events)
             else:
                 print("INFO: No key events returned")
+
+    def check_duration_keys(self, final_time):
+        for i in range(0, len(self.key_view.dur_bindings)):
+            if self.key_view.dur_sticky[i]:
+                self.check_event(self.key_view.dur_bindings[i][0], final_time)
 
     def delete_last_event(self):
         self.key_view.delete_last_event()
