@@ -319,7 +319,7 @@ class ConfigPopup:
         self.config = config
         self.popup_root = popup_root = tkinter.Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x420")
+        popup_root.geometry("300x410")
         popup_root.title("Configuration Settings")
         fps_tag = tkinter.Label(popup_root, text="FPS", bg='white', font=('Purisa', 12))
         fps_tag.place(x=10, y=10)
@@ -366,13 +366,13 @@ class ConfigPopup:
         self.auto_export_var = tkinter.BooleanVar(popup_root, value=self.config.get_auto_export())
         auto_export_checkbutton = tkinter.Checkbutton(popup_root, text="Auto Export Enabled", bg='white',
                                                  variable=self.auto_export_var, font=('Purisa', 12))
-        auto_export_checkbutton.place(x=10, y=290)
+        auto_export_checkbutton.place(x=10, y=280)
 
         clear_projects = tkinter.Button(popup_root, text="Clear Recent Projects",
                                         font=('Purisa', 12), command=self.clear_projects)
-        clear_projects.place(x=10, y=330)
+        clear_projects.place(x=10, y=320)
         ok_button = tkinter.Button(popup_root, text="OK", command=self.on_closing, font=('Purisa', 12))
-        ok_button.place(x=150, y=370, anchor=N)
+        ok_button.place(x=150, y=360, anchor=N)
 
     def on_closing(self):
         self.update_fps()
