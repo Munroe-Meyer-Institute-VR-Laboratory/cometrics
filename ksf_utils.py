@@ -562,7 +562,7 @@ def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
     row, col, sess = 5, tracker_headers['Session Data Start'], 1
     for session in sessions:
         key_freq, key_dur = get_keystroke_info(ksf_file, session)
-        data_wb[tracker_headers['Session'][1] + str(row)].value = sess
+        data_wb[tracker_headers['Session'][1] + str(row)].value = session['Session Number']
         data_wb[tracker_headers['Cond.'][1] + str(row)].value = session['Condition Name']
         data_wb[tracker_headers['Date'][1] + str(row)].value = session['Session Date']
         data_wb[tracker_headers['Therapist'][1] + str(row)].value = session['Session Therapist']
@@ -581,6 +581,7 @@ def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
     output_file = path.join(output_dir, f"{pathlib.Path(ksf_file).stem}_Charted.xlsx")
     try:
         wb.save(output_file)
+        os.startfile(output_file)
     except PermissionError as e:
         messagebox.showerror("Error", "Permission denied to save charted tracker, make sure your have permissions to "
                                       f"save in the output directory or that the spreadsheet is closed!\n{output_file}")
@@ -677,10 +678,8 @@ def get_sessions(session_dir):
     session_files = []
     sessions = []
     if path.isdir(session_dir):
-        _, _, files = next(walk(session_dir))
-        for file in files:
-            if pathlib.Path(file).suffix == ".json":
-                session_files.append(file)
+        session_files = glob.glob(f'{session_dir}/*.json', recursive=True)
+        session_files.sort(key=lambda x: os.path.getctime(x))
     for file in session_files:
         with open(path.join(session_dir, file), 'r') as f:
             data = json.load(f)
