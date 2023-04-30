@@ -16,3 +16,8 @@ pyWoodway~=0.2.4
 pyTactor~=0.1.4
 neurokit2~=0.2.0
 pandas~=1.4.3
+
+traces~=0.6.0
+PyGithub~=1.55
+Markdown~=3.4.1
+flirt~=0.0.2

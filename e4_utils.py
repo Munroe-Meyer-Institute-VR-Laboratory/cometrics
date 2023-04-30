@@ -1,4 +1,3 @@
-import _tkinter
 import csv
 import glob
 import json
@@ -6,16 +5,18 @@ import os
 import pathlib
 import threading
 import tkinter
+import warnings
 from datetime import datetime
 from enum import IntEnum
 from tkinter import messagebox
+
 import neurokit2 as nk
+from flirt.stats.common import get_stats
+from flirt.eda.feature_calculation import __cvx_eda
 import numpy as np
 import pandas as pd
-import warnings
-
+import traces
 from pyempatica import EmpaticaE4
-from tkvideoutils import ImageLabel
 
 from tkinter_utils import center
 
@@ -47,19 +48,49 @@ class EmpaticaData(IntEnum):
 date_format = "%B %d, %Y"
 time_format = "%H:%M:%S"
 datetime_format = date_format + time_format
-eda_header = ['SCR_Peaks_N', 'SCR_Peaks_Amplitude_Mean']
+accx_header = ['ACCX_mean', 'ACCX_std', 'ACCX_min', 'ACCX_max', 'ACCX_ptp', 'ACCX_sum', 'ACCX_energy', 'ACCX_skewness',
+               'ACCX_kurtosis', 'ACCX_peaks', 'ACCX_rms',
+               'ACCX_lineintegral', 'ACCX_n_above_mean', 'ACCX_n_below_mean', 'ACCX_n_sign_changes', 'ACCX_iqr',
+               'ACCX_iqr_5_95', 'ACCX_pct_5', 'ACCX_pct_95',
+               'ACCX_entropy', 'ACCX_perm_entropy', 'ACCX_svd_entropy']
+accy_header = ['ACCY_mean', 'ACCY_std', 'ACCY_min', 'ACCY_max', 'ACCY_ptp', 'ACCY_sum', 'ACCY_energy', 'ACCY_skewness',
+               'ACCY_kurtosis', 'ACCY_peaks', 'ACCY_rms',
+               'ACCY_lineintegral', 'ACCY_n_above_mean', 'ACCY_n_below_mean', 'ACCY_n_sign_changes', 'ACCY_iqr',
+               'ACCY_iqr_5_95', 'ACCY_pct_5', 'ACCY_pct_95',
+               'ACCY_entropy', 'ACCY_perm_entropy', 'ACCY_svd_entropy']
+accz_header = ['ACCZ_mean', 'ACCZ_std', 'ACCZ_min', 'ACCZ_max', 'ACCZ_ptp', 'ACCZ_sum', 'ACCZ_energy', 'ACCZ_skewness',
+               'ACCZ_kurtosis', 'ACCZ_peaks', 'ACCZ_rms',
+               'ACCZ_lineintegral', 'ACCZ_n_above_mean', 'ACCZ_n_below_mean', 'ACCZ_n_sign_changes', 'ACCZ_iqr',
+               'ACCZ_iqr_5_95', 'ACCZ_pct_5', 'ACCZ_pct_95',
+               'ACCZ_entropy', 'ACCZ_perm_entropy', 'ACCZ_svd_entropy']
+tmp_header = ['TMP_mean', 'TMP_std', 'TMP_min', 'TMP_max', 'TMP_ptp', 'TMP_sum', 'TMP_energy', 'TMP_skewness',
+              'TMP_kurtosis', 'TMP_peaks', 'TMP_rms',
+              'TMP_lineintegral', 'TMP_n_above_mean', 'TMP_n_below_mean', 'TMP_n_sign_changes', 'TMP_iqr',
+              'TMP_iqr_5_95', 'TMP_pct_5', 'TMP_pct_95',
+              'TMP_entropy', 'TMP_perm_entropy', 'TMP_svd_entropy']
+eda_header = ['SCR_Peaks_N', 'SCR_Peaks_Amplitude_Mean',
+              'SCR_mean', 'SCR_std', 'SCR_min', 'SCR_max', 'SCR_ptp', 'SCR_sum', 'SCR_energy', 'SCR_skewness',
+              'SCR_kurtosis', 'SCR_peaks', 'SCR_rms',
+              'SCR_lineintegral', 'SCR_n_above_mean', 'SCR_n_below_mean', 'SCR_n_sign_changes', 'SCR_iqr',
+              'SCR_iqr_5_95', 'SCR_pct_5', 'SCR_pct_95',
+              'SCR_entropy', 'SCR_perm_entropy', 'SCR_svd_entropy',
+              'SCL_mean', 'SCL_std', 'SCL_min', 'SCL_max', 'SCL_ptp', 'SCL_sum', 'SCL_energy', 'SCL_skewness',
+              'SCL_kurtosis', 'SCL_peaks', 'SCL_rms',
+              'SCL_lineintegral', 'SCL_n_above_mean', 'SCL_n_below_mean', 'SCL_n_sign_changes', 'SCL_iqr',
+              'SCL_iqr_5_95', 'SCL_pct_5', 'SCL_pct_95', 'SCL_entropy', 'SCL_perm_entropy', 'SCL_svd_entropy'
+              ]
 ppg_header = ['PPG_Rate_Mean', 'HRV_MeanNN', 'HRV_SDNN', 'HRV_SDANN1', 'HRV_SDNNI1',
-                  'HRV_SDANN2', 'HRV_SDNNI2', 'HRV_SDANN5', 'HRV_SDNNI5', 'HRV_RMSSD', 'HRV_SDSD', 'HRV_CVNN',
-                  'HRV_CVSD', 'HRV_MedianNN', 'HRV_MadNN', 'HRV_MCVNN', 'HRV_IQRNN', 'HRV_Prc20NN', 'HRV_Prc80NN',
-                  'HRV_pNN50', 'HRV_pNN20', 'HRV_MinNN', 'HRV_MaxNN', 'HRV_HTI', 'HRV_TINN', 'HRV_ULF', 'HRV_VLF',
-                  'HRV_LF', 'HRV_HF', 'HRV_VHF', 'HRV_LFHF', 'HRV_LFn', 'HRV_HFn', 'HRV_LnHF', 'HRV_SD1', 'HRV_SD2',
-                  'HRV_SD1SD2', 'HRV_S', 'HRV_CSI', 'HRV_CVI', 'HRV_CSI_Modified', 'HRV_PIP', 'HRV_IALS', 'HRV_PSS',
-                  'HRV_PAS', 'HRV_GI', 'HRV_SI', 'HRV_AI', 'HRV_PI', 'HRV_C1d', 'HRV_C1a', 'HRV_SD1d', 'HRV_SD1a',
-                  'HRV_C2d', 'HRV_C2a', 'HRV_SD2d', 'HRV_SD2a', 'HRV_Cd', 'HRV_Ca', 'HRV_SDNNd', 'HRV_SDNNa',
-                  'HRV_DFA_alpha1', 'HRV_MFDFA_alpha1_Width', 'HRV_MFDFA_alpha1_Peak', 'HRV_MFDFA_alpha1_Mean',
-                  'HRV_MFDFA_alpha1_Max', 'HRV_MFDFA_alpha1_Delta', 'HRV_MFDFA_alpha1_Asymmetry',
-                  'HRV_MFDFA_alpha1_Fluctuation', 'HRV_MFDFA_alpha1_Increment', 'HRV_ApEn', 'HRV_SampEn', 'HRV_ShanEn',
-                  'HRV_FuzzyEn', 'HRV_MSEn', 'HRV_CMSEn', 'HRV_RCMSEn', 'HRV_CD', 'HRV_HFD', 'HRV_KFD', 'HRV_LZC']
+              'HRV_SDANN2', 'HRV_SDNNI2', 'HRV_SDANN5', 'HRV_SDNNI5', 'HRV_RMSSD', 'HRV_SDSD', 'HRV_CVNN', 'HRV_CVSD',
+              'HRV_MedianNN', 'HRV_MadNN', 'HRV_MCVNN', 'HRV_IQRNN', 'HRV_Prc20NN', 'HRV_Prc80NN', 'HRV_pNN50',
+              'HRV_pNN20', 'HRV_MinNN', 'HRV_MaxNN', 'HRV_HTI', 'HRV_TINN', 'HRV_ULF', 'HRV_VLF', 'HRV_LF', 'HRV_HF',
+              'HRV_VHF', 'HRV_LFHF', 'HRV_LFn', 'HRV_HFn', 'HRV_LnHF', 'HRV_SD1', 'HRV_SD2', 'HRV_SD1SD2', 'HRV_S',
+              'HRV_CSI', 'HRV_CVI', 'HRV_CSI_Modified', 'HRV_PIP', 'HRV_IALS', 'HRV_PSS', 'HRV_PAS', 'HRV_GI', 'HRV_SI',
+              'HRV_AI', 'HRV_PI', 'HRV_C1d', 'HRV_C1a', 'HRV_SD1d', 'HRV_SD1a', 'HRV_C2d', 'HRV_C2a', 'HRV_SD2d',
+              'HRV_SD2a', 'HRV_Cd', 'HRV_Ca', 'HRV_SDNNd', 'HRV_SDNNa', 'HRV_DFA_alpha1', 'HRV_MFDFA_alpha1_Width',
+              'HRV_MFDFA_alpha1_Peak', 'HRV_MFDFA_alpha1_Mean', 'HRV_MFDFA_alpha1_Max', 'HRV_MFDFA_alpha1_Delta',
+              'HRV_MFDFA_alpha1_Asymmetry', 'HRV_MFDFA_alpha1_Fluctuation', 'HRV_MFDFA_alpha1_Increment', 'HRV_ApEn',
+              'HRV_SampEn', 'HRV_ShanEn', 'HRV_FuzzyEn', 'HRV_MSEn', 'HRV_CMSEn', 'HRV_RCMSEn', 'HRV_CD', 'HRV_HFD',
+              'HRV_KFD', 'HRV_LZC']
 
 
 def find_indices(search_list, search_item):
@@ -160,6 +191,36 @@ def __e4_metrics_thread(prim_filepaths, reli_filepaths, prim_export, reli_export
     popup_root.destroy()
 
 
+def interpolate_e4_data(empatica_data):
+    empatica_data[EmpaticaData.BVP], empatica_data[EmpaticaData.BVP_TIMESTAMPS] = \
+        interpolate_data(empatica_data[EmpaticaData.BVP], empatica_data[EmpaticaData.BVP_TIMESTAMPS], 64.0)
+    empatica_data[EmpaticaData.EDA], empatica_data[EmpaticaData.EDA_TIMESTAMPS] = \
+        interpolate_data(empatica_data[EmpaticaData.EDA], empatica_data[EmpaticaData.EDA_TIMESTAMPS], 4.0)
+    empatica_data[EmpaticaData.ACC_X], _ = \
+        interpolate_data(empatica_data[EmpaticaData.ACC_X], empatica_data[EmpaticaData.ACC_TIMESTAMPS], 32.0)
+    empatica_data[EmpaticaData.ACC_Y], _ = \
+        interpolate_data(empatica_data[EmpaticaData.ACC_Y], empatica_data[EmpaticaData.ACC_TIMESTAMPS], 32.0)
+    empatica_data[EmpaticaData.ACC_Z], empatica_data[EmpaticaData.ACC_TIMESTAMPS] = \
+        interpolate_data(empatica_data[EmpaticaData.ACC_Z], empatica_data[EmpaticaData.ACC_TIMESTAMPS], 32.0)
+    empatica_data[EmpaticaData.TMP], empatica_data[EmpaticaData.TMP_TIMESTAMPS] = \
+        interpolate_data(empatica_data[EmpaticaData.TMP], empatica_data[EmpaticaData.TMP_TIMESTAMPS], 4.0)
+
+
+def interpolate_data(empatica_data, timestamps, sampling_rate):
+    data = []
+    for i in range(0, len(empatica_data)):
+        data.append((timestamps[i], empatica_data[i]))
+    ts = traces.TimeSeries(data)
+    interp_data = ts.sample(
+        sampling_period=1.0 / float(sampling_rate),
+        start=timestamps[0],
+        end=timestamps[-1],
+        interpolate='linear',
+    )
+    new_timestamps, new_data = map(list, zip(*interp_data))
+    return new_data, new_timestamps
+
+
 def process_e4_data(file, output_dir, time_period):
     with open(file, 'r') as f:
         json_file = json.load(f)
@@ -173,89 +234,206 @@ def process_e4_data(file, output_dir, time_period):
         dur_header = []
         for d_key in dur:
             dur_header.append(d_key[1])
-        with open(os.path.join(output_dir, f"{pathlib.Path(file).stem}_HR.csv"), 'w',
-                  newline='') as ppg_file:
-            ksf_ppg_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + ppg_header
-            ppg_f = csv.writer(ppg_file)
-            ppg_f.writerow([pathlib.Path(file).parts[-3]])
-            ppg_f.writerow([pathlib.Path(file).parts[-2]])
-            ppg_f.writerow([pathlib.Path(file).stem])
-            ppg_f.writerow([str(datetime.now())])
-            ppg_f.writerow(ksf_ppg_header)
+        ppg_file = open(os.path.join(output_dir, f"{pathlib.Path(file).stem}_HR.csv"), 'w',
+                        newline='')
+        eda_file = open(os.path.join(output_dir, f"{pathlib.Path(file).stem}_EDA.csv"), 'w',
+                        newline='')
+        acc_x_file = open(os.path.join(output_dir, f"{pathlib.Path(file).stem}_ACCX.csv"), 'w',
+                          newline='')
+        acc_y_file = open(os.path.join(output_dir, f"{pathlib.Path(file).stem}_ACCY.csv"), 'w',
+                          newline='')
+        acc_z_file = open(os.path.join(output_dir, f"{pathlib.Path(file).stem}_ACCZ.csv"), 'w',
+                          newline='')
+        tmp_file = open(os.path.join(output_dir, f"{pathlib.Path(file).stem}_TMP.csv"), 'w',
+                        newline='')
+        full_file = open(os.path.join(output_dir, f"{pathlib.Path(file).stem}_ALL.csv"), 'w',
+                         newline='')
 
-            with open(os.path.join(output_dir, f"{pathlib.Path(file).stem}_EDA.csv"), 'w',
-                      newline='') as eda_file:
-                ksf_eda_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + eda_header
-                eda_f = csv.writer(eda_file)
-                eda_f.writerow([pathlib.Path(file).parts[-3]])
-                eda_f.writerow([pathlib.Path(file).parts[-2]])
-                eda_f.writerow([pathlib.Path(file).stem])
-                eda_f.writerow([str(datetime.now())])
-                eda_f.writerow(ksf_eda_header)
+        ksf_ppg_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + ppg_header
+        ppg_f = csv.writer(ppg_file)
+        ppg_f.writerow(ksf_ppg_header)
 
-                event_history = json_file['Event History']
-                if len(e4_data) > 19:
-                    start_time_datetime = convert_timezone(
-                        datetime.strptime(json_file['Session Date'] + json_file['Session Start Time'],
-                                          datetime_format))
-                    start_time = int(EmpaticaE4.get_unix_timestamp(start_time_datetime))
-                    end_time = int(start_time + int(json_file['Session Time']))
-                    e4_data = convert_legacy_e4_data(e4_data)
-                    convert_legacy_events_e4(event_history, start_time)
-                else:
-                    start_time = int(json_file['Session Start Timestamp'])
-                    end_time = int(json_file['Session End Timestamp'])
-                convert_timestamps(e4_data)
-                for i in range(start_time + int(time_period / 2), end_time, time_period):
+        ksf_eda_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + eda_header
+        eda_f = csv.writer(eda_file)
+        eda_f.writerow(ksf_eda_header)
+
+        ksf_accx_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + accx_header
+        acc_x_f = csv.writer(acc_x_file)
+        acc_x_f.writerow(ksf_accx_header)
+        ksf_accy_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + accy_header
+        acc_y_f = csv.writer(acc_y_file)
+        acc_y_f.writerow(ksf_accy_header)
+        ksf_accz_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + accz_header
+        acc_z_f = csv.writer(acc_z_file)
+        acc_z_f.writerow(ksf_accz_header)
+
+        ksf_tmp_header = ['Session Time', 'E4 Time'] + freq_header + dur_header + tmp_header
+        tmp_f = csv.writer(tmp_file)
+        tmp_f.writerow(ksf_tmp_header)
+
+        ksf_full_header = ['Session Time',
+                           'E4 Time'] + freq_header + dur_header + ppg_header + eda_header + accx_header + accy_header + accz_header + tmp_header
+        full_f = csv.writer(full_file)
+        full_f.writerow(ksf_full_header)
+
+        e4_data = json_file['E4 Data']
+        event_history = json_file['Event History']
+        if e4_data:
+            if len(e4_data) > 19:
+                start_time_datetime = convert_timezone(
+                    datetime.strptime(json_file['Session Date'] + json_file['Session Start Time'], datetime_format))
+                start_time = int(EmpaticaE4.get_unix_timestamp(start_time_datetime))
+                end_time = int(start_time + int(json_file['Session Time']))
+                e4_data = convert_legacy_e4_data(e4_data)
+                convert_legacy_events_e4(event_history, start_time)
+            else:
+                start_time = int(json_file['Session Start Timestamp'])
+                end_time = int(json_file['Session End Timestamp'])
+            interpolate_e4_data(e4_data)
+            convert_timestamps(e4_data)
+            malformed_data = 0
+            for i in range(start_time + int(time_period / 2), end_time, time_period):
+                try:
+                    data_time = i - int(time_period / 2)
+                    session_time = data_time - start_time
+                    data_range = (data_time, data_time + time_period)
+                    print(
+                        f"\r\tProcessing {datetime.fromtimestamp(data_range[0]).strftime('%H:%M:%S')} to {datetime.fromtimestamp(data_range[1]).strftime('%H:%M:%S')}",
+                        end='')
+                    timestamp_list = np.arange(*data_range)
+
+                    ppg_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [0]
+                    eda_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [0]
+                    acc_x_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [0]
+                    acc_y_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [0]
+                    acc_z_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [0]
+                    tmp_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [0]
+                    full_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [0]
+
+                    ppg_data_range = find_indices(e4_data[EmpaticaData.BVP_TIMESTAMPS], timestamp_list)
+                    ppg_data = e4_data[EmpaticaData.BVP][ppg_data_range[0]:ppg_data_range[-1]]
+
+                    eda_data_range = find_indices(e4_data[EmpaticaData.EDA_TIMESTAMPS], timestamp_list)
+                    eda_data = e4_data[EmpaticaData.EDA][eda_data_range[0]:eda_data_range[-1]]
+
+                    acc_data_range = find_indices(e4_data[EmpaticaData.ACC_TIMESTAMPS], timestamp_list)
+                    acc_x_data = e4_data[EmpaticaData.ACC_X][acc_data_range[0]:acc_data_range[-1]]
+                    acc_y_data = e4_data[EmpaticaData.ACC_Y][acc_data_range[0]:acc_data_range[-1]]
+                    acc_z_data = e4_data[EmpaticaData.ACC_Z][acc_data_range[0]:acc_data_range[-1]]
+
+                    tmp_data_range = find_indices(e4_data[EmpaticaData.TMP_TIMESTAMPS], timestamp_list)
+                    tmp_data = e4_data[EmpaticaData.TMP][tmp_data_range[0]:tmp_data_range[-1]]
+
+                    for event in event_history:
+                        if type(event[1]) is list:
+                            event_duration = np.arange(int(event[3][0]), int(event[3][1]))
+                            if int(event[3][0]) in timestamp_list or int(event[3][1]) in timestamp_list:
+                                for data in [ppg_csv_data, eda_csv_data, acc_x_csv_data, acc_y_csv_data, acc_z_csv_data,
+                                             tmp_csv_data, full_csv_data]:
+                                    data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
+                            if i in event_duration:
+                                for data in [ppg_csv_data, eda_csv_data, acc_x_csv_data, acc_y_csv_data, acc_z_csv_data,
+                                             tmp_csv_data, full_csv_data]:
+                                    data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
+                        else:
+                            if int(event[3]) in timestamp_list:
+                                for data in [ppg_csv_data, eda_csv_data, acc_x_csv_data, acc_y_csv_data, acc_z_csv_data,
+                                             tmp_csv_data, full_csv_data]:
+                                    data[freq_header.index(event[0]) + 2] = 1
                     try:
-                        data_time = i - int(time_period / 2)
-                        session_time = data_time - start_time
-                        data_range = (data_time, data_time + time_period)
-                        timestamp_list = np.arange(*data_range)
-
-                        ppg_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [
-                            0]
-                        eda_csv_data = [session_time, data_time] + len(freq_header) * [0] + len(dur_header) * [
-                            0]
-
-                        ppg_data_range = find_indices(e4_data[EmpaticaData.BVP_TIMESTAMPS], timestamp_list)
-                        ppg_data = e4_data[EmpaticaData.BVP][ppg_data_range[0]:ppg_data_range[-1]]
-
-                        eda_data_range = find_indices(e4_data[EmpaticaData.EDA_TIMESTAMPS], timestamp_list)
-                        eda_data = e4_data[EmpaticaData.EDA][eda_data_range[0]:eda_data_range[-1]]
-
-                        for event in event_history:
-                            if type(event[1]) is list:
-                                event_duration = np.arange(int(event[3][0]), int(event[3][1]))
-                                if int(event[3][0]) in timestamp_list or int(event[3][1]) in timestamp_list:
-                                    ppg_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                                    eda_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                                if i in event_duration:
-                                    ppg_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                                    eda_csv_data[dur_header.index(event[0]) + 2 + len(freq_header)] = 1
-                            else:
-                                if int(event[3]) in timestamp_list:
-                                    ppg_csv_data[freq_header.index(event[0]) + 2] = 1
-                                    eda_csv_data[freq_header.index(event[0]) + 2] = 1
-                        try:
-                            ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
-                            ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64)
-                            ppg_csv_data.extend(ppg_results.values.ravel().tolist())
-                        except Exception as e:
-                            print(f"INFO: Could not process PPG signal in {file}")
-                        try:
-                            eda_signals, _ = eda_custom_process(eda_data, sampling_rate=4)
-                            eda_results = nk.eda_analyze(eda_signals, method='interval-related')
-                            eda_csv_data.extend(eda_results.values.ravel().tolist())
-                        except Exception as e:
-                            print(f"INFO: Could not process EDA signal in {file}")
-                    except KeyError:
-                        print(f"No E4 data found in {file}")
+                        ppg_signals, _ = nk.ppg_process(ppg_data, sampling_rate=64)
+                        ppg_results = nk.ppg_analyze(ppg_signals, sampling_rate=64, analyses=['time'])
+                        cleaned_ppg_results = np.array(ppg_results.values.ravel().tolist())
+                        cleaned_ppg_results[np.where(np.isnan(cleaned_ppg_results))[0]] = 0
+                        cleaned_ppg_results[np.where(np.isinf(cleaned_ppg_results))[0]] = 0
+                        cleaned_ppg_results = list(cleaned_ppg_results)
+                        ppg_csv_data.extend(cleaned_ppg_results)
+                        full_csv_data.extend(cleaned_ppg_results)
                     except Exception as e:
-                        print(f"Something went wrong with {file}: {str(e)}")
-                    finally:
-                        eda_f.writerow(eda_csv_data)
-                        ppg_f.writerow(ppg_csv_data)
+                        malformed_data += 1
+                        ppg_csv_data.extend([0] * len(ppg_header))
+                        full_csv_data.extend([0] * len(ppg_header))
+                    try:
+                        cleaned_eda_results = []
+                        r, t = __cvx_eda(eda_data, 1 / 4)
+                        cleaned_eda_results.extend(float(v) for v in get_stats(eda_data).values())
+                        cleaned_eda_results.extend(float(v) for v in get_stats(np.ravel(r)).values())
+                        cleaned_eda_results.extend(float(v) for v in get_stats(np.ravel(t)).values())
+                        cleaned_eda_results = np.array(cleaned_eda_results)
+                        cleaned_eda_results[np.where(np.isnan(cleaned_eda_results))[0]] = 0
+                        cleaned_eda_results[np.where(np.isinf(cleaned_eda_results))[0]] = 0
+                        cleaned_eda_results = list(cleaned_eda_results)
+                        eda_csv_data.extend(cleaned_eda_results)
+                        full_csv_data.extend(cleaned_eda_results)
+                    except Exception as e:
+                        malformed_data += 1
+                        eda_csv_data.extend([0] * len(eda_header))
+                        full_csv_data.extend([0] * len(eda_header))
+                    try:
+                        acc_x_results = [float(v) for v in get_stats(acc_x_data).values()]
+                        acc_x_results = np.array(acc_x_results)
+                        acc_x_results[np.where(np.isnan(acc_x_results))[0]] = 0
+                        acc_x_results[np.where(np.isinf(acc_x_results))[0]] = 0
+                        acc_x_results = list(acc_x_results)
+                        acc_x_csv_data.extend(acc_x_results)
+                        full_csv_data.extend(acc_x_results)
+
+                        acc_y_results = [float(v) for v in get_stats(acc_y_data).values()]
+                        acc_y_results = np.array(acc_y_results)
+                        acc_y_results[np.where(np.isnan(acc_y_results))[0]] = 0
+                        acc_y_results[np.where(np.isinf(acc_y_results))[0]] = 0
+                        acc_y_results = list(acc_y_results)
+                        acc_y_csv_data.extend(acc_y_results)
+                        full_csv_data.extend(acc_y_results)
+
+                        acc_z_results = [float(v) for v in get_stats(acc_z_data).values()]
+                        acc_z_results = np.array(acc_z_results)
+                        acc_z_results[np.where(np.isnan(acc_z_results))[0]] = 0
+                        acc_z_results[np.where(np.isinf(acc_z_results))[0]] = 0
+                        acc_z_results = list(acc_z_results)
+                        acc_z_csv_data.extend(acc_z_results)
+                        full_csv_data.extend(acc_z_results)
+                    except Exception as e:
+                        malformed_data += 1
+                        acc_x_csv_data.extend([0] * len(accx_header))
+                        full_csv_data.extend([0] * len(accx_header))
+                        acc_y_csv_data.extend([0] * len(accy_header))
+                        full_csv_data.extend([0] * len(accy_header))
+                        acc_z_csv_data.extend([0] * len(accz_header))
+                        full_csv_data.extend([0] * len(accz_header))
+                    try:
+                        tmp_results = [float(v) for v in get_stats(tmp_data).values()]
+                        tmp_results = np.array(tmp_results)
+                        tmp_results[np.where(np.isnan(tmp_results))[0]] = 0
+                        tmp_results[np.where(np.isinf(tmp_results))[0]] = 0
+                        tmp_results = list(tmp_results)
+                        tmp_csv_data.extend(tmp_results)
+                        full_csv_data.extend(tmp_results)
+                    except Exception as e:
+                        malformed_data += 1
+                        tmp_csv_data.extend([0] * len(tmp_header))
+                        full_csv_data.extend([0] * len(tmp_header))
+                except KeyError:
+                    print(f"\tNo E4 data found in {file}")
+                except Exception as e:
+                    print(f"\tSomething went wrong with {file}: {str(e)}\n{str(e)}")
+                finally:
+                    eda_f.writerow(eda_csv_data)
+                    ppg_f.writerow(ppg_csv_data)
+                    acc_x_f.writerow(acc_x_csv_data)
+                    acc_y_f.writerow(acc_y_csv_data)
+                    acc_z_f.writerow(acc_z_csv_data)
+                    tmp_f.writerow(tmp_csv_data)
+                    full_f.writerow(full_csv_data)
+            print("\n\tCompleted processing")
+        else:
+            print("\tNo E4 data in this session, continuing...")
+        eda_file.close()
+        ppg_file.close()
+        acc_x_file.close()
+        acc_y_file.close()
+        acc_z_file.close()
+        tmp_file.close()
         return True
     else:
         return False
