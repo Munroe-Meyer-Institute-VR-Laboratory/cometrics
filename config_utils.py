@@ -149,3 +149,12 @@ class ConfigUtils:
         if self.config:
             self.config['woodway-b-sn'] = woodway_sn
             self.save_config()
+
+    def get_auto_export(self):
+        if self.config:
+            return bool(self.config['auto-export'])
+
+    def set_auto_export(self, export_option):
+        if self.config:
+            self.config['auto-export'] = export_option
+            self.save_config()
