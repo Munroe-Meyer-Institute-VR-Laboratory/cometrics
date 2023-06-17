@@ -389,6 +389,7 @@ class ConfigPopup:
         self.update_review()
         self.update_clickmode()
         self.update_auto_export()
+        self.update_protocol_beep()
         self.popup_root.destroy()
 
     def update_fps(self):
