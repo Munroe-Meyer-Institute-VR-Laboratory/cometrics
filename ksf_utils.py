@@ -328,6 +328,22 @@ def export_columnwise_csv(prim_dir, reli_dir, output_dir):
     convert_json_csv(reli_sessions, reli_export_files, reli_export)
 
 
+def get_single_session(session):
+    # Get the key cells in the spreadsheet
+    freq_headers, dur_headers = session["KSF"]["Frequency"], session["KSF"]["Duration"]
+    key_freq, key_dur = get_keystroke_info(session)
+
+    freq_keys, dur_keys = [], []
+    # Populate frequency and duration keys
+    for freq in key_freq:
+        freq_keys.append(key_freq[freq])
+    for dur in key_dur:
+        dur_keys.append(key_dur[dur])
+    freq_headers = [h[1] for h in freq_headers]
+    dur_headers = [h[1] for h in dur_headers]
+    return freq_headers, dur_headers, freq_keys, dur_keys
+
+
 def convert_json_csv(json_files, existing_files, output_dir):
     # Get the current time to put into export files
     date = datetime.datetime.today().strftime("%B %d, %Y")
@@ -392,6 +408,11 @@ def convert_json_csv(json_files, existing_files, output_dir):
                             row.append(data)
                             row.append('None')
                 writer.writerow(row)
+            freq_headers, dur_headers, freq_keys, dur_keys = get_single_session(session)
+            writer.writerow([])
+            writer.writerow([])
+            writer.writerow(freq_headers + dur_headers)
+            writer.writerow(freq_keys + dur_keys)
 
 
 def compare_cells(a, b):
@@ -561,7 +582,7 @@ def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
     # We expect the
     row, col, sess = 5, tracker_headers['Session Data Start'], 1
     for session in sessions:
-        key_freq, key_dur = get_keystroke_info(ksf_file, session)
+        key_freq, key_dur = get_keystroke_info(session)
         data_wb[tracker_headers['Session'][1] + str(row)].value = session['Session Number']
         data_wb[tracker_headers['Cond.'][1] + str(row)].value = session['Condition Name']
         data_wb[tracker_headers['Date'][1] + str(row)].value = session['Session Date']
@@ -624,13 +645,12 @@ def get_keystroke_window(freq_bindings, dur_bindings, session_file, window_size)
     return freq_windows, dur_windows
 
 
-def get_keystroke_info(key_file, session_file):
+def get_keystroke_info(session_file):
     freq_bindings = {}
     dur_bindings = {}
     key_freq = {}
     key_dur = {}
-    with open(key_file) as f:
-        keystroke_json = json.load(f)
+    keystroke_json = session_file["KSF"]
     for key in keystroke_json:
         if key == "Frequency":
             for bindings in keystroke_json[key]:
