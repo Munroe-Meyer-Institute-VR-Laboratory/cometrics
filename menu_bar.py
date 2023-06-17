@@ -109,5 +109,6 @@ class MenuBar(Frame):
     def get_session_acc(self):
         AccuracyPopup(self.caller.root, self.caller.keystroke_file, self.caller)
 
-    def load_sessions(self):
-        populate_spreadsheet(self.caller.patient_name, self.caller.tracker_file, self.caller.prim_dir, self.caller.graph_dir)
+    def load_sessions(self, start_file=True):
+        populate_spreadsheet(self.caller.patient_name, self.caller.tracker_file,
+                             self.caller.prim_dir, self.caller.graph_dir, start_file=start_file)

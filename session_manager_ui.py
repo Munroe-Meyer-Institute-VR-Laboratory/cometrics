@@ -366,7 +366,7 @@ class SessionManagerWindow:
             os.startfile(pathlib.Path(output_session_file).parent)
         if self.config.get_auto_export():
             self.menu.export_csv()
-            self.menu.load_sessions()
+            self.menu.load_sessions(start_file=False)
 
     def start_session(self):
         response = self.pdf.check_session_fields()

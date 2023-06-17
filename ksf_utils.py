@@ -560,7 +560,7 @@ def increment_char(character, i):
     return chr(ord(character) + i)
 
 
-def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
+def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir, start_file=True):
     # Load the tracker spreadsheet
     wb = openpyxl.load_workbook(ksf_excel)
     ksf_file = ksf_excel[:-5] + ".json"
@@ -602,7 +602,8 @@ def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
     output_file = path.join(output_dir, f"{pathlib.Path(ksf_file).stem}_Charted.xlsx")
     try:
         wb.save(output_file)
-        os.startfile(output_file)
+        if start_file:
+            os.startfile(output_file)
     except PermissionError as e:
         messagebox.showerror("Error", "Permission denied to save charted tracker, make sure your have permissions to "
                                       f"save in the output directory or that the spreadsheet is closed!\n{output_file}")
