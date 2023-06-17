@@ -1,5 +1,4 @@
 import _tkinter
-import gc
 import glob
 import json
 import os
@@ -21,6 +20,8 @@ from matplotlib.figure import Figure
 # Custom library imports
 from ttkwidgets import TickScale
 from pywoodway.treadmill import SplitBelt, find_treadmills
+
+from session_time_fields import SessionTimeFields
 from tkinter_utils import build_treeview, clear_treeview, AddWoodwayProtocolStep, AddBleProtocolStep, \
     CalibrateVibrotactors, CalibrateWoodway, select_focus, scroll_to, EditEventPopup
 from ui_params import treeview_bind_tag_dict, treeview_tags, treeview_bind_tags, crossmark, checkmark
@@ -95,7 +96,8 @@ class OutputViewPanel:
                                     height=self.height - self.button_size[1], width=self.width,
                                     field_font=field_font, header_font=header_font, button_size=button_size,
                                     session_dir=session_dir, ble_thresh=thresholds[0:2],
-                                    ble_button=ble_output_button)
+                                    ble_button=ble_output_button,
+                                    config=config)
             ble_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(ble_frame)
         else:
@@ -538,6 +540,8 @@ class ViewWoodway:
         self.__update_woodway()
         select_focus(self.prot_treeview, self.prot_treeview_parents[self.selected_step])
         scroll_to(self.prot_treeview, self.selected_step)
+        if self.config.get_protocol_beep():
+            SessionTimeFields.beep()
 
     def __update_woodway(self):
         self.__write_incline(self.woodway_incline)
@@ -737,8 +741,9 @@ class ViewWoodway:
 
 class ViewBLE:
     def __init__(self, parent, height, width, field_font, header_font, button_size,
-                 session_dir, ble_button, ble_thresh=None):
+                 session_dir, ble_button, config, ble_thresh=None):
         self.root = parent
+        self.config = config
         self.tab_button = ble_button
         self.session_dir = session_dir
         self.ble_instance = VibrotactorArray.get_ble_instance()
@@ -1004,6 +1009,8 @@ class ViewBLE:
         self.__update_ble()
         select_focus(self.prot_treeview, self.prot_treeview_parents[self.selected_step])
         scroll_to(self.prot_treeview, self.selected_step)
+        if self.config.get_protocol_beep():
+            SessionTimeFields.beep()
 
     def __update_ble(self):
         for slider in self.slider_objects:

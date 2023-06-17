@@ -387,7 +387,8 @@ def convert_json_csv(json_files, existing_files, output_dir):
             for key in session_data:
                 writer.writerow([key, session[key]])
             # Write out the event history
-            writer.writerow(['Tag', 'Time Onset', 'Time Offset', 'Frame Onset', 'Frame Offset', 'E4 Window Onset', 'E4 Window Offset', 'Audio Onset', 'Audio Offset'])
+            writer.writerow(['Tag', 'Time Onset', 'Time Offset', 'Frame Onset', 'Frame Offset', 'E4 Window Onset',
+                             'E4 Window Offset', 'Audio Onset', 'Audio Offset'])
             for event in event_history:
                 row = [event[0]]
                 for data in event[1:]:
@@ -478,7 +479,8 @@ def get_key_cells(data_wb):
                     # Check if row_value is not greater than dur_end_value
                     # Check if row_value is not less than freq_start_value
                     if int(row_value) == 3:
-                        if compare_cells(col_value, dur_end_value) != 1 and compare_cells(col_value, freq_start_value) != -1:
+                        if compare_cells(col_value, dur_end_value) != 1 and compare_cells(col_value,
+                                                                                          freq_start_value) != -1:
                             try:
                                 # If it's a str check it
                                 if type(row[i].value) is str and len(row[i].value) > 1:
@@ -499,12 +501,14 @@ def get_key_cells(data_wb):
                                     if compare_cells(col_value, tracker_headers['Duration Start']) == -1:
                                         freq_headers[cell_value] = [row[i].coordinate,
                                                                     ''.join(
-                                                                        [i for i in row[i].coordinate if not i.isdigit()]),
+                                                                        [i for i in row[i].coordinate if
+                                                                         not i.isdigit()]),
                                                                     str(row[i].value)]
                                     else:
                                         dur_headers[cell_value] = [row[i].coordinate,
                                                                    ''.join(
-                                                                       [i for i in row[i].coordinate if not i.isdigit()]),
+                                                                       [i for i in row[i].coordinate if
+                                                                        not i.isdigit()]),
                                                                    str(row[i].value)]
                             except TypeError as e:
                                 print(f"ERROR: Processing KSF error\n{str(e)}")
@@ -728,6 +732,7 @@ def open_keystroke_file(key_file):
                 for binding in keystroke_json[key]:
                     conditions.append(binding)
     return freq_bindings, dur_bindings, conditions
+
 
 def create_new_ksf_revision(original_ksf, keystrokes):
     ksf_wb = openpyxl.load_workbook(original_ksf)

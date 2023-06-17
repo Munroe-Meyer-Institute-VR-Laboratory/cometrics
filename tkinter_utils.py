@@ -321,7 +321,7 @@ class ConfigPopup:
         self.config = config
         self.popup_root = popup_root = tkinter.Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x410")
+        popup_root.geometry("300x450")
         popup_root.title("Configuration Settings")
         fps_tag = tkinter.Label(popup_root, text="FPS", bg='white', font=('Purisa', 12))
         fps_tag.place(x=10, y=10)
@@ -367,14 +367,19 @@ class ConfigPopup:
 
         self.auto_export_var = tkinter.BooleanVar(popup_root, value=self.config.get_auto_export())
         auto_export_checkbutton = tkinter.Checkbutton(popup_root, text="Auto Export Enabled", bg='white',
-                                                 variable=self.auto_export_var, font=('Purisa', 12))
+                                                      variable=self.auto_export_var, font=('Purisa', 12))
         auto_export_checkbutton.place(x=10, y=280)
+
+        self.protocol_var = tkinter.BooleanVar(popup_root, value=self.config.get_protocol_beep())
+        prot_checkbutton = tkinter.Checkbutton(popup_root, text="Protocol Beep Enabled", bg='white',
+                                               variable=self.protocol_var, font=('Purisa', 12))
+        prot_checkbutton.place(x=10, y=310)
 
         clear_projects = tkinter.Button(popup_root, text="Clear Recent Projects",
                                         font=('Purisa', 12), command=self.clear_projects)
-        clear_projects.place(x=10, y=320)
+        clear_projects.place(x=10, y=350)
         ok_button = tkinter.Button(popup_root, text="OK", command=self.on_closing, font=('Purisa', 12))
-        ok_button.place(x=150, y=360, anchor=N)
+        ok_button.place(x=150, y=400, anchor=N)
 
     def on_closing(self):
         self.update_fps()
@@ -409,6 +414,9 @@ class ConfigPopup:
 
     def clear_projects(self):
         self.config.set_recent_projects([])
+
+    def update_protocol_beep(self):
+        self.config.set_protocol_beep(self.protocol_var.get())
 
 
 class ProjectPopup:
@@ -510,7 +518,8 @@ class SurveyPopup:
         self.survey_link.bind("<Button-1>", lambda e: webbrowser.open_new_tab(survey))
         self.survey_link.bind("<Enter>", self.underline_text)
         self.survey_link.bind("<Leave>", self.remove_underline)
-        self.last_text = tkinter.Label(popup_root, bg='white', bd=2, text="This popup will not show up again, thank you!")
+        self.last_text = tkinter.Label(popup_root, bg='white', bd=2,
+                                       text="This popup will not show up again, thank you!")
         self.last_text.pack()
 
         # Create a Button Widget in the Toplevel Window
@@ -1054,10 +1063,10 @@ class GitHubIssue:
         dropdown_box.option_add('*TCombobox*Listbox.font', field_font)
         dropdown_box.place(x=10, y=40)
 
-        self.default_desc_text = "Enter a description of the problem you encountered.\n"\
-                                 "Please be descriptive!\n"\
-                                 "If possible, include steps to recreate the problem and contact "\
-                                 "information if you would like the developer to reach out for more "\
+        self.default_desc_text = "Enter a description of the problem you encountered.\n" \
+                                 "Please be descriptive!\n" \
+                                 "If possible, include steps to recreate the problem and contact " \
+                                 "information if you would like the developer to reach out for more " \
                                  "information and updates."
         self.desc_var = tkinter.StringVar(popup_root)
         self.description_entry = tkinter.Text(popup_root, bg="white", fg='grey',
