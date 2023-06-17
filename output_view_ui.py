@@ -1488,6 +1488,16 @@ class ViewVideo:
                 messagebox.showwarning("Warning", "Pause video first to clear a clip!")
                 print("WARNING: Pause video first to clear a clip")
 
+    def increment_frame(self):
+        if self.player:
+            if not self.player.playing:
+                self.player.load_frame(self.player.current_frame + 1)
+
+    def decrement_frame(self):
+        if self.player:
+            if not self.player.playing:
+                self.player.load_frame(self.player.current_frame - 1)
+
     def double_speed_on(self):
         if self.player:
             self.player.frame_duration = float(1 / (self.player.fps * 2))
