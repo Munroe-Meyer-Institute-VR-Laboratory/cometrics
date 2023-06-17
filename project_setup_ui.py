@@ -11,7 +11,7 @@ from tkinter.ttk import Combobox
 from ksf_utils import import_ksf, create_new_ksf_revision, compare_keystrokes
 from patient_data_fields import PatientContainer
 from tkinter_utils import center, get_display_size, get_treeview_style, build_treeview, EntryPopup, select_focus, \
-    NewKeyPopup, clear_treeview, get_slider_style, ProjectPopup, scroll_to
+    NewKeyPopup, clear_treeview, get_slider_style, ProjectPopup, scroll_to, SurveyPopup
 from ui_params import project_treeview_params as ptp, treeview_tags, window_ratio, large_field_font, medium_field_font, \
     small_field_font, large_treeview_font, \
     medium_treeview_font, small_treeview_font, large_treeview_rowheight, medium_treeview_rowheight, \
@@ -208,6 +208,11 @@ class ProjectSetupWindow:
                                            "Would you like to open the user guide for cometrics?")
             if response:
                 MenuBar.open_user_guide()
+
+        self.config.increment_use_count()
+        if self.config.get_use_count() == 10:
+            SurveyPopup(self.main_root, "Cometrics Survey")
+
         self.main_root.mainloop()
 
     # region External Data Entry

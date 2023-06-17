@@ -6,6 +6,7 @@ import threading
 import time
 import tkinter
 import traceback
+import webbrowser
 from tkinter import TOP, W, N, NW, messagebox, END, ttk, filedialog, INSERT
 from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview
@@ -15,6 +16,7 @@ from github import Github
 from logger_util import parse_log
 from tkvideoutils import ImageLabel
 from ui_params import treeview_default_tag_dict, cometrics_ver_root
+from pat import survey
 
 
 def center(toplevel, y_offset=-20):
@@ -480,6 +482,54 @@ class ProjectPopup:
     def close_win(self):
         self.caller.popup_return((self.entry.get(), self.dir_entry.get()), self.popup_call)
         self.popup_root.destroy()
+
+
+class SurveyPopup:
+    def __init__(self, root, name):
+        self.entry = None
+        self.popup_root = None
+        self.name = name
+        self.popup_entry(root)
+
+    def popup_entry(self, root):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("450x125")
+        popup_root.title(self.name)
+
+        # Create an Entry Widget in the Toplevel window
+        self.text = tkinter.Label(popup_root, bg='white', bd=2, text="Thank you for using cometrics!")
+        self.text.pack()
+        self.survey_text = tkinter.Label(popup_root, bg='white', bd=2,
+                                         text="To improve this software, please fill out this survey by clicking the link below,")
+        self.survey_text.pack()
+        self.survey_link = tkinter.Label(popup_root, text="Cometrics Survey", font=('TkDefaultFont', 9),
+                                         bg='white', fg="blue", cursor="hand2")
+        self.survey_link.pack()
+        self.survey_link.bind("<Button-1>", lambda e: webbrowser.open_new_tab(survey))
+        self.survey_link.bind("<Enter>", self.underline_text)
+        self.survey_link.bind("<Leave>", self.remove_underline)
+        self.last_text = tkinter.Label(popup_root, bg='white', bd=2, text="This popup will not show up again, thank you!")
+        self.last_text.pack()
+
+        # Create a Button Widget in the Toplevel Window
+        button = tkinter.Button(popup_root, text="Close", command=self.close_win)
+        button.pack(pady=5, side=TOP)
+        center(popup_root)
+        popup_root.focus_force()
+
+    def underline_text(self, enter):
+        self.survey_link["font"] = ('TkDefaultFont', 9, 'underline')
+
+    def remove_underline(self, enter):
+        self.survey_link["font"] = ('TkDefaultFont', 9)
+
+    def close_win(self):
+        try:
+            self.popup_root.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Exception encountered:\n{str(e)}\n{traceback.print_exc()}")
 
 
 class EntryPopup:

@@ -158,3 +158,12 @@ class ConfigUtils:
         if self.config:
             self.config['auto-export'] = export_option
             self.save_config()
+
+    def get_use_count(self):
+        if self.config:
+            return int(self.config['use-count'])
+
+    def increment_use_count(self):
+        if self.config:
+            self.config['use-count'] = int(self.config['use-count']) + 1
+            self.save_config()
