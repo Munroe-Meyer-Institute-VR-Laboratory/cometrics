@@ -97,7 +97,7 @@ class OutputViewPanel:
                                     field_font=field_font, header_font=header_font, button_size=button_size,
                                     session_dir=session_dir, ble_thresh=thresholds[0:2],
                                     ble_button=ble_output_button,
-                                    config=config)
+                                    config=config, caller=caller)
             ble_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(ble_frame)
         else:
@@ -115,7 +115,7 @@ class OutputViewPanel:
                                             height=self.height - self.button_size[1], width=self.width,
                                             field_font=field_font, header_font=header_font, button_size=button_size,
                                             config=config, session_dir=session_dir, woodway_thresh=thresholds[2],
-                                            woodway_button=woodway_output_button)
+                                            woodway_button=woodway_output_button, caller=caller)
             woodway_frame = Frame(parent, width=width, height=height)
             self.view_frames.append(woodway_frame)
         else:
@@ -309,8 +309,9 @@ class OutputViewPanel:
 
 class ViewWoodway:
     def __init__(self, parent, height, width, field_font, header_font, button_size, config, session_dir,
-                 woodway_button, woodway_thresh=None):
+                 woodway_button, caller, woodway_thresh=None):
         self.woodway = None
+        self.caller = caller
         self.tab_button = woodway_button
         self.session_dir = session_dir
         self.config = config
@@ -343,7 +344,9 @@ class ViewWoodway:
         prot_heading_dict = {"#0": ["Duration", 'w', 20, YES, 'w']}
         prot_column_dict = {"1": ["LS", 'c', 1, YES, 'c'],
                             "2": ["RS", 'c', 1, YES, 'c'],
-                            "3": ["Incline", 'c', 1, YES, 'c']}
+                            "3": ["Incline", 'c', 1, YES, 'c'],
+                            "4": ["F", 'c', 50, NO, 'c'],
+                            "5": ["D", 'c', 50, NO, 'c']}
         treeview_offset = int(width * 0.03)
 
         # TODO: When the session is paused the woodway and vibrotactors should stop, equalize speeds first??
@@ -542,6 +545,10 @@ class ViewWoodway:
         scroll_to(self.prot_treeview, self.selected_step)
         if self.config.get_protocol_beep():
             SessionTimeFields.beep()
+        if self.selected_command[4] != '':
+            self.caller.handle_key_press(self.selected_command[4])
+        if self.selected_command[5] != '':
+            self.caller.handle_key_press(self.selected_command[5])
 
     def __update_woodway(self):
         self.__write_incline(self.woodway_incline)
@@ -580,8 +587,17 @@ class ViewWoodway:
                 self.prot_treeview_parents.append(
                     self.prot_treeview.insert("", 'end', str(i + 1), text=str(self.protocol_steps[i][0]),
                                               values=(self.protocol_steps[i][1], self.protocol_steps[i][2],
-                                                      self.protocol_steps[i][3]),
+                                                      self.protocol_steps[i][3], self.protocol_steps[i][4],
+                                                      self.protocol_steps[i][5]),
                                               tags=(treeview_tags[(i + 1) % 2])))
+
+    def __heal_legacy_protocol(self):
+        for step in self.protocol_steps:
+            if len(step) == 4:
+                step.extend(['', ''])
+        with open(self.prot_file, 'w') as f:
+            x = {"Steps": self.protocol_steps}
+            json.dump(x, f)
 
     def __load_protocol_from_file(self, selected_file=None):
         try:
@@ -590,6 +606,8 @@ class ViewWoodway:
                 self.prot_file = selected_file
                 with open(self.prot_file, 'r') as f:
                     self.protocol_steps = json.load(f)['Steps']
+                if len(self.protocol_steps[0]) == 4:
+                    self.__heal_legacy_protocol()
                 self.repopulate_treeview()
             else:
                 selected_file = filedialog.askopenfilename(filetypes=(("JSON Files", "*.json"),))
@@ -667,7 +685,8 @@ class ViewWoodway:
     def __edit_protocol_step(self, event):
         if self.selected_step:
             step = self.protocol_steps[int(self.selected_step) - 1]
-            AddWoodwayProtocolStep(self, self.root, edit=True, dur=step[0], ls=step[1], rs=step[2], incl=step[3])
+            AddWoodwayProtocolStep(self, self.root, edit=True, dur=step[0], ls=step[1], rs=step[2], incl=step[3],
+                                   freq_key=step[4], dur_key=step[5])
 
     def __add_protocol_step(self):
         AddWoodwayProtocolStep(self, self.root)
@@ -741,8 +760,9 @@ class ViewWoodway:
 
 class ViewBLE:
     def __init__(self, parent, height, width, field_font, header_font, button_size,
-                 session_dir, ble_button, config, ble_thresh=None):
+                 session_dir, ble_button, config, caller, ble_thresh=None):
         self.root = parent
+        self.caller = caller
         self.config = config
         self.tab_button = ble_button
         self.session_dir = session_dir
@@ -778,7 +798,9 @@ class ViewBLE:
         self.prot_treeview_parents = []
         prot_heading_dict = {"#0": ["Duration", 'w', 20, YES, 'w']}
         prot_column_dict = {"1": ["Left", 'c', 1, YES, 'c'],
-                            "2": ["Right", 'c', 1, YES, 'c']}
+                            "2": ["Right", 'c', 1, YES, 'c'],
+                            "3": ["F", 'c', 50, NO, 'c'],
+                            "4": ["D", 'c', 50, NO, 'c']}
         treeview_offset = int(width * 0.03)
         self.prot_treeview, self.prot_filescroll = build_treeview(parent, x=treeview_offset, y=40,
                                                                   height=height - element_height_adj - 40,
@@ -972,7 +994,7 @@ class ViewBLE:
         if self.selected_step:
             step = self.protocol_steps[int(self.selected_step) - 1]
             AddBleProtocolStep(self, self.root, edit=True, dur=step[0],
-                               motor_1=step[1], motor_2=step[2])
+                               motor_1=step[1], motor_2=step[2], freq_key=step[3], dur_key=step[4])
 
     def next_protocol_step(self, current_time):
         if self.selected_step >= len(self.protocol_steps):
@@ -1011,6 +1033,10 @@ class ViewBLE:
         scroll_to(self.prot_treeview, self.selected_step)
         if self.config.get_protocol_beep():
             SessionTimeFields.beep()
+        if self.selected_command[3] != '':
+            self.caller.handle_key_press(self.selected_command[3])
+        if self.selected_command[4] != '':
+            self.caller.handle_key_press(self.selected_command[4])
 
     def __update_ble(self):
         for slider in self.slider_objects:
@@ -1028,8 +1054,17 @@ class ViewBLE:
             for i in range(0, len(self.protocol_steps)):
                 self.prot_treeview_parents.append(
                     self.prot_treeview.insert("", 'end', str(i + 1), text=str(self.protocol_steps[i][0]),
-                                              values=(self.protocol_steps[i][1], self.protocol_steps[i][2]),
+                                              values=(self.protocol_steps[i][1], self.protocol_steps[i][2],
+                                                      self.protocol_steps[i][3], self.protocol_steps[i][4]),
                                               tags=(treeview_tags[(i + 1) % 2])))
+
+    def __heal_legacy_protocol(self):
+        for step in self.protocol_steps:
+            if len(step) == 3:
+                step.extend(['', ''])
+        with open(self.prot_file, 'w') as f:
+            x = {"Steps": self.protocol_steps}
+            json.dump(x, f)
 
     def __load_protocol_from_file(self, selected_file=None):
         try:
@@ -1038,6 +1073,8 @@ class ViewBLE:
                 self.prot_file = selected_file
                 with open(self.prot_file, 'r') as f:
                     self.protocol_steps = json.load(f)['Steps']
+                if len(self.protocol_steps[0]) == 3:
+                    self.__heal_legacy_protocol()
                 self.repopulate_treeview()
             else:
                 selected_file = filedialog.askopenfilename(filetypes=(("JSON Files", "*.json"),))

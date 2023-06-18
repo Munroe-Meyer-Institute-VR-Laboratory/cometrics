@@ -630,13 +630,14 @@ def set_entry_text(widget: tkinter.Entry, text):
 
 
 class AddWoodwayProtocolStep:
-    def __init__(self, top, root, edit=False, dur=None, rs=None, ls=None, incl=None):
+    def __init__(self, top, root, edit=False, dur=None, rs=None, ls=None, incl=None, freq_key=None, dur_key=None):
         assert top.popup_return
         self.caller = top
         self.entry = None
         self.popup_root = None
         self.name = "Add Woodway Step"
         self.dur, self.rs, self.ls, self.incl = dur, rs, ls, incl
+        self.freq_key, self.dur_key = freq_key, dur_key
         self.edit = edit
         self.popup_entry(root)
 
@@ -644,7 +645,7 @@ class AddWoodwayProtocolStep:
         # Create a Toplevel window
         self.popup_root = popup_root = tkinter.Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x250")
+        popup_root.geometry("300x350")
         popup_root.title(self.name)
 
         # Create an Entry Widget in the Toplevel window
@@ -673,6 +674,27 @@ class AddWoodwayProtocolStep:
         if self.incl is not None:
             set_entry_text(self.incline_entry, self.incl)
 
+        field_font = ('Purisa', 12)
+        freq_label = tkinter.Label(popup_root, font=field_font, text="Frequency Key Association", bg='white')
+        freq_label.pack()
+        self.freq_var = tkinter.StringVar(popup_root, value=self.freq_key)
+        freq_box = Combobox(popup_root, textvariable=self.freq_var, font=field_font)
+        freq_box['values'] = ['None'] + self.caller.caller.ovu.key_view.bindings
+        freq_box['state'] = 'readonly'
+        freq_box.config(font=field_font)
+        freq_box.pack()
+        freq_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        dur_label = tkinter.Label(popup_root, font=field_font, text="Duration Key Association", bg='white')
+        dur_label.pack()
+        self.dur_var = tkinter.StringVar(popup_root, self.dur_key)
+        dur_box = Combobox(popup_root, textvariable=self.dur_var, font=field_font)
+        dur_box['values'] = ['None'] + self.caller.caller.ovu.key_view.dur_bindings
+        dur_box['state'] = 'readonly'
+        dur_box.config(font=field_font)
+        dur_box.pack()
+        dur_box.option_add('*TCombobox*Listbox.font', field_font)
+
         # Create a Button Widget in the Toplevel Window
         button = tkinter.Button(popup_root, text="OK", command=self.close_win)
         button.pack(pady=5, side=TOP)
@@ -682,8 +704,15 @@ class AddWoodwayProtocolStep:
 
     def close_win(self):
         try:
+            freq_key = ''
+            if self.freq_var.get() not in ['None', '']:
+                freq_key = str(self.freq_var.get()[0]).lower()
+            dur_key = ''
+            if self.dur_var.get() not in ['None', '']:
+                dur_key = str(self.dur_var.get()[0]).lower()
             new_step = [float(self.duration_entry.get()), float(self.ls_entry.get()),
-                        float(self.rs_entry.get()), float(self.incline_entry.get())]
+                        float(self.rs_entry.get()), float(self.incline_entry.get()),
+                        freq_key, dur_key]
             self.caller.popup_return(new_step, self.edit)
             self.popup_root.destroy()
         except ValueError:
@@ -692,7 +721,7 @@ class AddWoodwayProtocolStep:
 
 
 class AddBleProtocolStep:
-    def __init__(self, top, root, edit=False, dur=None, motor_1=None, motor_2=None):
+    def __init__(self, top, root, edit=False, dur=None, motor_1=None, motor_2=None, freq_key=None, dur_key=None):
         assert top.popup_return
         self.caller = top
         self.entry = None
@@ -700,13 +729,14 @@ class AddBleProtocolStep:
         self.name = "Add BLE Step"
         self.edit = edit
         self.dur, self.motor_1, self.motor_2 = dur, motor_1, motor_2
+        self.freq_key, self.dur_key = freq_key, dur_key
         self.popup_entry(root)
 
     def popup_entry(self, root):
         # Create a Toplevel window
         self.popup_root = popup_root = tkinter.Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x175")
+        popup_root.geometry("300x300")
         popup_root.title(self.name)
 
         # Create an Entry Widget in the Toplevel window
@@ -729,6 +759,27 @@ class AddBleProtocolStep:
         if self.motor_2 is not None:
             set_entry_text(self.motor_2_entry, self.motor_2)
 
+        field_font = ('Purisa', 12)
+        freq_label = tkinter.Label(popup_root, font=field_font, text="Frequency Key Association", bg='white')
+        freq_label.pack()
+        self.freq_var = tkinter.StringVar(popup_root, value=self.freq_key)
+        freq_box = Combobox(popup_root, textvariable=self.freq_var, font=field_font)
+        freq_box['values'] = ['None'] + self.caller.caller.ovu.key_view.bindings
+        freq_box['state'] = 'readonly'
+        freq_box.config(font=field_font)
+        freq_box.pack()
+        freq_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        dur_label = tkinter.Label(popup_root, font=field_font, text="Duration Key Association", bg='white')
+        dur_label.pack()
+        self.dur_var = tkinter.StringVar(popup_root, value=self.dur_key)
+        dur_box = Combobox(popup_root, textvariable=self.dur_var, font=field_font)
+        dur_box['values'] = ['None'] + self.caller.caller.ovu.key_view.dur_bindings
+        dur_box['state'] = 'readonly'
+        dur_box.config(font=field_font)
+        dur_box.pack()
+        dur_box.option_add('*TCombobox*Listbox.font', field_font)
+
         # Create a Button Widget in the Toplevel Window
         button = tkinter.Button(popup_root, text="OK", command=self.close_win)
         button.pack(pady=5, side=TOP)
@@ -738,8 +789,15 @@ class AddBleProtocolStep:
 
     def close_win(self):
         try:
+            freq_key = ''
+            if self.freq_var.get() not in ['None', '']:
+                freq_key = str(self.freq_var.get()[0]).lower()
+            dur_key = ''
+            if self.dur_var.get() not in ['None', '']:
+                dur_key = str(self.dur_var.get()[0]).lower()
             new_step = [float(self.duration_entry.get()), float(self.motor_1_entry.get()),
-                        float(self.motor_2_entry.get())]
+                        float(self.motor_2_entry.get()),
+                        freq_key, dur_key]
             self.caller.popup_return(new_step, edit=self.edit)
             self.popup_root.destroy()
         except ValueError:
