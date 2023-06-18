@@ -162,7 +162,9 @@ class SessionManagerWindow:
             "Toggle Session": keyboard.Key.esc,
             "Pause Session": keyboard.Key.ctrl_l,
             "Delete Last Event": keyboard.Key.backspace,
-            "Undo Last Delete": keyboard.Key.ctrl_r
+            "Undo Last Delete": keyboard.Key.ctrl_r,
+            "Next Frame": keyboard.Key.right,
+            "Previous Frame": keyboard.Key.left
         }
         self.tag_history = []
         self.listener = keyboard.Listener(
@@ -294,6 +296,10 @@ class SessionManagerWindow:
                 elif key == "Undo Last Delete":
                     if self.stf.session_started:
                         self.ovu.undo_last_delete()
+                elif key == "Next Frame":
+                    self.ovu.video_view.increment_frame()
+                elif key == "Previous Frame":
+                    self.ovu.video_view.decrement_frame()
 
     def handle_key_press(self, key):
         try:
@@ -360,7 +366,7 @@ class SessionManagerWindow:
             os.startfile(pathlib.Path(output_session_file).parent)
         if self.config.get_auto_export():
             self.menu.export_csv()
-            self.menu.load_sessions()
+            self.menu.load_sessions(start_file=False)
 
     def start_session(self):
         response = self.pdf.check_session_fields()

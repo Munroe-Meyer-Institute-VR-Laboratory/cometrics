@@ -342,6 +342,10 @@ class SessionTimeFields:
     def beep_thread(self):
         winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
 
+    @staticmethod
+    def beep():
+        winsound.PlaySound("SystemHand", winsound.SND_ALIAS)
+
 
 class ReviewMode:
     def __init__(self, caller, parent, height, width, button_size,

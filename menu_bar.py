@@ -9,6 +9,7 @@ from tkinter_utils import ConfigPopup, ExternalButtonPopup, GitHubIssue
 from e4_utils import export_e4_metrics
 from pat import token
 from ui_params import cometrics_ver_root
+from pat import survey
 
 
 class MenuBar(Frame):
@@ -42,9 +43,14 @@ class MenuBar(Frame):
         help_menu.add_command(label="Open Current Directory", command=self.open_current_dir)
         help_menu.add_command(label="Download E4 Streaming Server", command=self.download_e4_ss)
         help_menu.add_command(label="Open Source Code", command=self.open_source_code)
+        help_menu.add_command(label="Take Survey", command=self.open_survey)
         help_menu.add_command(label="View Privacy Policy", command=self.view_privacy_policy)
         help_menu.add_command(label="Submit Feedback", command=self.submit_feedback)
         menu.add_cascade(label="Help", menu=help_menu)
+
+    @staticmethod
+    def open_survey():
+        webbrowser.open_new_tab(survey)
 
     @staticmethod
     def view_privacy_policy():
@@ -109,5 +115,6 @@ class MenuBar(Frame):
     def get_session_acc(self):
         AccuracyPopup(self.caller.root, self.caller.keystroke_file, self.caller)
 
-    def load_sessions(self):
-        populate_spreadsheet(self.caller.patient_name, self.caller.tracker_file, self.caller.prim_dir, self.caller.graph_dir)
+    def load_sessions(self, start_file=True):
+        populate_spreadsheet(self.caller.patient_name, self.caller.tracker_file,
+                             self.caller.prim_dir, self.caller.graph_dir, start_file=start_file)

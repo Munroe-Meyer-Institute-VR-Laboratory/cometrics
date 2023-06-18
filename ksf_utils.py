@@ -328,6 +328,22 @@ def export_columnwise_csv(prim_dir, reli_dir, output_dir):
     convert_json_csv(reli_sessions, reli_export_files, reli_export)
 
 
+def get_single_session(session):
+    # Get the key cells in the spreadsheet
+    freq_headers, dur_headers = session["KSF"]["Frequency"], session["KSF"]["Duration"]
+    key_freq, key_dur = get_keystroke_info(session)
+
+    freq_keys, dur_keys = [], []
+    # Populate frequency and duration keys
+    for freq in key_freq:
+        freq_keys.append(key_freq[freq])
+    for dur in key_dur:
+        dur_keys.append(key_dur[dur])
+    freq_headers = [h[1] for h in freq_headers]
+    dur_headers = [h[1] for h in dur_headers]
+    return freq_headers, dur_headers, freq_keys, dur_keys
+
+
 def convert_json_csv(json_files, existing_files, output_dir):
     # Get the current time to put into export files
     date = datetime.datetime.today().strftime("%B %d, %Y")
@@ -371,7 +387,8 @@ def convert_json_csv(json_files, existing_files, output_dir):
             for key in session_data:
                 writer.writerow([key, session[key]])
             # Write out the event history
-            writer.writerow(['Tag', 'Time Onset', 'Time Offset', 'Frame Onset', 'Frame Offset', 'E4 Window Onset', 'E4 Window Offset', 'Audio Onset', 'Audio Offset'])
+            writer.writerow(['Tag', 'Time Onset', 'Time Offset', 'Frame Onset', 'Frame Offset', 'E4 Window Onset',
+                             'E4 Window Offset', 'Audio Onset', 'Audio Offset'])
             for event in event_history:
                 row = [event[0]]
                 for data in event[1:]:
@@ -392,6 +409,11 @@ def convert_json_csv(json_files, existing_files, output_dir):
                             row.append(data)
                             row.append('None')
                 writer.writerow(row)
+            freq_headers, dur_headers, freq_keys, dur_keys = get_single_session(session)
+            writer.writerow([])
+            writer.writerow([])
+            writer.writerow(freq_headers + dur_headers)
+            writer.writerow(freq_keys + dur_keys)
 
 
 def compare_cells(a, b):
@@ -457,7 +479,8 @@ def get_key_cells(data_wb):
                     # Check if row_value is not greater than dur_end_value
                     # Check if row_value is not less than freq_start_value
                     if int(row_value) == 3:
-                        if compare_cells(col_value, dur_end_value) != 1 and compare_cells(col_value, freq_start_value) != -1:
+                        if compare_cells(col_value, dur_end_value) != 1 and compare_cells(col_value,
+                                                                                          freq_start_value) != -1:
                             try:
                                 # If it's a str check it
                                 if type(row[i].value) is str and len(row[i].value) > 1:
@@ -478,12 +501,14 @@ def get_key_cells(data_wb):
                                     if compare_cells(col_value, tracker_headers['Duration Start']) == -1:
                                         freq_headers[cell_value] = [row[i].coordinate,
                                                                     ''.join(
-                                                                        [i for i in row[i].coordinate if not i.isdigit()]),
+                                                                        [i for i in row[i].coordinate if
+                                                                         not i.isdigit()]),
                                                                     str(row[i].value)]
                                     else:
                                         dur_headers[cell_value] = [row[i].coordinate,
                                                                    ''.join(
-                                                                       [i for i in row[i].coordinate if not i.isdigit()]),
+                                                                       [i for i in row[i].coordinate if
+                                                                        not i.isdigit()]),
                                                                    str(row[i].value)]
                             except TypeError as e:
                                 print(f"ERROR: Processing KSF error\n{str(e)}")
@@ -539,7 +564,7 @@ def increment_char(character, i):
     return chr(ord(character) + i)
 
 
-def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
+def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir, start_file=True):
     # Load the tracker spreadsheet
     wb = openpyxl.load_workbook(ksf_excel)
     ksf_file = ksf_excel[:-5] + ".json"
@@ -561,7 +586,7 @@ def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
     # We expect the
     row, col, sess = 5, tracker_headers['Session Data Start'], 1
     for session in sessions:
-        key_freq, key_dur = get_keystroke_info(ksf_file, session)
+        key_freq, key_dur = get_keystroke_info(session)
         data_wb[tracker_headers['Session'][1] + str(row)].value = session['Session Number']
         data_wb[tracker_headers['Cond.'][1] + str(row)].value = session['Condition Name']
         data_wb[tracker_headers['Date'][1] + str(row)].value = session['Session Date']
@@ -581,7 +606,8 @@ def populate_spreadsheet(patient_name, ksf_excel, prim_session_dir, output_dir):
     output_file = path.join(output_dir, f"{pathlib.Path(ksf_file).stem}_Charted.xlsx")
     try:
         wb.save(output_file)
-        os.startfile(output_file)
+        if start_file:
+            os.startfile(output_file)
     except PermissionError as e:
         messagebox.showerror("Error", "Permission denied to save charted tracker, make sure your have permissions to "
                                       f"save in the output directory or that the spreadsheet is closed!\n{output_file}")
@@ -624,13 +650,12 @@ def get_keystroke_window(freq_bindings, dur_bindings, session_file, window_size)
     return freq_windows, dur_windows
 
 
-def get_keystroke_info(key_file, session_file):
+def get_keystroke_info(session_file):
     freq_bindings = {}
     dur_bindings = {}
     key_freq = {}
     key_dur = {}
-    with open(key_file) as f:
-        keystroke_json = json.load(f)
+    keystroke_json = session_file["KSF"]
     for key in keystroke_json:
         if key == "Frequency":
             for bindings in keystroke_json[key]:
@@ -707,6 +732,7 @@ def open_keystroke_file(key_file):
                 for binding in keystroke_json[key]:
                     conditions.append(binding)
     return freq_bindings, dur_bindings, conditions
+
 
 def create_new_ksf_revision(original_ksf, keystrokes):
     ksf_wb = openpyxl.load_workbook(original_ksf)

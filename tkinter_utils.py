@@ -6,6 +6,7 @@ import threading
 import time
 import tkinter
 import traceback
+import webbrowser
 from tkinter import TOP, W, N, NW, messagebox, END, ttk, filedialog, INSERT
 from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview
@@ -15,6 +16,7 @@ from github import Github
 from logger_util import parse_log
 from tkvideoutils import ImageLabel
 from ui_params import treeview_default_tag_dict, cometrics_ver_root
+from pat import survey
 
 
 def center(toplevel, y_offset=-20):
@@ -319,7 +321,7 @@ class ConfigPopup:
         self.config = config
         self.popup_root = popup_root = tkinter.Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x410")
+        popup_root.geometry("300x450")
         popup_root.title("Configuration Settings")
         fps_tag = tkinter.Label(popup_root, text="FPS", bg='white', font=('Purisa', 12))
         fps_tag.place(x=10, y=10)
@@ -365,14 +367,19 @@ class ConfigPopup:
 
         self.auto_export_var = tkinter.BooleanVar(popup_root, value=self.config.get_auto_export())
         auto_export_checkbutton = tkinter.Checkbutton(popup_root, text="Auto Export Enabled", bg='white',
-                                                 variable=self.auto_export_var, font=('Purisa', 12))
+                                                      variable=self.auto_export_var, font=('Purisa', 12))
         auto_export_checkbutton.place(x=10, y=280)
+
+        self.protocol_var = tkinter.BooleanVar(popup_root, value=self.config.get_protocol_beep())
+        prot_checkbutton = tkinter.Checkbutton(popup_root, text="Protocol Beep Enabled", bg='white',
+                                               variable=self.protocol_var, font=('Purisa', 12))
+        prot_checkbutton.place(x=10, y=310)
 
         clear_projects = tkinter.Button(popup_root, text="Clear Recent Projects",
                                         font=('Purisa', 12), command=self.clear_projects)
-        clear_projects.place(x=10, y=320)
+        clear_projects.place(x=10, y=350)
         ok_button = tkinter.Button(popup_root, text="OK", command=self.on_closing, font=('Purisa', 12))
-        ok_button.place(x=150, y=360, anchor=N)
+        ok_button.place(x=150, y=400, anchor=N)
 
     def on_closing(self):
         self.update_fps()
@@ -382,6 +389,7 @@ class ConfigPopup:
         self.update_review()
         self.update_clickmode()
         self.update_auto_export()
+        self.update_protocol_beep()
         self.popup_root.destroy()
 
     def update_fps(self):
@@ -407,6 +415,9 @@ class ConfigPopup:
 
     def clear_projects(self):
         self.config.set_recent_projects([])
+
+    def update_protocol_beep(self):
+        self.config.set_protocol_beep(self.protocol_var.get())
 
 
 class ProjectPopup:
@@ -480,6 +491,55 @@ class ProjectPopup:
     def close_win(self):
         self.caller.popup_return((self.entry.get(), self.dir_entry.get()), self.popup_call)
         self.popup_root.destroy()
+
+
+class SurveyPopup:
+    def __init__(self, root, name):
+        self.entry = None
+        self.popup_root = None
+        self.name = name
+        self.popup_entry(root)
+
+    def popup_entry(self, root):
+        # Create a Toplevel window
+        self.popup_root = popup_root = tkinter.Toplevel(root)
+        popup_root.config(bg="white", bd=-2)
+        popup_root.geometry("450x125")
+        popup_root.title(self.name)
+
+        # Create an Entry Widget in the Toplevel window
+        self.text = tkinter.Label(popup_root, bg='white', bd=2, text="Thank you for using cometrics!")
+        self.text.pack()
+        self.survey_text = tkinter.Label(popup_root, bg='white', bd=2,
+                                         text="To improve this software, please fill out this survey by clicking the link below,")
+        self.survey_text.pack()
+        self.survey_link = tkinter.Label(popup_root, text="Cometrics Survey", font=('TkDefaultFont', 9),
+                                         bg='white', fg="blue", cursor="hand2")
+        self.survey_link.pack()
+        self.survey_link.bind("<Button-1>", lambda e: webbrowser.open_new_tab(survey))
+        self.survey_link.bind("<Enter>", self.underline_text)
+        self.survey_link.bind("<Leave>", self.remove_underline)
+        self.last_text = tkinter.Label(popup_root, bg='white', bd=2,
+                                       text="This popup will not show up again, thank you!")
+        self.last_text.pack()
+
+        # Create a Button Widget in the Toplevel Window
+        button = tkinter.Button(popup_root, text="Close", command=self.close_win)
+        button.pack(pady=5, side=TOP)
+        center(popup_root)
+        popup_root.focus_force()
+
+    def underline_text(self, enter):
+        self.survey_link["font"] = ('TkDefaultFont', 9, 'underline')
+
+    def remove_underline(self, enter):
+        self.survey_link["font"] = ('TkDefaultFont', 9)
+
+    def close_win(self):
+        try:
+            self.popup_root.destroy()
+        except Exception as e:
+            messagebox.showerror("Error", f"Exception encountered:\n{str(e)}\n{traceback.print_exc()}")
 
 
 class EntryPopup:
@@ -570,13 +630,14 @@ def set_entry_text(widget: tkinter.Entry, text):
 
 
 class AddWoodwayProtocolStep:
-    def __init__(self, top, root, edit=False, dur=None, rs=None, ls=None, incl=None):
+    def __init__(self, top, root, edit=False, dur=None, rs=None, ls=None, incl=None, freq_key=None, dur_key=None):
         assert top.popup_return
         self.caller = top
         self.entry = None
         self.popup_root = None
         self.name = "Add Woodway Step"
         self.dur, self.rs, self.ls, self.incl = dur, rs, ls, incl
+        self.freq_key, self.dur_key = freq_key, dur_key
         self.edit = edit
         self.popup_entry(root)
 
@@ -584,7 +645,7 @@ class AddWoodwayProtocolStep:
         # Create a Toplevel window
         self.popup_root = popup_root = tkinter.Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x250")
+        popup_root.geometry("300x350")
         popup_root.title(self.name)
 
         # Create an Entry Widget in the Toplevel window
@@ -613,6 +674,27 @@ class AddWoodwayProtocolStep:
         if self.incl is not None:
             set_entry_text(self.incline_entry, self.incl)
 
+        field_font = ('Purisa', 12)
+        freq_label = tkinter.Label(popup_root, font=field_font, text="Frequency Key Association", bg='white')
+        freq_label.pack()
+        self.freq_var = tkinter.StringVar(popup_root, value=self.freq_key)
+        freq_box = Combobox(popup_root, textvariable=self.freq_var, font=field_font)
+        freq_box['values'] = ['None'] + self.caller.caller.ovu.key_view.bindings
+        freq_box['state'] = 'readonly'
+        freq_box.config(font=field_font)
+        freq_box.pack()
+        freq_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        dur_label = tkinter.Label(popup_root, font=field_font, text="Duration Key Association", bg='white')
+        dur_label.pack()
+        self.dur_var = tkinter.StringVar(popup_root, self.dur_key)
+        dur_box = Combobox(popup_root, textvariable=self.dur_var, font=field_font)
+        dur_box['values'] = ['None'] + self.caller.caller.ovu.key_view.dur_bindings
+        dur_box['state'] = 'readonly'
+        dur_box.config(font=field_font)
+        dur_box.pack()
+        dur_box.option_add('*TCombobox*Listbox.font', field_font)
+
         # Create a Button Widget in the Toplevel Window
         button = tkinter.Button(popup_root, text="OK", command=self.close_win)
         button.pack(pady=5, side=TOP)
@@ -622,8 +704,15 @@ class AddWoodwayProtocolStep:
 
     def close_win(self):
         try:
+            freq_key = ''
+            if self.freq_var.get() not in ['None', '']:
+                freq_key = str(self.freq_var.get()[0]).lower()
+            dur_key = ''
+            if self.dur_var.get() not in ['None', '']:
+                dur_key = str(self.dur_var.get()[0]).lower()
             new_step = [float(self.duration_entry.get()), float(self.ls_entry.get()),
-                        float(self.rs_entry.get()), float(self.incline_entry.get())]
+                        float(self.rs_entry.get()), float(self.incline_entry.get()),
+                        freq_key, dur_key]
             self.caller.popup_return(new_step, self.edit)
             self.popup_root.destroy()
         except ValueError:
@@ -632,7 +721,7 @@ class AddWoodwayProtocolStep:
 
 
 class AddBleProtocolStep:
-    def __init__(self, top, root, edit=False, dur=None, motor_1=None, motor_2=None):
+    def __init__(self, top, root, edit=False, dur=None, motor_1=None, motor_2=None, freq_key=None, dur_key=None):
         assert top.popup_return
         self.caller = top
         self.entry = None
@@ -640,13 +729,14 @@ class AddBleProtocolStep:
         self.name = "Add BLE Step"
         self.edit = edit
         self.dur, self.motor_1, self.motor_2 = dur, motor_1, motor_2
+        self.freq_key, self.dur_key = freq_key, dur_key
         self.popup_entry(root)
 
     def popup_entry(self, root):
         # Create a Toplevel window
         self.popup_root = popup_root = tkinter.Toplevel(root)
         popup_root.config(bg="white", bd=-2)
-        popup_root.geometry("300x175")
+        popup_root.geometry("300x300")
         popup_root.title(self.name)
 
         # Create an Entry Widget in the Toplevel window
@@ -669,6 +759,27 @@ class AddBleProtocolStep:
         if self.motor_2 is not None:
             set_entry_text(self.motor_2_entry, self.motor_2)
 
+        field_font = ('Purisa', 12)
+        freq_label = tkinter.Label(popup_root, font=field_font, text="Frequency Key Association", bg='white')
+        freq_label.pack()
+        self.freq_var = tkinter.StringVar(popup_root, value=self.freq_key)
+        freq_box = Combobox(popup_root, textvariable=self.freq_var, font=field_font)
+        freq_box['values'] = ['None'] + self.caller.caller.ovu.key_view.bindings
+        freq_box['state'] = 'readonly'
+        freq_box.config(font=field_font)
+        freq_box.pack()
+        freq_box.option_add('*TCombobox*Listbox.font', field_font)
+
+        dur_label = tkinter.Label(popup_root, font=field_font, text="Duration Key Association", bg='white')
+        dur_label.pack()
+        self.dur_var = tkinter.StringVar(popup_root, value=self.dur_key)
+        dur_box = Combobox(popup_root, textvariable=self.dur_var, font=field_font)
+        dur_box['values'] = ['None'] + self.caller.caller.ovu.key_view.dur_bindings
+        dur_box['state'] = 'readonly'
+        dur_box.config(font=field_font)
+        dur_box.pack()
+        dur_box.option_add('*TCombobox*Listbox.font', field_font)
+
         # Create a Button Widget in the Toplevel Window
         button = tkinter.Button(popup_root, text="OK", command=self.close_win)
         button.pack(pady=5, side=TOP)
@@ -678,8 +789,15 @@ class AddBleProtocolStep:
 
     def close_win(self):
         try:
+            freq_key = ''
+            if self.freq_var.get() not in ['None', '']:
+                freq_key = str(self.freq_var.get()[0]).lower()
+            dur_key = ''
+            if self.dur_var.get() not in ['None', '']:
+                dur_key = str(self.dur_var.get()[0]).lower()
             new_step = [float(self.duration_entry.get()), float(self.motor_1_entry.get()),
-                        float(self.motor_2_entry.get())]
+                        float(self.motor_2_entry.get()),
+                        freq_key, dur_key]
             self.caller.popup_return(new_step, edit=self.edit)
             self.popup_root.destroy()
         except ValueError:
@@ -1004,10 +1122,10 @@ class GitHubIssue:
         dropdown_box.option_add('*TCombobox*Listbox.font', field_font)
         dropdown_box.place(x=10, y=40)
 
-        self.default_desc_text = "Enter a description of the problem you encountered.\n"\
-                                 "Please be descriptive!\n"\
-                                 "If possible, include steps to recreate the problem and contact "\
-                                 "information if you would like the developer to reach out for more "\
+        self.default_desc_text = "Enter a description of the problem you encountered.\n" \
+                                 "Please be descriptive!\n" \
+                                 "If possible, include steps to recreate the problem and contact " \
+                                 "information if you would like the developer to reach out for more " \
                                  "information and updates."
         self.desc_var = tkinter.StringVar(popup_root)
         self.description_entry = tkinter.Text(popup_root, bg="white", fg='grey',
