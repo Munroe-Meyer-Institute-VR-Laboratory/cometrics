@@ -2,6 +2,7 @@ import json
 import os
 import pathlib
 import traceback
+from shutil import copy2
 from tkinter import *
 from tkinter import messagebox, filedialog
 from menu_bar import MenuBar
@@ -16,6 +17,13 @@ from ui_params import project_treeview_params as ptp, treeview_tags, window_rati
     small_field_font, large_treeview_font, \
     medium_treeview_font, small_treeview_font, large_treeview_rowheight, medium_treeview_rowheight, \
     small_treeview_rowheight, large_button_size, medium_button_size, small_button_size, ui_title
+
+
+class KeyActions:
+    FREQUENCY_CREATE = 1
+    DURATION_CREATE = 2
+    FREQUENCY_EDIT = 3
+    DURATION_EDIT = 4
 
 
 class ProjectSetupWindow:
@@ -126,13 +134,20 @@ class ProjectSetupWindow:
                               font=(self.field_font[0], self.field_font[1], 'italic'),
                               bg='white', width=30, anchor='w')
         self.ksf_path.place(x=10 + self.window_width / 2, y=ptp[1], anchor=NW,
-                            width=int(self.window_width * 0.3), height=self.button_size[1])
+                            width=int(self.window_width * 0.25), height=self.button_size[1])
 
         self.ksf_import = Button(self.main_root, text="Import", font=self.field_font, width=10,
                                  command=self.import_concern_ksf)
         self.ksf_import.place(x=self.window_width * 0.77 + self.button_size[0] + 10, y=ptp[1],
                               width=self.button_size[0], height=self.button_size[1], anchor=NW)
         self.ksf_import.config(state='disabled')
+
+        self.ksf_new = Button(self.main_root, text="New", font=self.field_font, width=10,
+                              command=self.create_new_ksf)
+        self.ksf_new.place(x=self.window_width * 0.77 + self.button_size[0], y=ptp[1],
+                           width=self.button_size[0], height=self.button_size[1], anchor=NE)
+        self.ksf_new.config(state='disabled')
+
         # Define frequency and duration key headers
         freq_heading_dict = {"#0": ["Frequency Key", 'w', 1, YES, 'w']}
         dur_heading_dict = {"#0": ["Duration Key", 'w', 1, YES, 'w']}
@@ -474,33 +489,61 @@ class ProjectSetupWindow:
         except ValueError:
             self.ksf_file = None
             self.ksf_path['text'] = f"No KSF in {self.selected_concern} {self.phases_var.get()}"
-            self.ksf_import.config(state='active')
+            self.ksf_import.config(state='normal')
+            self.ksf_new.config(state='normal')
             self.clear_duration_treeview()
             self.clear_frequency_treeview()
+
+    def create_new_ksf(self):
+        self.tracker_file = os.path.join(self.ksf_dir, f"{self.patient_container.name}_KSF.xlsx")
+        copy2(r'reference\Template_KSF.xlsx', self.tracker_file)
+        new_ksf_file, new_keystrokes = import_ksf(self.tracker_file, self.ksf_dir)
+        self._ksf = new_keystrokes
+        self.ksf_file = new_ksf_file
+        self.clear_duration_treeview()
+        self.clear_frequency_treeview()
+        self.load_ksf()
+        self.ksf_new.config(state='disabled')
+        print("INFO: Successfully created tracker spreadsheet")
 
     def generate_ksf(self):
-        new_tracker_file = create_new_ksf_revision(self.tracker_file, self._ksf)
-        new_ksf_file, new_keystrokes = import_ksf(new_tracker_file, self.ksf_dir)
-        if compare_keystrokes(self._ksf, new_keystrokes):
-            self.tracker_file = new_tracker_file
-            self._ksf = new_keystrokes
-            self.ksf_file = new_ksf_file
-            self.clear_duration_treeview()
-            self.clear_frequency_treeview()
-            self.load_ksf()
-            print("INFO: Successfully updated tracker spreadsheet")
+        if len(self._ksf['Duration']) == 0 or len(self._ksf['Frequency']) == 0:
+            messagebox.showerror("Error", "There must be at least one Frequency and Duration key!")
+            print("ERROR: There must be at least one Frequency and Duration key!")
         else:
-            messagebox.showerror("Error", "Failed to update tracker spreadsheet!")
-            print("ERROR: Failed to update tracker spreadsheet")
+            new_tracker_file = create_new_ksf_revision(self.tracker_file, self._ksf)
+            new_ksf_file, new_keystrokes = import_ksf(new_tracker_file, self.ksf_dir)
+            if compare_keystrokes(self._ksf, new_keystrokes):
+                self.tracker_file = new_tracker_file
+                self._ksf = new_keystrokes
+                self.ksf_file = new_ksf_file
+                self.clear_duration_treeview()
+                self.clear_frequency_treeview()
+                self.load_ksf()
+                self.generate_button.config(state='disabled')
+                print("INFO: Successfully updated tracker spreadsheet")
+            else:
+                messagebox.showerror("Error", "Failed to update tracker spreadsheet!")
+                print("ERROR: Failed to update tracker spreadsheet")
 
-    def key_popup_return(self, tag, key, caller):
+    def key_popup_return(self, tag, key, caller, index, delete=False):
         if not tag or not key:
             messagebox.showwarning("Warning", "Invalid key entered! Please try again.")
             print(f"WARNING: Invalid key entered {tag} {key} {caller}")
-        if caller == 1:
+            return
+        if delete:
+            if caller == KeyActions.FREQUENCY_EDIT or caller == KeyActions.FREQUENCY_CREATE:
+                self.delete_frequency_key(index)
+            elif caller == KeyActions.DURATION_EDIT or caller == KeyActions.DURATION_CREATE:
+                self.delete_duration_key(index)
+        elif caller == KeyActions.FREQUENCY_CREATE:
             self.create_frequency_key(tag, key)
-        elif caller == 2:
+        elif caller == KeyActions.DURATION_CREATE:
             self.create_duration_key(tag, key)
+        elif caller == KeyActions.FREQUENCY_EDIT:
+            self.edit_frequency_key(index, tag, key)
+        elif caller == KeyActions.DURATION_EDIT:
+            self.edit_duration_key(index, tag, key)
 
     def load_concern_ksf(self):
         with open(self.ksf_file) as f:
@@ -568,42 +611,60 @@ class ProjectSetupWindow:
     def select_frequency_key(self, event):
         selection = self.frequency_key_treeview.identify_row(event.y)
         if selection:
-            if selection == '0':
-                NewKeyPopup(self, self.main_root, 1)
+            selection = int(selection) - 1
+            if selection == -1:
+                NewKeyPopup(self, self.main_root, KeyActions.FREQUENCY_CREATE)
             else:
-                self.delete_frequency_key(int(selection) - 1)
+                NewKeyPopup(self, self.main_root, KeyActions.FREQUENCY_EDIT, index=selection,
+                            key=self._ksf['Frequency'][selection][0],
+                            tag=self._ksf['Frequency'][selection][1])
 
     def select_duration_key(self, event):
         selection = self.duration_key_treeview.identify_row(event.y)
         if selection:
-            if selection == '0':
-                NewKeyPopup(self, self.main_root, 2)
+            selection = int(selection) - 1
+            if selection == -1:
+                NewKeyPopup(self, self.main_root, KeyActions.DURATION_CREATE)
             else:
-                self.delete_duration_key(int(selection) - 1)
+                NewKeyPopup(self, self.main_root, KeyActions.DURATION_EDIT, index=selection,
+                            key=self._ksf['Duration'][selection][0],
+                            tag=self._ksf['Duration'][selection][1])
 
     def create_frequency_key(self, tag, key):
         self._ksf['Frequency'].append([str(key), str(tag)])
         clear_treeview(self.frequency_key_treeview)
         self.populate_frequency_treeview()
-        self.generate_button.config(state='active')
+        self.generate_button.config(state='normal', background='#4abb5f')
 
     def create_duration_key(self, tag, key):
         self._ksf['Duration'].append([str(key), str(tag)])
         clear_treeview(self.duration_key_treeview)
         self.populate_duration_treeview()
-        self.generate_button.config(state='active')
+        self.generate_button.config(state='normal', background='#4abb5f')
 
     def delete_frequency_key(self, index):
         self._ksf['Frequency'].pop(index)
         clear_treeview(self.frequency_key_treeview)
         self.populate_frequency_treeview()
-        self.generate_button.config(state='active')
+        self.generate_button.config(state='normal', background='#4abb5f')
 
     def delete_duration_key(self, index):
         self._ksf['Duration'].pop(index)
         clear_treeview(self.duration_key_treeview)
         self.populate_duration_treeview()
-        self.generate_button.config(state='active')
+        self.generate_button.config(state='normal', background='#4abb5f')
+
+    def edit_frequency_key(self, index, tag, key):
+        self._ksf['Frequency'][index] = ([str(key), str(tag)])
+        clear_treeview(self.frequency_key_treeview)
+        self.populate_frequency_treeview()
+        self.generate_button.config(state='normal', background='#4abb5f')
+
+    def edit_duration_key(self, index, tag, key):
+        self._ksf['Duration'][index] = ([str(key), str(tag)])
+        clear_treeview(self.duration_key_treeview)
+        self.populate_duration_treeview()
+        self.generate_button.config(state='normal', background='#4abb5f')
 
     # endregion
 

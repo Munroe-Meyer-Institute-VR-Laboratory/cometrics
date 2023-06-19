@@ -760,45 +760,48 @@ def create_new_ksf_revision(original_ksf, keystrokes):
         name_cell = freq_headers[key][1] + '4'
         ws[name_cell].value = key
 
+    last_cell = freq_headers[list(freq_headers.keys())[0]][0]
+    i = 0
+    difference = 0
     if len(freq_headers) != len(keystrokes['Frequency']):
         difference = len(keystrokes['Frequency']) - len(freq_headers)
-        last_cell = freq_headers[key][0]
-        i = 1
-        for key in keystrokes['Frequency'][-difference:]:
-            ws[increment_cell(last_cell, i)].value = key[0]
-            name_cell = increment_cell(last_cell, i)[:-1] + '4'
-            ws[name_cell].value = key[1]
-            i += 1
-        for key in dur_headers:
-            dur_headers[key][0] = increment_cell(dur_headers[key][0], difference)
-        tracker_headers['Session Data'][3] += difference
-        tracker_headers['Frequency'][3] += difference
-        tracker_headers['Duration'][0] = increment_cell(tracker_headers['Duration'][0], difference)
-        tracker_headers['ST'][0] = increment_cell(tracker_headers['ST'][0], difference)
-        tracker_headers['PT'][0] = increment_cell(tracker_headers['PT'][0], difference)
-        tracker_headers['Session Time'][0] = increment_cell(tracker_headers['Session Time'][0], difference)
-        tracker_headers['Pause Time'][0] = increment_cell(tracker_headers['Pause Time'][0], difference)
-
+    for key in keystrokes['Frequency']:
+        ws[increment_cell(last_cell, i)].value = key[0]
+        name_cell = increment_cell(last_cell, i)[:-1] + '4'
+        ws[name_cell].value = key[1]
+        i += 1
+    # Offset the remaining headers so they don't collide with the frequency header
+    for key in dur_headers:
+        dur_headers[key][0] = increment_cell(dur_headers[key][0], difference)
+    tracker_headers['Session Data'][3] += difference
+    tracker_headers['Frequency'][3] += difference
+    tracker_headers['Duration'][0] = increment_cell(tracker_headers['Duration'][0], difference)
+    tracker_headers['ST'][0] = increment_cell(tracker_headers['ST'][0], difference)
+    tracker_headers['PT'][0] = increment_cell(tracker_headers['PT'][0], difference)
+    tracker_headers['Session Time'][0] = increment_cell(tracker_headers['Session Time'][0], difference)
+    tracker_headers['Pause Time'][0] = increment_cell(tracker_headers['Pause Time'][0], difference)
+    # Write the duration key headers
     for key in dur_headers:
         ws[dur_headers[key][0]].value = dur_headers[key][2]
         name_cell = dur_headers[key][0][:-1] + '4'
         ws[name_cell].value = key
-
+    # Get the first duration key cell
+    last_cell = dur_headers[list(dur_headers.keys())[0]][0]
+    i = 0
+    difference = 0
     if len(dur_headers) != len(keystrokes['Duration']):
         difference = len(keystrokes['Duration']) - len(dur_headers)
-        last_cell = dur_headers[key][0]
-        i = 1
-        for key in keystrokes['Duration'][-difference:]:
-            ws[increment_cell(last_cell, i)].value = key[0]
-            name_cell = increment_cell(last_cell, i)[:-1] + '4'
-            ws[name_cell].value = key[1]
-            i += 1
-        tracker_headers['Session Data'][3] += difference
-        tracker_headers['Duration'][3] += difference
-        tracker_headers['ST'][0] = increment_cell(tracker_headers['ST'][0], difference)
-        tracker_headers['PT'][0] = increment_cell(tracker_headers['PT'][0], difference)
-        tracker_headers['Session Time'][0] = increment_cell(tracker_headers['Session Time'][0], difference)
-        tracker_headers['Pause Time'][0] = increment_cell(tracker_headers['Pause Time'][0], difference)
+    for key in keystrokes['Duration']:
+        ws[increment_cell(last_cell, i)].value = key[0]
+        name_cell = increment_cell(last_cell, i)[:-1] + '4'
+        ws[name_cell].value = key[1]
+        i += 1
+    tracker_headers['Session Data'][3] += difference
+    tracker_headers['Duration'][3] += difference
+    tracker_headers['ST'][0] = increment_cell(tracker_headers['ST'][0], difference)
+    tracker_headers['PT'][0] = increment_cell(tracker_headers['PT'][0], difference)
+    tracker_headers['Session Time'][0] = increment_cell(tracker_headers['Session Time'][0], difference)
+    tracker_headers['Pause Time'][0] = increment_cell(tracker_headers['Pause Time'][0], difference)
 
     for key in skip_headers:
         if type(tracker_headers[key]) is list:
@@ -815,9 +818,9 @@ def create_new_ksf_revision(original_ksf, keystrokes):
     ksf_dir = pathlib.Path(original_ksf).parent
     ksf_count = len(glob.glob1(ksf_dir, "*.xlsx"))
     if ksf_count > 1:
-        new_ksf = f"{original_ksf[:-8]}_V{ksf_count + 1}.xlsx"
+        new_ksf = f"{original_ksf[:-8]}_V{ksf_count}.xlsx"
     else:
-        new_ksf = f"{original_ksf[:-5]}_V{ksf_count + 1}.xlsx"
+        new_ksf = f"{original_ksf[:-5]}_V{ksf_count}.xlsx"
     wb.save(new_ksf)
     return new_ksf
 
