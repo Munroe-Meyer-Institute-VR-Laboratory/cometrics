@@ -1,5 +1,5 @@
 # Privacy Policy for cometrics
-## Date: Aug 2022
+## Date: June 2023
 
 The developer of cometrics is mindful of the security and protection of user data and patient data.  This Privacy Policy document explains the types of information that are collected and recorded by cometrics and in which situations the developers will have access to generated data.
 

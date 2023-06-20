@@ -7,7 +7,7 @@ import time
 import tkinter
 import traceback
 import webbrowser
-from tkinter import TOP, W, N, NW, messagebox, END, ttk, filedialog, INSERT
+from tkinter import TOP, W, N, NW, messagebox, END, ttk, filedialog, INSERT, NE
 from tkinter.ttk import Style, Combobox
 from tkinter.ttk import Treeview
 import numpy as np
@@ -579,10 +579,13 @@ class EntryPopup:
 
 
 class NewKeyPopup:
-    def __init__(self, top, root, dur_freq):
+    def __init__(self, top, root, action, index=None, key=None, tag=None):
         assert top.key_popup_return
         self.caller = top
-        self.dur_freq = dur_freq
+        self.index = index
+        self.action = action
+        self.key = key
+        self.tag = tag
         self.tag_entry = None
         self.key_entry = None
         self.popup_root = None
@@ -596,32 +599,47 @@ class NewKeyPopup:
         popup_root.title("Enter New Binding")
 
         # Create an Entry Widget in the Toplevel window
-        self.tag_label = tkinter.Label(popup_root, text="Key Tag", bg='white')
+        self.tag_label = tkinter.Label(popup_root, text="Definition", bg='white')
         self.tag_label.place(x=30, y=20, anchor=W)
         self.tag_entry = tkinter.Entry(popup_root, bd=2, width=25, bg='white')
         self.tag_entry.place(x=90, y=20, anchor=W)
+        if self.tag:
+            set_entry_text(self.tag_entry, self.tag)
 
         self.key_label = tkinter.Label(popup_root, text="Key", bg='white')
         self.key_label.place(x=30, y=50, anchor=W)
         self.key_entry = tkinter.Entry(popup_root, bd=2, width=25, bg='white')
         self.key_entry.place(x=90, y=50, anchor=W)
+        if self.key:
+            set_entry_text(self.key_entry, self.key)
 
         # Create a Button Widget in the Toplevel Window
-        button = tkinter.Button(popup_root, text="OK", command=self.close_win)
-        button.place(x=150, y=70, anchor=N)
+        button = tkinter.Button(popup_root, text="Assign", fg='green', command=self.assign_key)
+        button.place(x=140, y=70, anchor=NE)
+
+        button = tkinter.Button(popup_root, text="Delete", fg='red', command=self.delete_key)
+        button.place(x=160, y=70, anchor=NW)
+
         center(popup_root)
         popup_root.focus_force()
         self.tag_entry.focus()
 
-    def close_win(self):
+    def delete_key(self):
+        self.caller.key_popup_return(self.tag_entry.get(), self.key_entry.get(), self.action, self.index, True)
+        self.close_win()
+
+    def assign_key(self):
         if len(self.key_entry.get()) == 1:
-            self.caller.key_popup_return(self.tag_entry.get(), self.key_entry.get(), self.dur_freq)
-            self.popup_root.destroy()
+            self.caller.key_popup_return(self.tag_entry.get(), self.key_entry.get(), self.action, self.index)
+            self.close_win()
         else:
             messagebox.showwarning("Warning", 'New key binding can only be one character!')
             print("WARNING: New key binding can only be one character!")
             self.popup_root.focus_force()
             self.tag_entry.focus()
+
+    def close_win(self):
+        self.popup_root.destroy()
 
 
 def set_entry_text(widget: tkinter.Entry, text):
