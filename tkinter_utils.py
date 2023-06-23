@@ -329,20 +329,20 @@ class ConfigPopup:
         self.fps_entry.insert(0, int(self.config.get_fps()))
         self.fps_entry.place(x=60, y=10)
         self.e4_var = tkinter.BooleanVar(popup_root, value=self.config.get_e4())
-        e4_checkbutton = tkinter.Checkbutton(popup_root, text="E4 Enabled", bg='white', variable=self.e4_var,
+        e4_checkbutton = tkinter.Checkbutton(popup_root, text="Show E4 Tab", bg='white', variable=self.e4_var,
                                              font=('Purisa', 12))
         e4_checkbutton.place(x=10, y=50)
         self.woodway_var = tkinter.BooleanVar(popup_root, value=self.config.get_woodway())
-        woodway_checkbutton = tkinter.Checkbutton(popup_root, text="Woodway Enabled", bg='white',
+        woodway_checkbutton = tkinter.Checkbutton(popup_root, text="Show Woodway Tab", bg='white',
                                                   variable=self.woodway_var, font=('Purisa', 12))
         woodway_checkbutton.place(x=10, y=80)
         self.ble_var = tkinter.BooleanVar(popup_root, value=self.config.get_ble())
-        ble_checkbutton = tkinter.Checkbutton(popup_root, text="BLE Enabled", bg='white',
+        ble_checkbutton = tkinter.Checkbutton(popup_root, text="Show BLE Tab", bg='white',
                                               variable=self.ble_var, font=('Purisa', 12))
         ble_checkbutton.place(x=10, y=110)
 
         self.click_var = tkinter.BooleanVar(popup_root, value=self.config.get_clickmode())
-        clk_checkbutton = tkinter.Checkbutton(popup_root, text="Single Click Enabled", bg='white',
+        clk_checkbutton = tkinter.Checkbutton(popup_root, text="Enable Single Click", bg='white',
                                               variable=self.click_var, font=('Purisa', 12))
         clk_checkbutton.place(x=10, y=140)
 
@@ -361,17 +361,17 @@ class ConfigPopup:
         self.b_entry.place(x=60, y=220)
 
         self.review_var = tkinter.BooleanVar(popup_root, value=self.config.get_review())
-        review_checkbutton = tkinter.Checkbutton(popup_root, text="Review Mode Enabled", bg='white',
+        review_checkbutton = tkinter.Checkbutton(popup_root, text="Enable Review Mode", bg='white',
                                                  variable=self.review_var, font=('Purisa', 12))
         review_checkbutton.place(x=10, y=250)
 
         self.auto_export_var = tkinter.BooleanVar(popup_root, value=self.config.get_auto_export())
-        auto_export_checkbutton = tkinter.Checkbutton(popup_root, text="Auto Export Enabled", bg='white',
+        auto_export_checkbutton = tkinter.Checkbutton(popup_root, text="Enable Auto Export", bg='white',
                                                       variable=self.auto_export_var, font=('Purisa', 12))
         auto_export_checkbutton.place(x=10, y=280)
 
         self.protocol_var = tkinter.BooleanVar(popup_root, value=self.config.get_protocol_beep())
-        prot_checkbutton = tkinter.Checkbutton(popup_root, text="Protocol Beep Enabled", bg='white',
+        prot_checkbutton = tkinter.Checkbutton(popup_root, text="Enable Protocol Beep", bg='white',
                                                variable=self.protocol_var, font=('Purisa', 12))
         prot_checkbutton.place(x=10, y=310)
 
