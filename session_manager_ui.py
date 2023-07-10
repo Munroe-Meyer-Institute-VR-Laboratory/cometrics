@@ -164,7 +164,8 @@ class SessionManagerWindow:
             "Delete Last Event": keyboard.Key.backspace,
             "Undo Last Delete": keyboard.Key.ctrl_r,
             "Next Frame": keyboard.Key.right,
-            "Previous Frame": keyboard.Key.left
+            "Previous Frame": keyboard.Key.left,
+            "Edit Last Event": keyboard.Key.shift
         }
         self.tag_history = []
         self.listener = keyboard.Listener(
@@ -300,6 +301,8 @@ class SessionManagerWindow:
                     self.ovu.video_view.increment_frame()
                 elif key == "Previous Frame":
                     self.ovu.video_view.decrement_frame()
+                elif key == "Edit Last Event":
+                    pass
 
     def handle_key_press(self, key):
         try:

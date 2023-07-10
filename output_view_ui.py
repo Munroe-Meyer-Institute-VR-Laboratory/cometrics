@@ -616,6 +616,8 @@ class ViewWoodway:
                     self.prot_file = selected_file
                     with open(self.prot_file, 'r') as f:
                         self.protocol_steps = json.load(f)['Steps']
+                    if len(self.protocol_steps[0]) == 4:
+                        self.__heal_legacy_protocol()
                     self.repopulate_treeview()
                     self.changed_protocol = True
                     self.prot_save_button['state'] = 'active'
