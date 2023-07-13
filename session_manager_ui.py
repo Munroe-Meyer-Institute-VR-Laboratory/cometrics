@@ -302,7 +302,7 @@ class SessionManagerWindow:
                 elif key == "Previous Frame":
                     self.ovu.video_view.decrement_frame()
                 elif key == "Edit Last Event":
-                    pass
+                    self.ovu.edit_last_event()
 
     def handle_key_press(self, key):
         try:
