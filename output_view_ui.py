@@ -234,7 +234,8 @@ class OutputViewPanel:
                 if self.e4_view.e4:
                     current_window = EmpaticaE4.get_unix_timestamp()
             # Get the appropriate key event
-            key_events = self.key_view.check_key(key_char, start_time, current_frame, current_window, current_audio_frame)
+            key_events = self.key_view.check_key(key_char, start_time, current_frame, current_window,
+                                                 current_audio_frame)
             # Add to session history
             if key_events:
                 self.key_view.add_session_event(key_events)
@@ -246,6 +247,11 @@ class OutputViewPanel:
         for i in range(0, len(self.key_view.dur_bindings)):
             if self.key_view.dur_sticky[i]:
                 self.check_event(self.key_view.dur_bindings[i][0], final_time)
+
+    def edit_last_event(self):
+        self.delete_last_event()
+        self.key_view.editing = True
+        self.video_view.editing = True
 
     def delete_last_event(self):
         self.key_view.delete_last_event()
@@ -616,6 +622,8 @@ class ViewWoodway:
                     self.prot_file = selected_file
                     with open(self.prot_file, 'r') as f:
                         self.protocol_steps = json.load(f)['Steps']
+                    if len(self.protocol_steps[0]) == 4:
+                        self.__heal_legacy_protocol()
                     self.repopulate_treeview()
                     self.changed_protocol = True
                     self.prot_save_button['state'] = 'active'
@@ -784,8 +792,9 @@ class ViewBLE:
             self.calibrated = True
             self.right_ble_thresh = ble_thresh[0]
             self.left_ble_thresh = ble_thresh[1]
-            print(f"INFO: Vibrotactors already calibrated - Right: {self.right_ble_thresh} Left: {self.left_ble_thresh} "
-                  f"Calibrated: {self.calibrated}")
+            print(
+                f"INFO: Vibrotactors already calibrated - Right: {self.right_ble_thresh} Left: {self.left_ble_thresh} "
+                f"Calibrated: {self.calibrated}")
         else:
             self.calibrated = False
             self.right_ble_thresh = None
@@ -1268,7 +1277,8 @@ class ViewBLE:
 
 
 class ViewVideo:
-    def __init__(self, caller, root, height, width, field_font, header_font, button_size, fps, kdf, video_button, field_offset=60,
+    def __init__(self, caller, root, height, width, field_font, header_font, button_size, fps, kdf, video_button,
+                 field_offset=60,
                  video_import_cb=None, slider_change_cb=None):
         self.recording_fps = fps
         self.tab_button = video_button
@@ -1280,6 +1290,7 @@ class ViewVideo:
         self.reviewing = False
         self.video_loaded = False
         self.video_file = None
+        self.editing = False
 
         self.video_label = Label(self.root, bg='white')
         self.video_height, self.video_width = int((width - 10) * (1080 / 1920)), width - 10
@@ -1443,6 +1454,9 @@ class ViewVideo:
     def add_event(self, events):
         if self.video_loaded:
             for event in events:
+                if self.editing:
+                    if type(event[1]) is list and type(self.deleted_event[1]) is list:
+                        event = event[:1] + self.deleted_event[1:]
                 if type(event[1]) is list:
                     start_time = int(event[1][1]) - int(event[1][0])
                 else:
@@ -1456,6 +1470,8 @@ class ViewVideo:
                                                                               tags=(
                                                                                   treeview_tags[
                                                                                       len(self.event_history) % 2])))
+            self.editing = False
+            self.deleted_event = None
             self.event_treeview.see(self.event_treeview_parents[-1])
 
     def add_event_history(self, event_history):
@@ -2092,7 +2108,8 @@ class KeystrokeDataFields:
                                                               fs_offset=fs_offset)
 
         self.key_explanation = Label(self.frame, font=field_font, text="Delete Last Event: Backspace"
-                                                                       "\nUndo Last Delete: Right Ctrl", justify=LEFT)
+                                                                       "\nUndo Last Delete: Right Ctrl"
+                                                                       "\nEdit Last Event: Left Shift", justify=LEFT)
         self.key_explanation.place(x=((width * 0.75) + 30) - ((width * 0.25) * 0.5),
                                    y=height - (th_offset / 2), anchor=NW)
 
@@ -2103,6 +2120,7 @@ class KeystrokeDataFields:
         self.keystroke_json = None
         self.new_keystroke = False
         self.deleted_event = None
+        self.editing = False
         self.bindings = []
         self.event_history = []
         self.dur_bindings = []
@@ -2129,6 +2147,9 @@ class KeystrokeDataFields:
 
     def add_session_event(self, events):
         for event in events:
+            if self.editing:
+                if type(event[1]) == type(self.deleted_event[1]):
+                    event = event[:1] + self.deleted_event[1:]
             if type(event[1]) is list:
                 start_time = int(event[1][1]) - int(event[1][0])
             else:
@@ -2138,6 +2159,8 @@ class KeystrokeDataFields:
                                                                     text=str(self.event_history[-1][0]),
                                                                     values=(start_time,),
                                                                     tags=(treeview_tags[len(self.event_history) % 2])))
+        self.editing = False
+        self.deleted_event = None
         self.sh_treeview.see(self.sh_treeview_parents[-1])
 
     def undo_last_delete(self):
@@ -2212,9 +2235,10 @@ class KeystrokeDataFields:
                     self.dur_sticky[i] = True
                     self.sticky_start[i] = (start_time, current_frame, current_window, current_audio_frame)
         if return_bindings:
-            # Clear deleted event buffer when a new event is added
-            if self.deleted_event:
-                self.deleted_event = None
+            # Clear deleted event buffer when a new event is added but not when editing
+            if not self.editing:
+                if self.deleted_event:
+                    self.deleted_event = None
             return return_bindings
 
     def add_key_popup(self):
